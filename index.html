@@ -402,6 +402,24 @@
   .refresh-btn:hover { color: var(--accent); }
   .refresh-btn.spinning svg { animation: spin 0.7s linear infinite; }
 
+  .delete-note-btn {
+    margin-top: 16px;
+    padding: 9px 20px;
+    background: none;
+    border: 1px solid var(--danger);
+    border-radius: 8px;
+    color: var(--danger);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .delete-note-btn:hover { background: var(--danger); color: white; }
+
   .patient-items {
     flex: 1;
     overflow-y: auto;
@@ -742,11 +760,7 @@
 <div id="toast"></div>
 
 <script>
-// ─────────────────────────────────────────────────────────────────────────────
-// CONFIGURATION — paste your Cloudflare Worker URL here after deploying worker.js
-// ─────────────────────────────────────────────────────────────────────────────
 const WORKER_URL = 'https://odd-mode-138a.oshynnobmann.workers.dev';
-// ─────────────────────────────────────────────────────────────────────────────
 
 let appointments = [];
 let isRecording = false;
@@ -754,8 +768,6 @@ let selectedIndex = null;
 let recognition = null;
 let finalTranscript = '';
 let selectedDoctor = null;
-
-// ── View switching ────────────────────────────────────────────────────────────
 
 function setView(view, btn) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -765,8 +777,6 @@ function setView(view, btn) {
   document.getElementById('doctor-select').style.display = view === 'dr' ? '' : 'none';
   if (view === 'sec') loadNotes();
 }
-
-// ── Doctor selection ──────────────────────────────────────────────────────────
 
 function selectDoctor(value) {
   selectedDoctor = value || null;
@@ -781,8 +791,6 @@ function selectDoctor(value) {
     display.textContent = '';
   }
 }
-
-// ── Voice recording ───────────────────────────────────────────────────────────
 
 function toggleRecording() {
   isRecording ? stopRecording() : startRecording();
@@ -833,8 +841,6 @@ function stopRecording() {
   document.getElementById('mic-status').textContent = 'Transcript ready — review and submit';
 }
 
-// ── Submit note ───────────────────────────────────────────────────────────────
-
 async function submitNote() {
   const text = document.getElementById('note-text').value.trim();
   if (!selectedDoctor) { document.getElementById('no-doctor-warning').style.display = 'block'; return; }
@@ -856,7 +862,6 @@ async function submitNote() {
 
     if (!res.ok) throw new Error('Server error ' + res.status);
 
-    // Reset form
     document.getElementById('note-text').value = '';
     document.getElementById('mic-status').textContent = 'Tap to record';
     selectedDoctor = null;
@@ -878,8 +883,6 @@ async function submitNote() {
   btn.disabled = false;
 }
 
-// ── Load notes (secretary) ────────────────────────────────────────────────────
-
 async function loadNotes() {
   const refreshBtn = document.getElementById('refresh-btn');
   refreshBtn.classList.add('spinning');
@@ -891,13 +894,11 @@ async function loadNotes() {
     renderPatientList();
   } catch (err) {
     document.getElementById('patient-items').innerHTML =
-      `<div class="empty-list" style="color:rgba(255,100,100,0.7)">Could not load notes.<br>${err.message}</div>`;
+      '<div class="empty-list" style="color:rgba(255,100,100,0.7)">Could not load notes.<br>' + err.message + '</div>';
   }
 
   refreshBtn.classList.remove('spinning');
 }
-
-// ── Render helpers ────────────────────────────────────────────────────────────
 
 function renderPatientList() {
   const container = document.getElementById('patient-items');
@@ -906,16 +907,15 @@ function renderPatientList() {
     return;
   }
   container.innerHTML = appointments.map((a, i) => {
-    const name = a.summary?.patientName || 'Unknown Patient';
-    return `
-      <div class="patient-item ${selectedIndex === i ? 'active' : ''}" onclick="selectAppointment(${i})">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
-          <span class="p-name">${escapeHtml(name)}</span>
-          ${a.isNew ? '<span class="new-badge">NEW</span>' : ''}
-        </div>
-        <span class="p-time">${formatTime(a.timestamp)}</span>
-        ${a.provider ? `<span class="p-time" style="color:rgba(255,255,255,0.5);font-style:italic">${escapeHtml(a.provider)}</span>` : ''}
-      </div>`;
+    const name = (a.summary && a.summary.patientName) ? a.summary.patientName : 'Unknown Patient';
+    return '<div class="patient-item ' + (selectedIndex === i ? 'active' : '') + '" onclick="selectAppointment(' + i + ')">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">' +
+      '<span class="p-name">' + escapeHtml(name) + '</span>' +
+      (a.isNew ? '<span class="new-badge">NEW</span>' : '') +
+      '</div>' +
+      '<span class="p-time">' + formatTime(a.timestamp) + '</span>' +
+      (a.provider ? '<span class="p-time" style="color:rgba(255,255,255,0.5);font-style:italic">' + escapeHtml(a.provider) + '</span>' : '') +
+      '</div>';
   }).join('');
 }
 
@@ -928,48 +928,41 @@ function selectAppointment(index) {
 function renderMainPanel(appt) {
   const s = appt.summary || {};
   const noSummary = !appt.summary;
+  const summaryHtml = noSummary
+    ? '<div class="section-label">AI Summary</div><p style="font-size:0.85rem;color:var(--text-muted);font-style:italic;margin-bottom:24px">AI summary unavailable — add an Anthropic API key to the Worker to enable this.</p>'
+    : '<div class="section-label">AI Summary</div><div class="summary-grid">' +
+      '<div class="summary-field"><div class="field-label">📅 Scheduling Needs</div><div class="field-value ' + (isNone(s.schedulingNeeds) ? 'none' : '') + '">' + escapeHtml(s.schedulingNeeds || 'None mentioned') + '</div></div>' +
+      '<div class="summary-field"><div class="field-label">📬 Follow-Up Actions</div><div class="field-value ' + (isNone(s.followUpActions) ? 'none' : '') + '">' + escapeHtml(s.followUpActions || 'None') + '</div></div>' +
+      '<div class="summary-field" style="grid-column: 1 / -1"><div class="field-label">📝 Additional Notes</div><div class="field-value ' + (isNone(s.additionalNotes) ? 'none' : '') + '">' + escapeHtml(s.additionalNotes || 'None') + '</div></div>' +
+      '</div>';
 
-  document.getElementById('main-panel').innerHTML = `
-    <div class="appt-card">
-      <div class="appt-card-header">
-        <div>
-          <h2>${escapeHtml(s.patientName || 'Unknown Patient')}</h2>
-          ${appt.provider ? `<div style="font-size:0.8rem;color:var(--accent-dark);font-weight:600;margin-top:3px">${escapeHtml(appt.provider)}</div>` : ''}
-        </div>
-        <span class="appt-time">${formatTime(appt.timestamp)}</span>
-      </div>
-
-      ${noSummary ? `
-        <div class="section-label">AI Summary</div>
-        <p style="font-size:0.85rem;color:var(--text-muted);font-style:italic;margin-bottom:24px">
-          AI summary unavailable — add an Anthropic API key to the Worker to enable this.
-        </p>
-      ` : `
-        <div class="section-label">AI Summary</div>
-        <div class="summary-grid">
-          <div class="summary-field">
-            <div class="field-label">📅 Scheduling Needs</div>
-            <div class="field-value ${isNone(s.schedulingNeeds) ? 'none' : ''}">${escapeHtml(s.schedulingNeeds || 'None mentioned')}</div>
-          </div>
-          <div class="summary-field">
-            <div class="field-label">📬 Follow-Up Actions</div>
-            <div class="field-value ${isNone(s.followUpActions) ? 'none' : ''}">${escapeHtml(s.followUpActions || 'None')}</div>
-          </div>
-          <div class="summary-field" style="grid-column: 1 / -1">
-            <div class="field-label">📝 Additional Notes</div>
-            <div class="field-value ${isNone(s.additionalNotes) ? 'none' : ''}">${escapeHtml(s.additionalNotes || 'None')}</div>
-          </div>
-        </div>
-      `}
-
-      <div class="transcript-section">
-        <div class="section-label">Full Transcript</div>
-        <div class="transcript-text">${escapeHtml(appt.transcript)}</div>
-      </div>
-    </div>`;
+  document.getElementById('main-panel').innerHTML =
+    '<div class="appt-card">' +
+    '<div class="appt-card-header"><div>' +
+    '<h2>' + escapeHtml(s.patientName || 'Unknown Patient') + '</h2>' +
+    (appt.provider ? '<div style="font-size:0.8rem;color:var(--accent-dark);font-weight:600;margin-top:3px">' + escapeHtml(appt.provider) + '</div>' : '') +
+    '</div><span class="appt-time">' + formatTime(appt.timestamp) + '</span></div>' +
+    summaryHtml +
+    '<div class="transcript-section"><div class="section-label">Full Transcript</div>' +
+    '<div class="transcript-text">' + escapeHtml(appt.transcript) + '</div></div>' +
+    '<button class="delete-note-btn" onclick="deleteNote(\'' + appt.id + '\')">🗑 Delete this appointment</button>' +
+    '</div>';
 }
 
-// ── Utilities ─────────────────────────────────────────────────────────────────
+async function deleteNote(id) {
+  if (!confirm('Delete this appointment? This cannot be undone.')) return;
+  try {
+    const res = await fetch(WORKER_URL + '/notes/' + id, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    appointments = appointments.filter(function(a) { return a.id !== id; });
+    selectedIndex = -1;
+    renderPatientList();
+    document.getElementById('main-panel').innerHTML = '<div class="empty-state"><p>Select a patient from the list</p></div>';
+    showToast('Appointment deleted.');
+  } catch (err) {
+    showToast('Could not delete: ' + err.message);
+  }
+}
 
 function isNone(v) { return !v || v === 'None' || v === 'None mentioned'; }
 
