@@ -693,10 +693,10 @@
   <div class="checklist">
     <h3>Include in your note</h3>
     <div class="checklist-items">
-      <div class="checklist-item"><div class="dot"></div><span><strong>Patient name</strong> — full name as it appears in records</span></div>
-      <div class="checklist-item"><div class="dot"></div><span><strong>Scheduling needs</strong> — follow-up timing, frequency, urgency</span></div>
-      <div class="checklist-item"><div class="dot"></div><span><strong>Follow-up actions</strong> — anything to send the patient (forms, referrals, instructions, reminders)</span></div>
-      <div class="checklist-item"><div class="dot"></div><span><strong>Additional notes</strong> — anything else the secretary should know</span></div>
+      <div class="checklist-item"><div class="dot"></div><span><strong>Scheduling needs</strong> — follow-up timing, frequency, urgency (e.g. "follow up in 2 weeks", "monthly check-ins")</span></div>
+      <div class="checklist-item"><div class="dot"></div><span><strong>Follow-up actions</strong> — anything to send or do for the patient (forms, referrals, home exercise PDFs, insurance letters)</span></div>
+      <div class="checklist-item"><div class="dot"></div><span><strong>Clinical details</strong> — areas of concern, treatment changes, pain levels, progress notes the secretary should be aware of</span></div>
+      <div class="checklist-item"><div class="dot"></div><span><strong>Additional notes</strong> — anything else the secretary should know (billing flags, cancellation requests, special accommodations)</span></div>
     </div>
   </div>
 
@@ -715,7 +715,8 @@
   <div class="or-divider">or type manually</div>
 
   <div class="text-input-wrap">
-    <textarea id="note-text" placeholder="E.g. Patient is Sarah Johnson. She needs a follow-up in 2 weeks. Please send her the home exercise PDF. She mentioned lingering pain in the left shoulder so we adjusted her plan..."></textarea>
+    <input type="text" id="patient-name" placeholder="Patient name (required)" style="width:100%;border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-family:'Inter',sans-serif;font-size:0.875rem;color:var(--text);background:var(--surface);outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+    <textarea id="note-text" placeholder="E.g. She needs a follow-up in 2 weeks. Please send her the home exercise PDF. She mentioned lingering pain in the left shoulder so we adjusted her plan..."></textarea>
     <button class="submit-btn" id="submit-btn" onclick="submitNote()">
       <span id="submit-label">Submit Note</span>
       <div class="spinner" id="spinner"></div>
@@ -786,11 +787,21 @@ function selectDoctor(value) {
     select.classList.add('selected');
     document.getElementById('no-doctor-warning').style.display = 'none';
     display.textContent = 'Recording as ' + value;
+    localStorage.setItem('mc_doctor', value);
   } else {
     select.classList.remove('selected');
     display.textContent = '';
+    localStorage.removeItem('mc_doctor');
   }
 }
+
+window.addEventListener('DOMContentLoaded', function() {
+  const saved = localStorage.getItem('mc_doctor');
+  if (saved) {
+    const sel = document.getElementById('doctor-select');
+    if (sel) { sel.value = saved; selectDoctor(saved); }
+  }
+});
 
 function toggleRecording() {
   isRecording ? stopRecording() : startRecording();
@@ -843,7 +854,9 @@ function stopRecording() {
 
 async function submitNote() {
   const text = document.getElementById('note-text').value.trim();
+  const patientName = document.getElementById('patient-name').value.trim();
   if (!selectedDoctor) { document.getElementById('no-doctor-warning').style.display = 'block'; return; }
+  if (!patientName) { document.getElementById('patient-name').focus(); document.getElementById('patient-name').style.borderColor = 'var(--danger)'; alert('Please enter the patient\'s name.'); return; }
   if (!text) { alert('Please type or record a note first.'); return; }
 
   const btn = document.getElementById('submit-btn');
@@ -857,19 +870,16 @@ async function submitNote() {
     const res = await fetch(WORKER_URL + '/notes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ transcript: text, provider: selectedDoctor }),
+      body: JSON.stringify({ transcript: text, provider: selectedDoctor, patientName: patientName }),
     });
 
     if (!res.ok) throw new Error('Server error ' + res.status);
 
     document.getElementById('note-text').value = '';
+    document.getElementById('patient-name').value = '';
+    document.getElementById('patient-name').style.borderColor = 'var(--border)';
     document.getElementById('mic-status').textContent = 'Tap to record';
-    selectedDoctor = null;
     finalTranscript = '';
-    const sel = document.getElementById('doctor-select');
-    sel.value = '';
-    sel.classList.remove('selected');
-    document.getElementById('provider-display').textContent = '';
 
     label.textContent = '✓ Note Submitted';
     showToast('✓ Note saved — the secretary can see it now');
@@ -894,7 +904,7 @@ async function loadNotes() {
     renderPatientList();
   } catch (err) {
     document.getElementById('patient-items').innerHTML =
-      '<div class="empty-list" style="color:rgba(255,100,100,0.7)">Could not load notes.<br>' + err.message + '</div>';
+      `<div class="empty-list" style="color:rgba(255,100,100,0.7)">Could not load notes.<br>${err.message}</div>`;
   }
 
   refreshBtn.classList.remove('spinning');
@@ -907,15 +917,16 @@ function renderPatientList() {
     return;
   }
   container.innerHTML = appointments.map((a, i) => {
-    const name = (a.summary && a.summary.patientName) ? a.summary.patientName : 'Unknown Patient';
-    return '<div class="patient-item ' + (selectedIndex === i ? 'active' : '') + '" onclick="selectAppointment(' + i + ')">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">' +
-      '<span class="p-name">' + escapeHtml(name) + '</span>' +
-      (a.isNew ? '<span class="new-badge">NEW</span>' : '') +
-      '</div>' +
-      '<span class="p-time">' + formatTime(a.timestamp) + '</span>' +
-      (a.provider ? '<span class="p-time" style="color:rgba(255,255,255,0.5);font-style:italic">' + escapeHtml(a.provider) + '</span>' : '') +
-      '</div>';
+    const name = a.patientName || a.summary?.patientName || 'Unknown Patient';
+    return `
+      <div class="patient-item ${selectedIndex === i ? 'active' : ''}" onclick="selectAppointment(${i})">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+          <span class="p-name">${escapeHtml(name)}</span>
+          ${a.isNew ? '<span class="new-badge">NEW</span>' : ''}
+        </div>
+        <span class="p-time">${formatTime(a.timestamp)}</span>
+        ${a.provider ? `<span class="p-time" style="color:rgba(255,255,255,0.5);font-style:italic">${escapeHtml(a.provider)}</span>` : ''}
+      </div>`;
   }).join('');
 }
 
@@ -928,25 +939,49 @@ function selectAppointment(index) {
 function renderMainPanel(appt) {
   const s = appt.summary || {};
   const noSummary = !appt.summary;
-  const summaryHtml = noSummary
-    ? '<div class="section-label">AI Summary</div><p style="font-size:0.85rem;color:var(--text-muted);font-style:italic;margin-bottom:24px">AI summary unavailable — add an Anthropic API key to the Worker to enable this.</p>'
-    : '<div class="section-label">AI Summary</div><div class="summary-grid">' +
-      '<div class="summary-field"><div class="field-label">📅 Scheduling Needs</div><div class="field-value ' + (isNone(s.schedulingNeeds) ? 'none' : '') + '">' + escapeHtml(s.schedulingNeeds || 'None mentioned') + '</div></div>' +
-      '<div class="summary-field"><div class="field-label">📬 Follow-Up Actions</div><div class="field-value ' + (isNone(s.followUpActions) ? 'none' : '') + '">' + escapeHtml(s.followUpActions || 'None') + '</div></div>' +
-      '<div class="summary-field" style="grid-column: 1 / -1"><div class="field-label">📝 Additional Notes</div><div class="field-value ' + (isNone(s.additionalNotes) ? 'none' : '') + '">' + escapeHtml(s.additionalNotes || 'None') + '</div></div>' +
-      '</div>';
 
-  document.getElementById('main-panel').innerHTML =
-    '<div class="appt-card">' +
-    '<div class="appt-card-header"><div>' +
-    '<h2>' + escapeHtml(s.patientName || 'Unknown Patient') + '</h2>' +
-    (appt.provider ? '<div style="font-size:0.8rem;color:var(--accent-dark);font-weight:600;margin-top:3px">' + escapeHtml(appt.provider) + '</div>' : '') +
-    '</div><span class="appt-time">' + formatTime(appt.timestamp) + '</span></div>' +
-    summaryHtml +
-    '<div class="transcript-section"><div class="section-label">Full Transcript</div>' +
-    '<div class="transcript-text">' + escapeHtml(appt.transcript) + '</div></div>' +
-    '<button class="delete-note-btn" onclick="deleteNote(\'' + appt.id + '\')">🗑 Delete this appointment</button>' +
-    '</div>';
+  document.getElementById('main-panel').innerHTML = `
+    <div class="appt-card">
+      <div class="appt-card-header">
+        <div>
+          <h2>${escapeHtml(appt.patientName || s.patientName || 'Unknown Patient')}</h2>
+          ${appt.provider ? `<div style="font-size:0.8rem;color:var(--accent-dark);font-weight:600;margin-top:3px">${escapeHtml(appt.provider)}</div>` : ''}
+        </div>
+        <span class="appt-time">${formatTime(appt.timestamp)}</span>
+      </div>
+
+      ${noSummary ? `
+        <div class="section-label">AI Summary</div>
+        <p style="font-size:0.85rem;color:var(--text-muted);font-style:italic;margin-bottom:24px">
+          AI summary unavailable — add an Anthropic API key to the Worker to enable this.
+        </p>
+      ` : `
+        <div class="section-label">AI Summary</div>
+        <div class="summary-grid">
+          <div class="summary-field">
+            <div class="field-label">📅 Scheduling Needs</div>
+            <div class="field-value ${isNone(s.schedulingNeeds) ? 'none' : ''}">${escapeHtml(s.schedulingNeeds || 'None mentioned')}</div>
+          </div>
+          <div class="summary-field">
+            <div class="field-label">📬 Follow-Up Actions</div>
+            <div class="field-value ${isNone(s.followUpActions) ? 'none' : ''}">${escapeHtml(s.followUpActions || 'None')}</div>
+          </div>
+          <div class="summary-field" style="grid-column: 1 / -1">
+            <div class="field-label">📝 Additional Notes</div>
+            <div class="field-value ${isNone(s.additionalNotes) ? 'none' : ''}">${escapeHtml(s.additionalNotes || 'None')}</div>
+          </div>
+        </div>
+      `}
+
+      <div class="transcript-section">
+        <div class="section-label">Full Transcript</div>
+        <div class="transcript-text">${escapeHtml(appt.transcript)}</div>
+      </div>
+
+      <button class="delete-note-btn" onclick="deleteNote('${appt.id}')">
+        🗑 Delete this appointment
+      </button>
+    </div>`;
 }
 
 async function deleteNote(id) {
