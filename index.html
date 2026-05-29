@@ -33,7 +33,6 @@
     flex-direction: column;
   }
 
-  /* HEADER */
   header {
     background: var(--charcoal);
     padding: 0 32px;
@@ -48,7 +47,6 @@
   }
 
   .logo-wrap { display: flex; align-items: center; gap: 12px; }
-
   .logo-text { display: flex; flex-direction: column; line-height: 1; }
 
   .logo-text .brand {
@@ -67,7 +65,6 @@
     margin-top: 1px;
   }
 
-  /* TOGGLE */
   .toggle-wrap {
     display: flex;
     align-items: center;
@@ -98,11 +95,9 @@
     box-shadow: 0 2px 10px rgba(232,160,32,0.4);
   }
 
-  /* VIEWS */
   .view { display: none; flex: 1; }
   .view.active { display: flex; }
 
-  /* ===== DR VIEW ===== */
   #dr-view {
     flex-direction: column;
     align-items: center;
@@ -121,12 +116,8 @@
     margin-bottom: 4px;
   }
 
-  .dr-header p {
-    color: var(--text-muted);
-    font-size: 0.88rem;
-  }
+  .dr-header p { color: var(--text-muted); font-size: 0.88rem; }
 
-  /* Checklist */
   .checklist {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -165,7 +156,6 @@
     flex-shrink: 0;
   }
 
-  /* Mic button */
   .mic-section {
     display: flex;
     flex-direction: column;
@@ -221,62 +211,6 @@
 
   .mic-status.recording { color: var(--danger); }
 
-  /* Doctor selector */
-  .doctor-selector {
-    width: 100%;
-    max-width: 560px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .doctor-selector-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-  }
-
-  .doctor-btns { display: flex; gap: 12px; }
-
-  .doctor-btn {
-    flex: 1;
-    padding: 14px 16px;
-    border: 2px solid var(--border);
-    border-radius: 10px;
-    background: var(--surface);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.2s;
-    text-align: center;
-  }
-
-  .doctor-btn:hover { border-color: var(--accent); color: var(--charcoal); }
-
-  .doctor-btn.selected {
-    border-color: var(--accent);
-    background: #fdf3e0;
-    color: var(--charcoal);
-    box-shadow: 0 2px 8px rgba(232,160,32,0.2);
-  }
-
-  .doctor-btn .dr-title {
-    font-size: 0.7rem;
-    font-weight: 500;
-    color: var(--text-muted);
-    display: block;
-    margin-bottom: 3px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-
-  .doctor-btn.selected .dr-title { color: var(--accent-dark); }
-
-  /* OR divider */
   .or-divider {
     display: flex;
     align-items: center;
@@ -292,7 +226,6 @@
     content: ''; flex: 1; height: 1px; background: var(--border);
   }
 
-  /* Text input */
   .text-input-wrap {
     width: 100%;
     max-width: 560px;
@@ -350,7 +283,6 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ===== SECRETARY VIEW ===== */
   #sec-view {
     flex-direction: row;
     height: calc(100vh - 68px);
@@ -463,7 +395,6 @@
     margin-top: 3px;
   }
 
-  /* Search */
   .search-wrap {
     padding: 10px 12px;
     border-bottom: 1px solid rgba(255,255,255,0.08);
@@ -508,10 +439,7 @@
 
   .search-clear.visible { display: block; }
   .search-clear:hover { color: rgba(255,255,255,0.7); }
-
-  .search-input-row:focus-within {
-    border-color: var(--accent);
-  }
+  .search-input-row:focus-within { border-color: var(--accent); }
 
   .match-highlight {
     background: rgba(232,160,32,0.35);
@@ -537,7 +465,6 @@
     line-height: 1.7;
   }
 
-  /* Main panel */
   .main-panel {
     flex: 1;
     overflow-y: auto;
@@ -569,7 +496,6 @@
 
   .empty-state p { font-size: 0.84rem; max-width: 260px; line-height: 1.65; }
 
-  /* Appointment card */
   .appt-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -661,7 +587,6 @@
     white-space: pre-wrap;
   }
 
-  /* Header doctor select */
   #doctor-select {
     padding: 9px 36px 9px 14px;
     border: 1px solid rgba(255,255,255,0.2);
@@ -697,7 +622,6 @@
     margin-top: -4px;
   }
 
-  /* Toast */
   #toast {
     position: fixed;
     bottom: 28px;
@@ -733,7 +657,6 @@
       <span class="sub">Patient Notes</span>
     </div>
   </div>
-
   <div style="display:flex;align-items:center;gap:12px">
     <select id="doctor-select" onchange="selectDoctor(this.value)">
       <option value="">— Select provider —</option>
@@ -798,4 +721,384 @@
         <h3>Appointments</h3>
         <p>Select to view details</p>
       </div>
-      <button class="refresh-btn" id="refresh-btn" onclick="loadN
+      <button class="refresh-btn" id="refresh-btn" onclick="loadNotes()" title="Refresh">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+      </button>
+    </div>
+    <div class="search-wrap">
+      <div class="search-input-row">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input id="sec-search" type="text" placeholder="Search by name or note…" oninput="onSearchInput(this.value)">
+        <button class="search-clear" id="search-clear" onclick="clearSearch()" title="Clear">✕</button>
+      </div>
+    </div>
+    <div class="patient-items" id="patient-items">
+      <div class="empty-list">Loading…</div>
+    </div>
+  </div>
+
+  <div class="main-panel" id="main-panel">
+    <div class="empty-state">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"></path>
+        <rect x="9" y="3" width="6" height="4" rx="1"></rect>
+        <line x1="9" y1="12" x2="15" y2="12"></line>
+        <line x1="9" y1="16" x2="13" y2="16"></line>
+      </svg>
+      <h3>No appointment selected</h3>
+      <p>Choose a patient from the list on the left to view their note and summary.</p>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const WORKER_URL = 'https://odd-mode-138a.oshynnobmann.workers.dev';
+
+let appointments = [];
+let isRecording = false;
+let selectedIndex = null;
+let recognition = null;
+let finalTranscript = '';
+let selectedDoctor = null;
+let knownNoteIds = null;
+let pollInterval = null;
+let searchQuery = '';
+
+async function requestNotificationPermission() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') await Notification.requestPermission();
+}
+
+function startPolling() {
+  if (pollInterval) return;
+  pollInterval = setInterval(async () => {
+    try {
+      const res = await fetch(WORKER_URL + '/notes');
+      if (!res.ok) return;
+      const notes = await res.json();
+      const currentIds = notes.map(n => n.id);
+      if (knownNoteIds === null) { knownNoteIds = new Set(currentIds); return; }
+      const newNotes = notes.filter(n => !knownNoteIds.has(n.id));
+      newNotes.forEach(n => {
+        knownNoteIds.add(n.id);
+        appointments = notes;
+        renderPatientList();
+        if (Notification.permission === 'granted') {
+          new Notification('New appointment note', {
+            body: (n.patientName || 'Unknown Patient') + (n.provider ? ' — ' + n.provider : ''),
+            icon: ''
+          });
+        }
+      });
+    } catch(e) {}
+  }, 10000);
+}
+
+function stopPolling() {
+  clearInterval(pollInterval);
+  pollInterval = null;
+  knownNoteIds = null;
+}
+
+function setView(view, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(view + '-view').classList.add('active');
+  btn.classList.add('active');
+  document.getElementById('doctor-select').style.display = view === 'dr' ? '' : 'none';
+  if (view === 'sec') {
+    clearSearch();
+    loadNotes();
+    requestNotificationPermission();
+    startPolling();
+  } else {
+    stopPolling();
+  }
+}
+
+function saveDoctorCookie(value) {
+  document.cookie = 'mc_doctor=' + encodeURIComponent(value) + '; path=/; max-age=31536000; SameSite=Lax';
+}
+
+function getDoctorCookie() {
+  const match = document.cookie.match(/(?:^|;\s*)mc_doctor=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function selectDoctor(value) {
+  selectedDoctor = value || null;
+  const select = document.getElementById('doctor-select');
+  const display = document.getElementById('provider-display');
+  if (value) {
+    select.classList.add('selected');
+    document.getElementById('no-doctor-warning').style.display = 'none';
+    display.textContent = 'Recording as ' + value;
+    saveDoctorCookie(value);
+    try { localStorage.setItem('mc_doctor', value); } catch(e) {}
+  } else {
+    select.classList.remove('selected');
+    display.textContent = '';
+    saveDoctorCookie('');
+    try { localStorage.removeItem('mc_doctor'); } catch(e) {}
+  }
+}
+
+(function() {
+  const saved = getDoctorCookie() || (function(){ try { return localStorage.getItem('mc_doctor'); } catch(e) { return null; } })();
+  if (saved) {
+    const sel = document.getElementById('doctor-select');
+    if (sel) { sel.value = saved; selectDoctor(saved); }
+  }
+})();
+
+function toggleRecording() {
+  isRecording ? stopRecording() : startRecording();
+}
+
+function startRecording() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { alert('Speech recognition is not supported in this browser. Please use Chrome.'); return; }
+  finalTranscript = document.getElementById('note-text').value;
+  recognition = new SR();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+  recognition.onresult = (event) => {
+    let interim = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const t = event.results[i][0].transcript;
+      if (event.results[i].isFinal) finalTranscript += t + ' ';
+      else interim += t;
+    }
+    document.getElementById('note-text').value = finalTranscript + interim;
+  };
+  recognition.onerror = (event) => {
+    if (event.error === 'not-allowed') alert('Microphone access denied. Please allow microphone access and try again.');
+    else document.getElementById('mic-status').textContent = 'Error: ' + event.error + ' — tap to retry';
+    stopRecording();
+  };
+  recognition.onend = () => { if (isRecording) recognition.start(); };
+  recognition.start();
+  isRecording = true;
+  document.getElementById('mic-btn').classList.add('recording');
+  document.getElementById('mic-status').textContent = 'Listening… speak now';
+  document.getElementById('mic-status').classList.add('recording');
+}
+
+function stopRecording() {
+  if (recognition) { recognition.onend = null; recognition.stop(); recognition = null; }
+  isRecording = false;
+  document.getElementById('mic-btn').classList.remove('recording');
+  document.getElementById('mic-status').classList.remove('recording');
+  const el = document.getElementById('note-text');
+  el.value = el.value.trim();
+  document.getElementById('mic-status').textContent = 'Transcript ready — review and submit';
+}
+
+async function submitNote() {
+  const text = document.getElementById('note-text').value.trim();
+  const patientName = document.getElementById('patient-name').value.trim();
+  if (!selectedDoctor) { document.getElementById('no-doctor-warning').style.display = 'block'; return; }
+  if (!patientName) { document.getElementById('patient-name').focus(); document.getElementById('patient-name').style.borderColor = 'var(--danger)'; alert('Please enter the patient\'s name.'); return; }
+  if (!text) { alert('Please type or record a note first.'); return; }
+  const btn = document.getElementById('submit-btn');
+  const label = document.getElementById('submit-label');
+  const spinner = document.getElementById('spinner');
+  btn.disabled = true;
+  label.textContent = 'Saving…';
+  spinner.style.display = 'block';
+  try {
+    const res = await fetch(WORKER_URL + '/notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transcript: text, provider: selectedDoctor, patientName: patientName }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    document.getElementById('note-text').value = '';
+    document.getElementById('patient-name').value = '';
+    document.getElementById('patient-name').style.borderColor = 'var(--border)';
+    document.getElementById('mic-status').textContent = 'Tap to record';
+    finalTranscript = '';
+    label.textContent = '✓ Note Submitted';
+    showToast('✓ Note saved — the secretary can see it now');
+    setTimeout(() => { label.textContent = 'Submit Note'; }, 2500);
+  } catch (err) {
+    alert('Could not save note: ' + err.message);
+    label.textContent = 'Submit Note';
+  }
+  spinner.style.display = 'none';
+  btn.disabled = false;
+}
+
+async function loadNotes() {
+  const refreshBtn = document.getElementById('refresh-btn');
+  refreshBtn.classList.add('spinning');
+  try {
+    const res = await fetch(WORKER_URL + '/notes');
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    appointments = await res.json();
+    renderPatientList();
+  } catch (err) {
+    document.getElementById('patient-items').innerHTML =
+      '<div class="empty-list" style="color:rgba(255,100,100,0.7)">Could not load notes.<br>' + err.message + '</div>';
+  }
+  refreshBtn.classList.remove('spinning');
+}
+
+function onSearchInput(val) {
+  searchQuery = val.trim();
+  document.getElementById('search-clear').classList.toggle('visible', searchQuery.length > 0);
+  renderPatientList();
+}
+
+function clearSearch() {
+  var el = document.getElementById('sec-search');
+  if (el) el.value = '';
+  searchQuery = '';
+  var clearBtn = document.getElementById('search-clear');
+  if (clearBtn) clearBtn.classList.remove('visible');
+  renderPatientList();
+}
+
+function highlight(text, query) {
+  if (!query) return escapeHtml(text);
+  const escaped = escapeHtml(text);
+  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return escaped.replace(new RegExp('(' + escapedQuery + ')', 'gi'), '<span class="match-highlight">$1</span>');
+}
+
+function getSnippet(transcript, query) {
+  if (!query || !transcript) return '';
+  const idx = transcript.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return '';
+  const start = Math.max(0, idx - 20);
+  const raw = transcript.slice(start, idx + query.length + 40);
+  return (start > 0 ? '…' : '') + raw + (raw.length < transcript.length - start ? '…' : '');
+}
+
+function renderPatientList() {
+  const container = document.getElementById('patient-items');
+  if (!appointments.length) {
+    container.innerHTML = '<div class="empty-list">No appointments yet.<br>Notes from the doctor<br>will appear here.</div>';
+    return;
+  }
+  const q = searchQuery.toLowerCase();
+  const scored = appointments.map(function(a, i) {
+    const name = (a.patientName || (a.summary && a.summary.patientName) || '').toLowerCase();
+    const transcript = (a.transcript || '').toLowerCase();
+    let score = -1;
+    if (!q) score = 0;
+    else if (name.indexOf(q) !== -1) score = 2;
+    else if (transcript.indexOf(q) !== -1) score = 1;
+    return { a: a, i: i, score: score };
+  }).filter(function(x) { return x.score !== -1; });
+
+  if (!scored.length) {
+    container.innerHTML = '<div class="empty-list">No results for<br>"' + escapeHtml(searchQuery) + '"</div>';
+    return;
+  }
+
+  scored.sort(function(x, y) { return y.score - x.score; });
+
+  container.innerHTML = scored.map(function(item) {
+    var a = item.a, i = item.i, score = item.score;
+    const name = a.patientName || (a.summary && a.summary.patientName) || 'Unknown Patient';
+    const nameHtml = highlight(name, searchQuery);
+    const snippet = (q && score === 1) ? getSnippet(a.transcript, searchQuery) : '';
+    return '<div class="patient-item ' + (selectedIndex === i ? 'active' : '') + '" onclick="selectAppointment(' + i + ')">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">' +
+      '<span class="p-name">' + nameHtml + '</span>' +
+      (a.isNew ? '<span class="new-badge">NEW</span>' : '') +
+      '</div>' +
+      '<span class="p-time">' + formatTime(a.timestamp) + '</span>' +
+      (a.provider ? '<span class="p-time" style="color:rgba(255,255,255,0.5);font-style:italic">' + escapeHtml(a.provider) + '</span>' : '') +
+      (snippet ? '<div class="p-snippet">' + highlight(snippet, searchQuery) + '</div>' : '') +
+      '</div>';
+  }).join('');
+}
+
+function selectAppointment(index) {
+  selectedIndex = index;
+  renderPatientList();
+  renderMainPanel(appointments[index]);
+}
+
+function renderMainPanel(appt) {
+  const s = appt.summary || {};
+  const noSummary = !appt.summary;
+  document.getElementById('main-panel').innerHTML =
+    '<div class="appt-card">' +
+      '<div class="appt-card-header">' +
+        '<div>' +
+          '<h2>' + escapeHtml(appt.patientName || s.patientName || 'Unknown Patient') + '</h2>' +
+          (appt.provider ? '<div style="font-size:0.8rem;color:var(--accent-dark);font-weight:600;margin-top:3px">' + escapeHtml(appt.provider) + '</div>' : '') +
+        '</div>' +
+        '<span class="appt-time">' + formatTime(appt.timestamp) + '</span>' +
+      '</div>' +
+      (noSummary ?
+        '<div class="section-label">AI Summary</div>' +
+        '<p style="font-size:0.85rem;color:var(--text-muted);font-style:italic;margin-bottom:24px">AI summary unavailable — add an Anthropic API key to the Worker to enable this.</p>'
+        :
+        '<div class="section-label">AI Summary</div>' +
+        '<div class="summary-grid">' +
+          '<div class="summary-field"><div class="field-label">📅 Scheduling Needs</div><div class="field-value ' + (isNone(s.schedulingNeeds) ? 'none' : '') + '">' + escapeHtml(s.schedulingNeeds || 'None mentioned') + '</div></div>' +
+          '<div class="summary-field"><div class="field-label">📬 Follow-Up Actions</div><div class="field-value ' + (isNone(s.followUpActions) ? 'none' : '') + '">' + escapeHtml(s.followUpActions || 'None') + '</div></div>' +
+          '<div class="summary-field" style="grid-column:1/-1"><div class="field-label">📝 Additional Notes</div><div class="field-value ' + (isNone(s.additionalNotes) ? 'none' : '') + '">' + escapeHtml(s.additionalNotes || 'None') + '</div></div>' +
+        '</div>'
+      ) +
+      '<div class="transcript-section">' +
+        '<div class="section-label">Full Transcript</div>' +
+        '<div class="transcript-text">' + escapeHtml(appt.transcript) + '</div>' +
+      '</div>' +
+      '<button class="delete-note-btn" onclick="deleteNote(\'' + appt.id + '\')">🗑 Delete this appointment</button>' +
+    '</div>';
+}
+
+async function deleteNote(id) {
+  if (!confirm('Delete this appointment? This cannot be undone.')) return;
+  try {
+    const res = await fetch(WORKER_URL + '/notes/' + id, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    appointments = appointments.filter(function(a) { return a.id !== id; });
+    selectedIndex = -1;
+    renderPatientList();
+    document.getElementById('main-panel').innerHTML = '<div class="empty-state"><p>Select a patient from the list</p></div>';
+    showToast('Appointment deleted.');
+  } catch (err) {
+    showToast('Could not delete: ' + err.message);
+  }
+}
+
+function isNone(v) { return !v || v === 'None' || v === 'None mentioned'; }
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function formatTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' · ' +
+    d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
