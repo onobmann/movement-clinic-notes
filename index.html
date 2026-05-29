@@ -33,7 +33,6 @@
     flex-direction: column;
   }
 
-  /* HEADER */
   header {
     background: var(--charcoal);
     padding: 0 32px;
@@ -48,7 +47,6 @@
   }
 
   .logo-wrap { display: flex; align-items: center; gap: 12px; }
-
   .logo-text { display: flex; flex-direction: column; line-height: 1; }
 
   .logo-text .brand {
@@ -67,7 +65,6 @@
     margin-top: 1px;
   }
 
-  /* TOGGLE */
   .toggle-wrap {
     display: flex;
     align-items: center;
@@ -98,11 +95,9 @@
     box-shadow: 0 2px 10px rgba(232,160,32,0.4);
   }
 
-  /* VIEWS */
   .view { display: none; flex: 1; }
   .view.active { display: flex; }
 
-  /* ===== DR VIEW ===== */
   #dr-view {
     flex-direction: column;
     align-items: center;
@@ -121,12 +116,8 @@
     margin-bottom: 4px;
   }
 
-  .dr-header p {
-    color: var(--text-muted);
-    font-size: 0.88rem;
-  }
+  .dr-header p { color: var(--text-muted); font-size: 0.88rem; }
 
-  /* Checklist */
   .checklist {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -165,7 +156,6 @@
     flex-shrink: 0;
   }
 
-  /* Mic button */
   .mic-section {
     display: flex;
     flex-direction: column;
@@ -221,62 +211,6 @@
 
   .mic-status.recording { color: var(--danger); }
 
-  /* Doctor selector */
-  .doctor-selector {
-    width: 100%;
-    max-width: 560px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .doctor-selector-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-  }
-
-  .doctor-btns { display: flex; gap: 12px; }
-
-  .doctor-btn {
-    flex: 1;
-    padding: 14px 16px;
-    border: 2px solid var(--border);
-    border-radius: 10px;
-    background: var(--surface);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.2s;
-    text-align: center;
-  }
-
-  .doctor-btn:hover { border-color: var(--accent); color: var(--charcoal); }
-
-  .doctor-btn.selected {
-    border-color: var(--accent);
-    background: #fdf3e0;
-    color: var(--charcoal);
-    box-shadow: 0 2px 8px rgba(232,160,32,0.2);
-  }
-
-  .doctor-btn .dr-title {
-    font-size: 0.7rem;
-    font-weight: 500;
-    color: var(--text-muted);
-    display: block;
-    margin-bottom: 3px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-
-  .doctor-btn.selected .dr-title { color: var(--accent-dark); }
-
-  /* OR divider */
   .or-divider {
     display: flex;
     align-items: center;
@@ -292,7 +226,6 @@
     content: ''; flex: 1; height: 1px; background: var(--border);
   }
 
-  /* Text input */
   .text-input-wrap {
     width: 100%;
     max-width: 560px;
@@ -350,7 +283,6 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ===== SECRETARY VIEW ===== */
   #sec-view {
     flex-direction: row;
     height: calc(100vh - 68px);
@@ -471,7 +403,6 @@
     line-height: 1.7;
   }
 
-  /* Main panel */
   .main-panel {
     flex: 1;
     overflow-y: auto;
@@ -503,7 +434,6 @@
 
   .empty-state p { font-size: 0.84rem; max-width: 260px; line-height: 1.65; }
 
-  /* Appointment card */
   .appt-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -595,7 +525,6 @@
     white-space: pre-wrap;
   }
 
-  /* Header doctor select */
   #doctor-select {
     padding: 9px 36px 9px 14px;
     border: 1px solid rgba(255,255,255,0.2);
@@ -631,7 +560,6 @@
     margin-top: -4px;
   }
 
-  /* Toast */
   #toast {
     position: fixed;
     bottom: 28px;
@@ -667,7 +595,6 @@
       <span class="sub">Patient Notes</span>
     </div>
   </div>
-
   <div style="display:flex;align-items:center;gap:12px">
     <select id="doctor-select" onchange="selectDoctor(this.value)">
       <option value="">— Select provider —</option>
@@ -682,7 +609,6 @@
   </div>
 </header>
 
-<!-- DR VIEW -->
 <div id="dr-view" class="view active">
   <div class="dr-header">
     <h2>Post-Appointment Note</h2>
@@ -724,7 +650,6 @@
   </div>
 </div>
 
-<!-- SECRETARY VIEW -->
 <div id="sec-view" class="view">
   <div class="patient-list">
     <div class="patient-list-header">
@@ -795,13 +720,14 @@ function selectDoctor(value) {
   }
 }
 
-window.addEventListener('DOMContentLoaded', function() {
+// Restore saved doctor on page load
+(function() {
   const saved = localStorage.getItem('mc_doctor');
   if (saved) {
     const sel = document.getElementById('doctor-select');
     if (sel) { sel.value = saved; selectDoctor(saved); }
   }
-});
+})();
 
 function toggleRecording() {
   isRecording ? stopRecording() : startRecording();
