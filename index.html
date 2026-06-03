@@ -957,30 +957,42 @@ async function requestNotificationPermission() {
 
 function startPolling() {
   if (pollInterval) return;
+  let lastMetaKey = null;
+
   pollInterval = setInterval(async () => {
     try {
-      const res = await fetch(WORKER_URL + '/notes');
-      if (!res.ok) return;
-      const notes = await res.json();
-      const currentIds = notes.map(n => n.id);
+      // Cheap check: 1 KV read — only fetch all notes if something changed
+      const metaRes = await fetch(WORKER_URL + '/notes/meta');
+      if (!metaRes.ok) return;
+      const meta = await metaRes.json();
+      const metaKey = meta.count + ':' + (meta.latestId || '');
+
+      if (metaKey === lastMetaKey) return; // nothing changed, skip full fetch
+      lastMetaKey = metaKey;
+
+      const notesRes = await fetch(WORKER_URL + '/notes');
+      if (!notesRes.ok) return;
+      const notes = await notesRes.json();
+
       if (knownNoteIds === null) {
-        knownNoteIds = new Set(currentIds);
-        return;
+        knownNoteIds = new Set(notes.map(n => n.id));
+      } else {
+        const newNotes = notes.filter(n => !knownNoteIds.has(n.id));
+        newNotes.forEach(n => {
+          knownNoteIds.add(n.id);
+          if (Notification.permission === 'granted') {
+            new Notification('New appointment note', {
+              body: (n.patientName || 'Unknown') + (n.provider ? ' — ' + n.provider : ''),
+              icon: ''
+            });
+          }
+        });
       }
-      const newNotes = notes.filter(n => !knownNoteIds.has(n.id));
-      newNotes.forEach(n => {
-        knownNoteIds.add(n.id);
-        appointments = notes;
-        renderPatientList();
-        if (Notification.permission === 'granted') {
-          new Notification('New appointment note', {
-            body: (n.patientName || 'Unknown') + (n.provider ? ' — ' + n.provider : ''),
-            icon: ''
-          });
-        }
-      });
+
+      appointments = notes;
+      renderPatientList();
     } catch(e) {}
-  }, 10000);
+  }, 60000); // check every 60s instead of 10s
 }
 
 function stopPolling() {
@@ -1150,6 +1162,10 @@ async function loadNotes() {
     const res = await fetch(WORKER_URL + '/notes');
     if (!res.ok) throw new Error('Server error ' + res.status);
     appointments = await res.json();
+    // Seed known IDs so the poller doesn't re-notify for existing notes
+    if (knownNoteIds === null) {
+      knownNoteIds = new Set(appointments.map(n => n.id));
+    }
     renderPatientList();
   } catch (err) {
     document.getElementById('patient-items').innerHTML =
@@ -1349,4 +1365,3 @@ function showToast(msg) {
 </script>
 </body>
 </html>
-```
