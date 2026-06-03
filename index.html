@@ -450,7 +450,7 @@
     color: rgba(255,255,255,0.38);
   }
 
-  .new-badge {
+  .unread-badge {
     display: inline-block;
     font-size: 0.62rem;
     font-weight: 700;
@@ -460,8 +460,68 @@
     color: var(--charcoal);
     width: fit-content;
     letter-spacing: 0.06em;
-    margin-top: 3px;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s;
+    user-select: none;
   }
+  .unread-badge:hover { background: var(--accent-dark); opacity: 0.85; }
+
+  .completed-badge {
+    display: inline-block;
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    background: #27ae60;
+    color: white;
+    width: fit-content;
+    letter-spacing: 0.06em;
+  }
+
+  .patient-item.completed .p-name { opacity: 0.5; text-decoration: line-through; }
+
+  .action-btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  .complete-btn {
+    padding: 9px 20px;
+    background: none;
+    border: 1px solid #27ae60;
+    border-radius: 8px;
+    color: #27ae60;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .complete-btn:hover { background: #27ae60; color: white; }
+  .complete-btn.is-completed { border-color: var(--text-muted); color: var(--text-muted); }
+  .complete-btn.is-completed:hover { background: var(--text-muted); color: white; }
+
+  .mark-unread-btn {
+    padding: 9px 20px;
+    background: none;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    color: var(--accent-dark);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .mark-unread-btn:hover { background: var(--accent); color: var(--charcoal); }
 
   /* Search */
   .search-wrap {
@@ -763,6 +823,7 @@
       <div class="checklist-item"><div class="dot"></div><span><strong>Therapies/Treatments they need</strong> – HBOT, FST, PEMF, Injections, Treatments w/ Doc</span></div>
       <div class="checklist-item"><div class="dot"></div><span><strong>Follow-up actions</strong> – What, if anything, needs to be sent to the patient? (Documents, Links, videos etc.)</span></div>
       <div class="checklist-item"><div class="dot"></div><span><strong>Additional notes</strong> – anything else the secretary should know (Ex. Billing, Labs, Notes to add to their profile)</span></div>
+      <div class="checklist-item"><div class="dot"></div><span><strong>Add Tasks</strong> – What Tasks should be added for you? What tasks do you have for the Front desk?</span></div>
     </div>
   </div>
 
@@ -838,7 +899,11 @@
 <div id="toast"></div>
 
 <script>
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIGURATION — paste your Cloudflare Worker URL here after deploying worker.js
+// ─────────────────────────────────────────────────────────────────────────────
 const WORKER_URL = 'https://odd-mode-138a.oshynnobmann.workers.dev';
+// ─────────────────────────────────────────────────────────────────────────────
 
 let appointments = [];
 let isRecording = false;
@@ -849,6 +914,41 @@ let selectedDoctor = null;
 let knownNoteIds = null;
 let pollInterval = null;
 let searchQuery = '';
+
+// ── Read / Complete state ─────────────────────────────────────────────────────
+
+function getReadIds() {
+  try { return new Set(JSON.parse(localStorage.getItem('mc_read_ids') || '[]')); } catch(e) { return new Set(); }
+}
+function saveReadIds(s) {
+  try { localStorage.setItem('mc_read_ids', JSON.stringify([...s])); } catch(e) {}
+}
+function getCompletedIds() {
+  try { return new Set(JSON.parse(localStorage.getItem('mc_completed_ids') || '[]')); } catch(e) { return new Set(); }
+}
+function saveCompletedIds(s) {
+  try { localStorage.setItem('mc_completed_ids', JSON.stringify([...s])); } catch(e) {}
+}
+
+function markAsRead(id) {
+  const ids = getReadIds(); ids.add(id); saveReadIds(ids);
+  renderPatientList();
+  if (selectedIndex !== null && appointments[selectedIndex]?.id === id) renderMainPanel(appointments[selectedIndex]);
+}
+function markAsUnread(id) {
+  const ids = getReadIds(); ids.delete(id); saveReadIds(ids);
+  renderPatientList();
+  if (selectedIndex !== null && appointments[selectedIndex]?.id === id) renderMainPanel(appointments[selectedIndex]);
+}
+function toggleComplete(id) {
+  const ids = getCompletedIds();
+  if (ids.has(id)) ids.delete(id); else ids.add(id);
+  saveCompletedIds(ids);
+  renderPatientList();
+  if (selectedIndex !== null && appointments[selectedIndex]?.id === id) renderMainPanel(appointments[selectedIndex]);
+}
+
+// ── Notifications ─────────────────────────────────────────────────────────────
 
 async function requestNotificationPermission() {
   if (!('Notification' in window)) return;
@@ -889,6 +989,8 @@ function stopPolling() {
   knownNoteIds = null;
 }
 
+// ── View switching ────────────────────────────────────────────────────────────
+
 function setView(view, btn) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
@@ -904,6 +1006,8 @@ function setView(view, btn) {
     stopPolling();
   }
 }
+
+// ── Doctor selection ──────────────────────────────────────────────────────────
 
 function saveDoctorCookie(value) {
   document.cookie = 'mc_doctor=' + encodeURIComponent(value) + '; path=/; max-age=31536000; SameSite=Lax';
@@ -932,6 +1036,7 @@ function selectDoctor(value) {
   }
 }
 
+// Restore saved doctor on page load
 (function() {
   const saved = getDoctorCookie() || (function(){ try { return localStorage.getItem('mc_doctor'); } catch(e) { return null; } })();
   if (saved) {
@@ -939,6 +1044,8 @@ function selectDoctor(value) {
     if (sel) { sel.value = saved; selectDoctor(saved); }
   }
 })();
+
+// ── Voice recording ───────────────────────────────────────────────────────────
 
 function toggleRecording() {
   isRecording ? stopRecording() : startRecording();
@@ -989,6 +1096,8 @@ function stopRecording() {
   document.getElementById('mic-status').textContent = 'Transcript ready — review and submit';
 }
 
+// ── Submit note ───────────────────────────────────────────────────────────────
+
 async function submitNote() {
   const text = document.getElementById('note-text').value.trim();
   const patientName = document.getElementById('patient-name').value.trim();
@@ -1012,6 +1121,7 @@ async function submitNote() {
 
     if (!res.ok) throw new Error('Server error ' + res.status);
 
+    // Reset note fields only — keep doctor selected
     document.getElementById('note-text').value = '';
     document.getElementById('patient-name').value = '';
     document.getElementById('patient-name').style.borderColor = 'var(--border)';
@@ -1030,6 +1140,8 @@ async function submitNote() {
   btn.disabled = false;
 }
 
+// ── Load notes (secretary) ────────────────────────────────────────────────────
+
 async function loadNotes() {
   const refreshBtn = document.getElementById('refresh-btn');
   refreshBtn.classList.add('spinning');
@@ -1046,6 +1158,8 @@ async function loadNotes() {
 
   refreshBtn.classList.remove('spinning');
 }
+
+// ── Search ────────────────────────────────────────────────────────────────────
 
 function onSearchInput(val) {
   searchQuery = val.trim();
@@ -1075,6 +1189,8 @@ function getSnippet(transcript, query) {
   return (start > 0 ? '…' : '') + raw + (raw.length < transcript.length - start ? '…' : '');
 }
 
+// ── Render helpers ────────────────────────────────────────────────────────────
+
 function renderPatientList() {
   const container = document.getElementById('patient-items');
   if (!appointments.length) {
@@ -1084,6 +1200,7 @@ function renderPatientList() {
 
   const q = searchQuery.toLowerCase();
 
+  // Score: 2 = name match, 1 = transcript-only match, -1 = no match
   const scored = appointments.map((a, i) => {
     const name = (a.patientName || a.summary?.patientName || '').toLowerCase();
     const transcript = (a.transcript || '').toLowerCase();
@@ -1099,17 +1216,25 @@ function renderPatientList() {
     return;
   }
 
+  // Sort: name matches first, then transcript matches; within each group preserve recency order
   scored.sort((x, y) => y.score - x.score);
 
+  const readIds = getReadIds();
+  const completedIds = getCompletedIds();
   container.innerHTML = scored.map(({ a, i }) => {
     const name = a.patientName || a.summary?.patientName || 'Unknown';
     const nameHtml = highlight(name, searchQuery);
     const snippet = q && scored.find(x => x.i === i)?.score === 1 ? getSnippet(a.transcript, searchQuery) : '';
+    const isUnread = a.isNew && !readIds.has(a.id);
+    const isCompleted = completedIds.has(a.id);
     return `
-      <div class="patient-item ${selectedIndex === i ? 'active' : ''}" onclick="selectAppointment(${i})">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+      <div class="patient-item ${selectedIndex === i ? 'active' : ''} ${isCompleted ? 'completed' : ''}" onclick="selectAppointment(${i})">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap">
           <span class="p-name">${nameHtml}</span>
-          ${a.isNew ? '<span class="new-badge">NEW</span>' : ''}
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            ${isUnread ? `<span class="unread-badge" onclick="event.stopPropagation();markAsRead('${a.id}')">UNREAD</span>` : ''}
+            ${isCompleted ? '<span class="completed-badge">✓ Done</span>' : ''}
+          </div>
         </div>
         <span class="p-time">${formatTime(a.timestamp)}</span>
         ${a.provider ? `<span class="p-time" style="color:rgba(255,255,255,0.5);font-style:italic">${escapeHtml(a.provider)}</span>` : ''}
@@ -1127,12 +1252,14 @@ function selectAppointment(index) {
 function renderMainPanel(appt) {
   const s = appt.summary || {};
   const noSummary = !appt.summary;
+  const isUnread = appt.isNew && !getReadIds().has(appt.id);
+  const isCompleted = getCompletedIds().has(appt.id);
 
   document.getElementById('main-panel').innerHTML = `
     <div class="appt-card">
       <div class="appt-card-header">
         <div>
-          <h2>${escapeHtml(appt.patientName || s.patientName || 'Unknown')}</h2>
+          <h2>${escapeHtml(appt.patientName || s.patientName || 'Unknown Patient')}</h2>
           ${appt.provider ? `<div style="font-size:0.8rem;color:var(--accent-dark);font-weight:600;margin-top:3px">${escapeHtml(appt.provider)}</div>` : ''}
         </div>
         <span class="appt-time">${formatTime(appt.timestamp)}</span>
@@ -1166,11 +1293,19 @@ function renderMainPanel(appt) {
         <div class="transcript-text">${escapeHtml(appt.transcript)}</div>
       </div>
 
-      <button class="delete-note-btn" onclick="deleteNote('${appt.id}')">
-        🗑 Delete this appointment
-      </button>
+      <div class="action-btn-row">
+        <button class="complete-btn ${isCompleted ? 'is-completed' : ''}" onclick="toggleComplete('${appt.id}')">
+          ${isCompleted ? '↩ Mark Incomplete' : '✓ Mark Complete'}
+        </button>
+        ${!isUnread ? `<button class="mark-unread-btn" onclick="markAsUnread('${appt.id}')">◎ Mark as Unread</button>` : ''}
+        <button class="delete-note-btn" style="margin-top:0" onclick="deleteNote('${appt.id}')">
+          🗑 Delete
+        </button>
+      </div>
     </div>`;
 }
+
+// ── Delete note ───────────────────────────────────────────────────────────────
 
 async function deleteNote(id) {
   if (!confirm('Delete this appointment? This cannot be undone.')) return;
@@ -1186,6 +1321,8 @@ async function deleteNote(id) {
     showToast('Could not delete: ' + err.message);
   }
 }
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
 
 function isNone(v) { return !v || v === 'None' || v === 'None mentioned'; }
 
