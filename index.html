@@ -68,12 +68,12 @@
     padding: 4px;
   }
   .toggle-btn {
-    padding: 8px 22px;
+    padding: 7px 16px;
     border-radius: 28px;
     border: none;
     background: transparent;
     font-family: 'Inter', sans-serif;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     font-weight: 500;
     cursor: pointer;
     color: rgba(255,255,255,0.55);
@@ -630,32 +630,6 @@
     border: 1px solid var(--border);
     white-space: pre-wrap;
   }
-  /* Header doctor select */
-  #doctor-select {
-    padding: 9px 36px 9px 14px;
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 10px;
-    background: rgba(255,255,255,0.08);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: rgba(255,255,255,0.6);
-    cursor: pointer;
-    outline: none;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    background-color: rgba(255,255,255,0.08);
-    transition: all 0.18s;
-  }
-  #doctor-select:focus { border-color: var(--accent); }
-  #doctor-select.selected {
-    border-color: var(--accent);
-    background-color: rgba(232,160,32,0.15);
-    color: var(--accent);
-    font-weight: 600;
-  }
   .no-doctor-warning {
     font-size: 0.78rem;
     color: var(--danger);
@@ -1054,7 +1028,9 @@
     .summary-grid { grid-template-columns: 1fr; }
     .patient-list { width: 190px; }
     .main-panel { padding: 18px; }
-    header { padding: 0 16px; }
+    header { padding: 0 12px; }
+    .toggle-btn { padding: 8px 10px; font-size: 0.75rem; }
+    #doctor-select { font-size: 0.78rem; padding: 8px 28px 8px 10px; }
   }
 </style>
 </head>
@@ -1067,16 +1043,10 @@
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:12px">
-    <select id="doctor-select" onchange="selectDoctor(this.value)">
-      <option value="">— Select provider —</option>
-      <option value="Dr. Hodson">Dr. Hodson</option>
-      <option value="Dr. Meyers">Dr. Meyers</option>
-      <option value="Scott">Scott</option>
-    </select>
     <div class="toggle-wrap">
-      <button class="toggle-btn active" onclick="setView('dr', this)">🩺 Doctor</button>
-      <button class="toggle-btn" onclick="setView('sec', this)">📋 Care Team</button>
-      <button class="toggle-btn" onclick="setView('tasks', this)">📌 Tasks</button>
+      <button class="toggle-btn active" onclick="setView('dr', this)">Doctor</button>
+      <button class="toggle-btn" onclick="setView('sec', this)">Care Team</button>
+      <button class="toggle-btn" onclick="setView('tasks', this)">Tasks</button>
     </div>
   </div>
 </header>
@@ -1084,8 +1054,14 @@
 <div id="dr-view" class="view active">
   <div class="dr-header">
     <h2>Post-Appointment Note</h2>
-    <p id="provider-display" style="color:var(--accent-dark);font-weight:600;font-size:0.9rem;min-height:20px"></p>
-    <div class="no-doctor-warning" id="no-doctor-warning">⚠ Please select a provider at the top before submitting.</div>
+    <select id="doctor-select" onchange="selectDoctor(this.value)" style="margin-top:10px;padding:10px 36px 10px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface);font-family:'Inter',sans-serif;font-size:0.88rem;font-weight:500;color:var(--text-muted);cursor:pointer;outline:none;appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%237a7670' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 12px center;transition:border-color 0.2s;">
+      <option value="">— Select provider —</option>
+      <option value="Dr. Hodson">Dr. Hodson</option>
+      <option value="Dr. Meyers">Dr. Meyers</option>
+      <option value="Scott">Scott</option>
+    </select>
+    <p id="provider-display" style="color:var(--accent-dark);font-weight:600;font-size:0.9rem;min-height:20px;margin-top:6px"></p>
+    <div class="no-doctor-warning" id="no-doctor-warning">⚠ Please select a provider before submitting.</div>
   </div>
   <div class="checklist">
     <h3>Include in your note</h3>
@@ -1328,7 +1304,6 @@ function setView(view, btn) {
   document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(view + '-view').classList.add('active');
   btn.classList.add('active');
-  document.getElementById('doctor-select').style.display = view === 'dr' ? '' : 'none';
   if (view === 'sec') {
     clearSearch();
     loadNotes();
@@ -1354,13 +1329,15 @@ function selectDoctor(value) {
   const select = document.getElementById('doctor-select');
   const display = document.getElementById('provider-display');
   if (value) {
-    select.classList.add('selected');
+    select.style.borderColor = 'var(--accent)';
+    select.style.color = 'var(--charcoal)';
     document.getElementById('no-doctor-warning').style.display = 'none';
     display.textContent = 'Recording as ' + value;
     saveDoctorCookie(value);
     try { localStorage.setItem('mc_doctor', value); } catch(e) {}
   } else {
-    select.classList.remove('selected');
+    select.style.borderColor = 'var(--border)';
+    select.style.color = 'var(--text-muted)';
     display.textContent = '';
     saveDoctorCookie('');
     try { localStorage.removeItem('mc_doctor'); } catch(e) {}
@@ -1637,12 +1614,12 @@ function showToast(msg) {
 
 // ── Tasks ─────────────────────────────────────────────────────────────────────
 const STAFF = [
+  { name: 'Christy',    initials: 'CH', color: '#185fa5', bg: '#e6f1fb' },
   { name: 'Dr. Hodson', initials: 'DH', color: '#5b4fcf', bg: '#eeedfe' },
   { name: 'Dr. Meyers', initials: 'DM', color: '#0f6e56', bg: '#e1f5ee' },
-  { name: 'Scott',      initials: 'SC', color: '#c4861a', bg: '#fdf3e0' },
   { name: 'Jenna',      initials: 'JE', color: '#993556', bg: '#fbeaf0' },
-  { name: 'Christy',    initials: 'CH', color: '#185fa5', bg: '#e6f1fb' },
   { name: 'Oshyn',      initials: 'OS', color: '#3b6d11', bg: '#eaf3de' },
+  { name: 'Scott',      initials: 'SC', color: '#c4861a', bg: '#fdf3e0' },
 ];
 
 let allTasks = [];
