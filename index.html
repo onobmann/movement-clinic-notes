@@ -882,6 +882,38 @@
     transition: color 0.15s;
   }
   .task-del-btn:hover { color: var(--danger); }
+  .kanban-completed-wrap {
+    margin-top: 4px;
+    border-top: 1px dashed var(--border);
+    padding-top: 2px;
+    flex-shrink: 0;
+  }
+  .kanban-completed-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 4px;
+    background: none;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    text-align: left;
+    text-transform: uppercase;
+  }
+  .kanban-completed-toggle:hover { color: var(--charcoal); }
+  .kanban-completed-toggle svg { transition: transform 0.2s; flex-shrink: 0; }
+  .kanban-completed-toggle.open svg { transform: rotate(180deg); }
+  .kanban-completed-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-bottom: 4px;
+  }
   .kanban-add-row {
     padding: 8px 10px;
     flex-shrink: 0;
@@ -1224,35 +1256,46 @@ let selectedDoctor = null;
 let knownNoteIds = null;
 let pollInterval = null;
 let searchQuery = '';
-// ── Read / Complete state ─────────────────────────────────────────────────────
-function getReadIds() {
-  try { return new Set(JSON.parse(localStorage.getItem('mc_read_ids') || '[]')); } catch(e) { return new Set(); }
-}
-function saveReadIds(s) {
-  try { localStorage.setItem('mc_read_ids', JSON.stringify([...s])); } catch(e) {}
-}
-function getCompletedIds() {
-  try { return new Set(JSON.parse(localStorage.getItem('mc_completed_ids') || '[]')); } catch(e) { return new Set(); }
-}
-function saveCompletedIds(s) {
-  try { localStorage.setItem('mc_completed_ids', JSON.stringify([...s])); } catch(e) {}
-}
-function markAsRead(id) {
-  const ids = getReadIds(); ids.add(id); saveReadIds(ids);
+// ── Read / Complete state (server-synced) ────────────────────────────────────
+async function markAsRead(id) {
+  const note = appointments.find(n => n.id === id);
+  if (!note) return;
+  note.isRead = true;
   renderPatientList();
   if (selectedIndex !== null && appointments[selectedIndex]?.id === id) renderMainPanel(appointments[selectedIndex]);
+  try {
+    await fetch(WORKER_URL + '/notes/' + id, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isRead: true }),
+    });
+  } catch(e) {}
 }
-function markAsUnread(id) {
-  const ids = getReadIds(); ids.delete(id); saveReadIds(ids);
+async function markAsUnread(id) {
+  const note = appointments.find(n => n.id === id);
+  if (!note) return;
+  note.isRead = false;
   renderPatientList();
   if (selectedIndex !== null && appointments[selectedIndex]?.id === id) renderMainPanel(appointments[selectedIndex]);
+  try {
+    await fetch(WORKER_URL + '/notes/' + id, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isRead: false }),
+    });
+  } catch(e) {}
 }
-function toggleComplete(id) {
-  const ids = getCompletedIds();
-  if (ids.has(id)) ids.delete(id); else ids.add(id);
-  saveCompletedIds(ids);
+async function toggleComplete(id) {
+  const note = appointments.find(n => n.id === id);
+  if (!note) return;
+  const newVal = !note.isCompleted;
+  note.isCompleted = newVal;
   renderPatientList();
   if (selectedIndex !== null && appointments[selectedIndex]?.id === id) renderMainPanel(appointments[selectedIndex]);
+  try {
+    await fetch(WORKER_URL + '/notes/' + id, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isCompleted: newVal }),
+    });
+  } catch(e) { note.isCompleted = !newVal; renderPatientList(); }
 }
 // ── Notifications ─────────────────────────────────────────────────────────────
 async function requestNotificationPermission() {
@@ -1497,14 +1540,12 @@ function renderPatientList() {
   }
   // Sort: name matches first, then transcript matches; within each group preserve recency order
   scored.sort((x, y) => y.score - x.score);
-  const readIds = getReadIds();
-  const completedIds = getCompletedIds();
   container.innerHTML = scored.map(({ a, i }) => {
     const name = a.patientName || a.summary?.patientName || 'Unknown';
     const nameHtml = highlight(name, searchQuery);
     const snippet = q && scored.find(x => x.i === i)?.score === 1 ? getSnippet(a.transcript, searchQuery) : '';
-    const isUnread = a.isNew && !readIds.has(a.id);
-    const isCompleted = completedIds.has(a.id);
+    const isUnread = !a.isRead;
+    const isCompleted = !!a.isCompleted;
     return `
       <div class="patient-item ${selectedIndex === i ? 'active' : ''} ${isCompleted ? 'completed' : ''}" onclick="selectAppointment(${i})">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap">
@@ -1528,8 +1569,8 @@ function selectAppointment(index) {
 function renderMainPanel(appt) {
   const s = appt.summary || {};
   const noSummary = !appt.summary;
-  const isUnread = appt.isNew && !getReadIds().has(appt.id);
-  const isCompleted = getCompletedIds().has(appt.id);
+  const isUnread = !appt.isRead;
+  const isCompleted = !!appt.isCompleted;
   document.getElementById('main-panel').innerHTML = `
     <div class="appt-card">
       <div class="appt-card-header">
@@ -1624,6 +1665,13 @@ const STAFF = [
 
 let allTasks = [];
 let taskModalAssignee = null;
+const completedOpenCols = new Set();
+
+function toggleCompletedSection(staffName) {
+  if (completedOpenCols.has(staffName)) completedOpenCols.delete(staffName);
+  else completedOpenCols.add(staffName);
+  renderKanban();
+}
 
 async function loadTasks() {
   try {
@@ -1640,19 +1688,29 @@ async function loadTasks() {
 function renderKanban() {
   const container = document.getElementById('kanban-cols');
   container.innerHTML = STAFF.map(s => {
-    const tasks = allTasks.filter(t => t.assignee === s.name);
-    const open = tasks.filter(t => !t.completed).length;
+    const allColTasks = allTasks.filter(t => t.assignee === s.name);
+    const openTasks = allColTasks.filter(t => !t.completed);
+    const doneTasks = allColTasks.filter(t => t.completed);
+    const isOpen = completedOpenCols.has(s.name);
+    const chevronSvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
     return `
       <div class="kanban-col">
         <div class="kanban-col-header">
           <div class="kanban-col-avatar" style="background:${s.bg};color:${s.color}">${s.initials}</div>
           <span class="kanban-col-name">${escapeHtml(s.name)}</span>
-          <span class="kanban-col-count">${open}</span>
+          <span class="kanban-col-count">${openTasks.length}</span>
         </div>
         <div class="kanban-cards">
-          ${tasks.length === 0
-            ? '<div style="text-align:center;padding:24px 12px;color:var(--text-muted);font-size:0.78rem;line-height:1.6">No tasks yet</div>'
-            : tasks.map(t => renderTaskCard(t)).join('')}
+          ${openTasks.length === 0
+            ? '<div style="text-align:center;padding:20px 12px;color:var(--text-muted);font-size:0.78rem;line-height:1.6">No tasks yet</div>'
+            : openTasks.map(t => renderTaskCard(t)).join('')}
+          ${doneTasks.length > 0 ? `
+          <div class="kanban-completed-wrap">
+            <button class="kanban-completed-toggle ${isOpen ? 'open' : ''}" onclick="toggleCompletedSection('${escapeHtml(s.name)}')">
+              ${chevronSvg} Completed (${doneTasks.length})
+            </button>
+            ${isOpen ? `<div class="kanban-completed-list">${doneTasks.map(t => renderTaskCard(t)).join('')}</div>` : ''}
+          </div>` : ''}
         </div>
         <div class="kanban-add-row">
           <button class="kanban-add-inline" onclick="openTaskModal('${escapeHtml(s.name)}')">
