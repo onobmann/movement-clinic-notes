@@ -859,6 +859,12 @@
     gap: 3px;
     flex-shrink: 0;
   }
+  .task-assigned-by {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-bottom: 8px;
+  }
   .task-due.overdue { color: var(--danger); font-weight: 600; }
   .task-due.soon { color: var(--accent-dark); font-weight: 600; }
   .task-card-actions {
@@ -1210,6 +1216,18 @@
       <div class="modal-field">
         <label class="modal-label">Assign to</label>
         <select id="task-assignee" class="modal-select">
+          <option value="">— Select person —</option>
+          <option value="Dr. Hodson">Dr. Hodson</option>
+          <option value="Dr. Meyers">Dr. Meyers</option>
+          <option value="Scott">Scott</option>
+          <option value="Jenna">Jenna</option>
+          <option value="Christy">Christy</option>
+          <option value="Oshyn">Oshyn</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Task Assignee</label>
+        <select id="task-assigned-by" class="modal-select" onchange="rememberAssignedBy(this.value)">
           <option value="">— Select person —</option>
           <option value="Dr. Hodson">Dr. Hodson</option>
           <option value="Dr. Meyers">Dr. Meyers</option>
@@ -1677,6 +1695,27 @@ let taskModalAssignee = null;
 let editingTaskId = null;
 const completedOpenCols = new Set();
 
+// ── Remember last-used Task Assignee (per browser/person) ───────────────────
+function saveAssignedByCookie(value) {
+  document.cookie = 'mc_assigned_by=' + encodeURIComponent(value) + '; path=/; max-age=31536000; SameSite=Lax';
+}
+function getAssignedByCookie() {
+  const match = document.cookie.match(/(?:^|;\s*)mc_assigned_by=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+function rememberAssignedBy(value) {
+  if (value) {
+    saveAssignedByCookie(value);
+    try { localStorage.setItem('mc_assigned_by', value); } catch(e) {}
+  } else {
+    saveAssignedByCookie('');
+    try { localStorage.removeItem('mc_assigned_by'); } catch(e) {}
+  }
+}
+function getRememberedAssignedBy() {
+  return getAssignedByCookie() || (function(){ try { return localStorage.getItem('mc_assigned_by'); } catch(e) { return null; } })();
+}
+
 function toggleCompletedSection(staffName) {
   if (completedOpenCols.has(staffName)) completedOpenCols.delete(staffName);
   else completedOpenCols.add(staffName);
@@ -1717,6 +1756,12 @@ function renderKanban() {
           <span class="kanban-col-name">${escapeHtml(s.name)}</span>
           <span class="kanban-col-count">${openTasks.length}</span>
         </div>
+        <div class="kanban-add-row">
+          <button class="kanban-add-inline" onclick="openTaskModal('${escapeHtml(s.name)}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Add task
+          </button>
+        </div>
         <div class="kanban-cards">
           ${openTasks.length === 0
             ? '<div style="text-align:center;padding:20px 12px;color:var(--text-muted);font-size:0.78rem;line-height:1.6">No tasks yet</div>'
@@ -1728,12 +1773,6 @@ function renderKanban() {
             </button>
             ${isOpen ? `<div class="kanban-completed-list">${doneTasks.map(t => renderTaskCard(t)).join('')}</div>` : ''}
           </div>` : ''}
-        </div>
-        <div class="kanban-add-row">
-          <button class="kanban-add-inline" onclick="openTaskModal('${escapeHtml(s.name)}')">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            Add task
-          </button>
         </div>
       </div>`;
   }).join('');
@@ -1749,6 +1788,7 @@ function renderTaskCard(t) {
         <div class="task-priority-dot pri-${t.priority}"></div>
         <div class="task-desc-text">${escapeHtml(t.description)}</div>
       </div>
+      ${t.assignedBy ? `<div class="task-assigned-by">Assigned by ${escapeHtml(t.assignedBy)}</div>` : ''}
       <div class="task-card-meta">
         ${t.patientInitials ? `<span class="task-patient-tag">${escapeHtml(t.patientInitials)}</span>` : '<span></span>'}
         ${t.dueDate ? `<span class="task-due ${dueInfo.cls}">
@@ -1820,6 +1860,7 @@ function openTaskModal(assignee) {
   document.getElementById('task-due').value = '';
   document.getElementById('task-priority').value = 'medium';
   document.getElementById('task-assignee').value = assignee || '';
+  document.getElementById('task-assigned-by').value = getRememberedAssignedBy() || '';
   document.getElementById('task-submit-btn').disabled = false;
   document.getElementById('task-submit-btn').textContent = 'Add Task';
   document.getElementById('task-modal').classList.add('open');
@@ -1832,6 +1873,7 @@ function editTask(id) {
   editingTaskId = id;
   document.querySelector('.modal-title').textContent = 'Edit Task';
   document.getElementById('task-assignee').value = task.assignee || '';
+  document.getElementById('task-assigned-by').value = task.assignedBy || '';
   document.getElementById('task-desc').value = task.description || '';
   document.getElementById('task-patient').value = task.patientInitials || '';
   document.getElementById('task-due').value = task.dueDate || '';
@@ -1852,6 +1894,7 @@ function closeTaskModalOutside(e) {
 
 async function submitTask() {
   const assignee = document.getElementById('task-assignee').value;
+  const assignedBy = document.getElementById('task-assigned-by').value;
   const desc = document.getElementById('task-desc').value.trim();
   const patient = document.getElementById('task-patient').value.trim();
   const due = document.getElementById('task-due').value;
@@ -1860,6 +1903,8 @@ async function submitTask() {
   if (!assignee) { document.getElementById('task-assignee').focus(); return; }
   if (!desc) { document.getElementById('task-desc').focus(); return; }
 
+  rememberAssignedBy(assignedBy);
+
   const btn = document.getElementById('task-submit-btn');
   btn.disabled = true;
   btn.textContent = 'Saving…';
@@ -1867,7 +1912,7 @@ async function submitTask() {
   try {
     if (editingTaskId) {
       // Update existing task
-      const payload = { assignee, description: desc, patientInitials: patient, dueDate: due, priority };
+      const payload = { assignee, assignedBy, description: desc, patientInitials: patient, dueDate: due, priority };
       const res = await fetch(WORKER_URL + '/tasks/' + editingTaskId, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -1885,7 +1930,7 @@ async function submitTask() {
       const res = await fetch(WORKER_URL + '/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assignee, description: desc, patientInitials: patient, dueDate: due, priority }),
+        body: JSON.stringify({ assignee, assignedBy, description: desc, patientInitials: patient, dueDate: due, priority }),
       });
       if (!res.ok) throw new Error('Server error ' + res.status);
       const task = await res.json();
