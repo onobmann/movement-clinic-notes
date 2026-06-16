@@ -762,6 +762,15 @@
     color: var(--text-muted);
     margin-left: auto;
   }
+  .kanban-col-alert {
+    font-size: 0.64rem;
+    font-weight: 700;
+    background: #fdeee9;
+    border: 1px solid #f0c4b3;
+    color: #9a4a2c;
+    border-radius: 20px;
+    padding: 2px 7px;
+  }
   .kanban-cards {
     flex: 1;
     overflow-y: auto;
@@ -802,6 +811,8 @@
   }
   .task-check:hover { border-color: var(--accent); }
   .task-check.checked { background: #27ae60; border-color: #27ae60; }
+  .task-check.readonly { cursor: default; opacity: 0.5; }
+  .task-check.readonly:hover { border-color: var(--border); }
   .task-check.checked::after {
     content: '';
     display: block;
@@ -869,12 +880,18 @@
   .task-due.soon { color: var(--accent-dark); font-weight: 600; }
   .task-card-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: center;
     margin-top: 8px;
     padding-top: 6px;
     border-top: 1px solid var(--border);
   }
-  .task-edit-btn, .task-del-btn {
+  .task-card-actions-left, .task-card-actions-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .task-edit-btn, .task-del-btn, .task-kickback-btn {
     background: none;
     border: none;
     cursor: pointer;
@@ -889,6 +906,90 @@
   }
   .task-edit-btn:hover { color: var(--accent-dark); }
   .task-del-btn:hover { color: var(--danger); }
+  .task-kickback-btn { color: var(--accent-dark); font-weight: 600; }
+  .task-kickback-btn:hover { color: var(--charcoal); }
+  /* Kick-back banner */
+  .duplicate-tag {
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: var(--accent-dark);
+    background: #fdf3e0;
+    border-radius: 4px;
+    padding: 3px 7px;
+    margin-bottom: 8px;
+    display: inline-block;
+  }
+  .kickback-banner {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 9px;
+    font-size: 0.76rem;
+    line-height: 1.45;
+  }
+  .kickback-banner.kb-question { background: #fdeee9; border: 1px solid #f0c4b3; color: #9a4a2c; }
+  .kickback-banner.kb-reply { background: #e9f3fb; border: 1px solid #bcdcf2; color: #1c5c84; }
+  .kickback-banner-text { flex: 1; }
+  .kickback-resolve-btn {
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.75);
+    border: 1px solid currentColor;
+    color: inherit;
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.66rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .kickback-resolve-btn:hover { background: currentColor; color: white; }
+  .thread-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    padding: 4px 2px;
+    margin-bottom: 4px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    cursor: pointer;
+    text-align: left;
+  }
+  .thread-toggle:hover { color: var(--charcoal); }
+  .thread-toggle svg { transition: transform 0.2s; flex-shrink: 0; }
+  .thread-toggle.open svg { transform: rotate(180deg); }
+  .thread-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .thread-entry {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 7px 9px;
+    font-size: 0.74rem;
+  }
+  .thread-entry-head {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 2px;
+  }
+  .thread-entry-time { font-size: 0.64rem; color: var(--text-muted); margin-left: auto; }
+  .thread-entry-msg { color: var(--text); line-height: 1.45; }
   .kanban-completed-wrap {
     margin-top: 4px;
     border-top: 1px dashed var(--border);
@@ -1267,6 +1368,36 @@
   </div>
 </div>
 
+<!-- KICK BACK MODAL -->
+<div id="kickback-modal" class="modal-overlay" onclick="closeKickBackModalOutside(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title" id="kickback-modal-title">Kick Back Task</span>
+      <button class="modal-close" onclick="closeKickBackModal()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p id="kickback-modal-sub" style="font-size:0.8rem;color:var(--text-muted);margin-top:-8px"></p>
+      <div class="modal-field">
+        <label class="modal-label">Type</label>
+        <select id="kickback-type" class="modal-select">
+          <option value="question">❓ Ask a question / request more context</option>
+          <option value="reply">💬 Reply / give an answer</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Message</label>
+        <textarea id="kickback-message" class="modal-textarea" placeholder="What do you need to ask or say?"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeKickBackModal()">Cancel</button>
+      <button class="modal-submit" id="kickback-submit-btn" onclick="submitKickBack()">Send</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 <script>
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1368,6 +1499,32 @@ function stopPolling() {
   pollInterval = null;
   knownNoteIds = null;
 }
+// Lightweight polling for the Tasks view — same pattern as notes polling
+// above (1 cheap meta read, only re-fetch the full list if it changed).
+// This is what's missing without it: a kickback reply sitting in KV is
+// invisible to anyone who already had the Tasks tab open, until they
+// manually switch away and back.
+function startTaskPolling() {
+  if (taskPollInterval) return;
+  let lastTaskMetaKey = null;
+  taskPollInterval = setInterval(async () => {
+    try {
+      const metaRes = await fetch(WORKER_URL + '/tasks/meta');
+      if (!metaRes.ok) return;
+      const meta = await metaRes.json();
+      const metaKey = meta.count + ':' + (meta.savedAt || '');
+      if (metaKey === lastTaskMetaKey) return;
+      const isFirst = lastTaskMetaKey === null;
+      lastTaskMetaKey = metaKey;
+      if (isFirst) return; // first check just seeds the baseline, no need to refetch what we just loaded
+      await loadTasks();
+    } catch (e) {}
+  }, 20000); // 20s — tasks change more often than notes, so poll a bit faster
+}
+function stopTaskPolling() {
+  clearInterval(taskPollInterval);
+  taskPollInterval = null;
+}
 // ── View switching ────────────────────────────────────────────────────────────
 function setView(view, btn) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -1384,6 +1541,9 @@ function setView(view, btn) {
   }
   if (view === 'tasks') {
     loadTasks();
+    startTaskPolling();
+  } else {
+    stopTaskPolling();
   }
 }
 // ── Doctor selection ──────────────────────────────────────────────────────────
@@ -1694,6 +1854,12 @@ let allTasks = [];
 let taskModalAssignee = null;
 let editingTaskId = null;
 const completedOpenCols = new Set();
+// ── Kick-back state ───────────────────────────────────────────────────────
+let kickBackTaskId = null;
+let kickBackFrom = null;
+let kickBackTo = null;
+const openThreads = new Set();
+let taskPollInterval = null;
 
 // ── Remember last-used Task Assignee (per browser/person) ───────────────────
 function saveAssignedByCookie(value) {
@@ -1722,6 +1888,21 @@ function toggleCompletedSection(staffName) {
   renderKanban();
 }
 
+// ── Kick-back helpers ────────────────────────────────────────────────────────
+// A task with an unresolved thread entry shows up in BOTH the assignee's
+// column and the assignedBy's column (as a linked duplicate) until either
+// person marks it resolved.
+function hasUnresolvedKickback(t) {
+  return Array.isArray(t.thread) && t.thread.length > 0 && !t.resolved;
+}
+function getTasksForColumn(staffName) {
+  return allTasks.filter(t => {
+    if (t.assignee === staffName) return true;
+    if (t.assignedBy === staffName && t.assignedBy !== t.assignee && hasUnresolvedKickback(t)) return true;
+    return false;
+  });
+}
+
 async function loadTasks() {
   try {
     const res = await fetch(WORKER_URL + '/tasks');
@@ -1744,9 +1925,13 @@ async function reloadTasks() {
 function renderKanban() {
   const container = document.getElementById('kanban-cols');
   container.innerHTML = STAFF.map(s => {
-    const allColTasks = allTasks.filter(t => t.assignee === s.name);
+    const allColTasks = getTasksForColumn(s.name);
     const openTasks = allColTasks.filter(t => !t.completed);
     const doneTasks = allColTasks.filter(t => t.completed);
+    // Count badge should reflect tasks this person actually owns, not the
+    // kicked-back duplicates that are just showing up for visibility.
+    const ownedOpenCount = openTasks.filter(t => t.assignee === s.name).length;
+    const dupCount = openTasks.length - ownedOpenCount;
     const isOpen = completedOpenCols.has(s.name);
     const chevronSvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
     return `
@@ -1754,7 +1939,8 @@ function renderKanban() {
         <div class="kanban-col-header">
           <div class="kanban-col-avatar" style="background:${s.bg};color:${s.color}">${s.initials}</div>
           <span class="kanban-col-name">${escapeHtml(s.name)}</span>
-          <span class="kanban-col-count">${openTasks.length}</span>
+          <span class="kanban-col-count">${ownedOpenCount}</span>
+          ${dupCount > 0 ? `<span class="kanban-col-alert">+${dupCount} need reply</span>` : ''}
         </div>
         <div class="kanban-add-row">
           <button class="kanban-add-inline" onclick="openTaskModal('${escapeHtml(s.name)}')">
@@ -1765,26 +1951,33 @@ function renderKanban() {
         <div class="kanban-cards">
           ${openTasks.length === 0
             ? '<div style="text-align:center;padding:20px 12px;color:var(--text-muted);font-size:0.78rem;line-height:1.6">No tasks yet</div>'
-            : openTasks.map(t => renderTaskCard(t)).join('')}
+            : openTasks.map(t => renderTaskCard(t, s.name)).join('')}
           ${doneTasks.length > 0 ? `
           <div class="kanban-completed-wrap">
             <button class="kanban-completed-toggle ${isOpen ? 'open' : ''}" onclick="toggleCompletedSection('${escapeHtml(s.name)}')">
               ${chevronSvg} Completed (${doneTasks.length})
             </button>
-            ${isOpen ? `<div class="kanban-completed-list">${doneTasks.map(t => renderTaskCard(t)).join('')}</div>` : ''}
+            ${isOpen ? `<div class="kanban-completed-list">${doneTasks.map(t => renderTaskCard(t, s.name)).join('')}</div>` : ''}
           </div>` : ''}
         </div>
       </div>`;
   }).join('');
 }
 
-function renderTaskCard(t) {
+function renderTaskCard(t, actingAs) {
   const dueInfo = getDueInfo(t.dueDate);
   const checked = t.completed ? 'checked' : '';
+  const isDuplicate = actingAs !== t.assignee;
+  const otherParty = actingAs === t.assignee ? (t.assignedBy || '') : t.assignee;
+  const canKickBack = !!otherParty && otherParty !== actingAs;
   return `
-    <div class="task-card ${t.completed ? 'completed' : ''}" id="card-${t.id}">
+    <div class="task-card ${t.completed ? 'completed' : ''}" id="card-${t.id}-${escapeHtml(actingAs).replace(/[^a-zA-Z0-9]/g,'')}">
+      ${isDuplicate ? `<div class="duplicate-tag" title="This is a linked view of ${escapeHtml(t.assignee)}'s task — completion is managed on their board">↩ Linked from ${escapeHtml(t.assignee)}'s board</div>` : ''}
+      ${renderKickbackBanner(t, actingAs)}
       <div class="task-card-top">
-        <div class="task-check ${checked}" onclick="toggleTaskComplete('${t.id}')" title="${t.completed ? 'Mark incomplete' : 'Mark complete'}"></div>
+        ${isDuplicate
+          ? `<div class="task-check readonly ${checked}" title="Completion is managed on ${escapeHtml(t.assignee)}'s board"></div>`
+          : `<div class="task-check ${checked}" onclick="toggleTaskComplete('${t.id}')" title="${t.completed ? 'Mark incomplete' : 'Mark complete'}"></div>`}
         <div class="task-priority-dot pri-${t.priority}"></div>
         <div class="task-desc-text">${escapeHtml(t.description)}</div>
       </div>
@@ -1796,17 +1989,64 @@ function renderTaskCard(t) {
           ${dueInfo.label}
         </span>` : ''}
       </div>
+      ${renderThreadToggle(t)}
       <div class="task-card-actions">
-        <button class="task-edit-btn" onclick="editTask('${t.id}')">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          Edit
-        </button>
-        <button class="task-del-btn" onclick="deleteTask('${t.id}')">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-          Delete
-        </button>
+        <div class="task-card-actions-left">
+          ${canKickBack ? `<button class="task-kickback-btn" onclick="event.stopPropagation();openKickBackModal('${t.id}','${escapeHtml(actingAs)}','${escapeHtml(otherParty)}')" title="Send a question or reply to ${escapeHtml(otherParty)}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+            Kick Back
+          </button>` : ''}
+        </div>
+        ${isDuplicate ? '' : `<div class="task-card-actions-right">
+          <button class="task-edit-btn" onclick="editTask('${t.id}')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit
+          </button>
+          <button class="task-del-btn" onclick="deleteTask('${t.id}')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+            Delete
+          </button>
+        </div>`}
       </div>
     </div>`;
+}
+
+// ── Kick-back rendering ──────────────────────────────────────────────────────
+function renderKickbackBanner(t, actingAs) {
+  if (!hasUnresolvedKickback(t)) return '';
+  const last = t.thread[t.thread.length - 1];
+  const isQuestion = last.type === 'question';
+  const icon = isQuestion ? '❓' : '💬';
+  const label = isQuestion ? (escapeHtml(last.from) + ' is asking for clarification') : (escapeHtml(last.from) + ' replied');
+  return `
+    <div class="kickback-banner ${isQuestion ? 'kb-question' : 'kb-reply'}">
+      <div class="kickback-banner-text">${icon} <strong>${label}</strong>: "${escapeHtml(last.message)}"</div>
+      <button class="kickback-resolve-btn" onclick="event.stopPropagation();markResolved('${t.id}','${escapeHtml(actingAs)}')">Mark Resolved</button>
+    </div>`;
+}
+
+function renderThreadToggle(t) {
+  if (!Array.isArray(t.thread) || t.thread.length === 0) return '';
+  const isOpen = openThreads.has(t.id);
+  const chevron = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+  return `
+    <button class="thread-toggle ${isOpen ? 'open' : ''}" onclick="event.stopPropagation();toggleThread('${t.id}')">
+      ${chevron} ${isOpen ? 'Hide' : 'View'} history (${t.thread.length})
+    </button>
+    ${isOpen ? `<div class="thread-list">${t.thread.map(renderThreadEntry).join('')}</div>` : ''}`;
+}
+
+function renderThreadEntry(e) {
+  if (e.type === 'resolved') {
+    return `<div class="thread-entry">
+      <div class="thread-entry-head">✅ <strong>${escapeHtml(e.from)}</strong> marked resolved<span class="thread-entry-time">${formatTime(e.at)}</span></div>
+    </div>`;
+  }
+  const icon = e.type === 'question' ? '❓' : '💬';
+  return `<div class="thread-entry">
+    <div class="thread-entry-head">${icon} <strong>${escapeHtml(e.from)}</strong><span class="thread-entry-time">${formatTime(e.at)}</span></div>
+    <div class="thread-entry-msg">${escapeHtml(e.message)}</div>
+  </div>`;
 }
 
 function getDueInfo(dueDate) {
@@ -1890,6 +2130,102 @@ function closeTaskModal() {
 
 function closeTaskModalOutside(e) {
   if (e.target === document.getElementById('task-modal')) closeTaskModal();
+}
+
+// ── Kick-back modal ───────────────────────────────────────────────────────────
+function openKickBackModal(taskId, fromName, toName) {
+  kickBackTaskId = taskId;
+  kickBackFrom = fromName;
+  kickBackTo = toName;
+  document.getElementById('kickback-modal-title').textContent = 'Kick Back to ' + toName;
+  document.getElementById('kickback-modal-sub').textContent = 'Sending as ' + fromName;
+  document.getElementById('kickback-type').value = 'question';
+  document.getElementById('kickback-message').value = '';
+  document.getElementById('kickback-submit-btn').disabled = false;
+  document.getElementById('kickback-submit-btn').textContent = 'Send';
+  document.getElementById('kickback-modal').classList.add('open');
+  setTimeout(() => document.getElementById('kickback-message').focus(), 80);
+}
+
+function closeKickBackModal() {
+  document.getElementById('kickback-modal').classList.remove('open');
+  kickBackTaskId = null;
+}
+
+function closeKickBackModalOutside(e) {
+  if (e.target === document.getElementById('kickback-modal')) closeKickBackModal();
+}
+
+async function submitKickBack() {
+  const type = document.getElementById('kickback-type').value;
+  const message = document.getElementById('kickback-message').value.trim();
+  if (!message) { document.getElementById('kickback-message').focus(); return; }
+  const task = allTasks.find(t => t.id === kickBackTaskId);
+  if (!task) { closeKickBackModal(); return; }
+
+  // Send just the new entry — the server appends it to whatever thread is
+  // currently stored, so this can't clobber a reply that landed in between
+  // this tab's last load and now (the old version sent the full array built
+  // from this tab's possibly-stale cache, which silently overwrote it).
+  const btn = document.getElementById('kickback-submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  try {
+    const res = await fetch(WORKER_URL + '/tasks/' + task.id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        appendThreadEntry: { type: type, message: message, from: kickBackFrom, to: kickBackTo },
+      }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allTasks.findIndex(t => t.id === task.id);
+    if (idx !== -1) allTasks[idx] = updated;
+    openThreads.add(task.id); // auto-expand so the thread is visible right away
+    renderKanban();
+    closeKickBackModal();
+    showToast((type === 'question' ? 'Question' : 'Reply') + ' sent to ' + kickBackTo);
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Send';
+    showToast('Could not send: ' + err.message);
+  }
+}
+
+async function markResolved(id, byName) {
+  const task = allTasks.find(t => t.id === id);
+  if (!task) return;
+  const prevResolved = task.resolved;
+  const prevThread = task.thread;
+  task.resolved = true; // optimistic
+  renderKanban();
+  try {
+    const res = await fetch(WORKER_URL + '/tasks/' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        appendThreadEntry: { type: 'resolved', from: byName || '', to: '' },
+      }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allTasks.findIndex(t => t.id === id);
+    if (idx !== -1) allTasks[idx] = updated; // picks up the audit-trail entry
+    renderKanban();
+    showToast('Marked resolved');
+  } catch (err) {
+    task.resolved = prevResolved; // revert
+    task.thread = prevThread;
+    renderKanban();
+    showToast('Could not update: ' + err.message);
+  }
+}
+
+function toggleThread(id) {
+  if (openThreads.has(id)) openThreads.delete(id);
+  else openThreads.add(id);
+  renderKanban();
 }
 
 async function submitTask() {
