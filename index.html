@@ -1379,7 +1379,7 @@
     </div>
     <div class="modal-body">
       <p id="kickback-modal-sub" style="font-size:0.8rem;color:var(--text-muted);margin-top:-8px"></p>
-      <div class="modal-field">
+      <div class="modal-field" id="kickback-type-field">
         <label class="modal-label">Type</label>
         <select id="kickback-type" class="modal-select">
           <option value="question">❓ Ask a question / request more context</option>
@@ -1387,7 +1387,7 @@
         </select>
       </div>
       <div class="modal-field">
-        <label class="modal-label">Message</label>
+        <label class="modal-label" id="kickback-message-label">Message</label>
         <textarea id="kickback-message" class="modal-textarea" placeholder="What do you need to ask or say?"></textarea>
       </div>
     </div>
@@ -1858,6 +1858,7 @@ const completedOpenCols = new Set();
 let kickBackTaskId = null;
 let kickBackFrom = null;
 let kickBackTo = null;
+let kickBackMode = 'send'; // 'send' (question/reply) or 'resolve' (closing reply, message optional)
 const openThreads = new Set();
 let taskPollInterval = null;
 
@@ -1986,7 +1987,7 @@ function renderTaskCard(t, actingAs) {
   return `
     <div class="task-card ${t.completed ? 'completed' : ''}" id="card-${t.id}-${escapeHtml(actingAs).replace(/[^a-zA-Z0-9]/g,'')}">
       ${kickedToMe ? `<div class="duplicate-tag" title="Originally assigned to ${escapeHtml(t.assignee)} — it's on your board now because of a kickback">↩ Kicked back from ${escapeHtml(t.assignee)}'s board</div>` : ''}
-      ${renderKickbackBanner(t, actingAs)}
+      ${renderKickbackBanner(t, actingAs, otherParty)}
       <div class="task-card-top">
         <div class="task-check ${checked}" onclick="toggleTaskComplete('${t.id}','${escapeHtml(actingAs)}')" title="${t.completed ? 'Mark incomplete' : 'Mark complete'}"></div>
         <div class="task-priority-dot pri-${t.priority}"></div>
@@ -2025,7 +2026,7 @@ function renderTaskCard(t, actingAs) {
 }
 
 // ── Kick-back rendering ──────────────────────────────────────────────────────
-function renderKickbackBanner(t, actingAs) {
+function renderKickbackBanner(t, actingAs, otherParty) {
   if (!hasUnresolvedKickback(t)) return '';
   const last = t.thread[t.thread.length - 1];
   const isQuestion = last.type === 'question';
@@ -2034,7 +2035,7 @@ function renderKickbackBanner(t, actingAs) {
   return `
     <div class="kickback-banner ${isQuestion ? 'kb-question' : 'kb-reply'}">
       <div class="kickback-banner-text">${icon} <strong>${label}</strong>: "${escapeHtml(last.message)}"</div>
-      <button class="kickback-resolve-btn" onclick="event.stopPropagation();markResolved('${t.id}','${escapeHtml(actingAs)}')">Mark Resolved</button>
+      <button class="kickback-resolve-btn" onclick="event.stopPropagation();openResolveModal('${t.id}','${escapeHtml(actingAs)}','${escapeHtml(otherParty)}')">Mark Resolved</button>
     </div>`;
 }
 
@@ -2053,6 +2054,7 @@ function renderThreadEntry(e) {
   if (e.type === 'resolved') {
     return `<div class="thread-entry">
       <div class="thread-entry-head">✅ <strong>${escapeHtml(e.from)}</strong> marked resolved<span class="thread-entry-time">${formatTime(e.at)}</span></div>
+      ${e.message ? `<div class="thread-entry-msg">${escapeHtml(e.message)}</div>` : ''}
     </div>`;
   }
   const icon = e.type === 'question' ? '❓' : '💬';
@@ -2168,9 +2170,13 @@ function openKickBackModal(taskId, fromName, toName) {
   kickBackTaskId = taskId;
   kickBackFrom = fromName;
   kickBackTo = toName;
+  kickBackMode = 'send';
   document.getElementById('kickback-modal-title').textContent = 'Kick Back to ' + toName;
   document.getElementById('kickback-modal-sub').textContent = 'Sending as ' + fromName;
+  document.getElementById('kickback-type-field').style.display = '';
   document.getElementById('kickback-type').value = 'question';
+  document.getElementById('kickback-message-label').textContent = 'Message';
+  document.getElementById('kickback-message').placeholder = 'What do you need to ask or say?';
   document.getElementById('kickback-message').value = '';
   document.getElementById('kickback-submit-btn').disabled = false;
   document.getElementById('kickback-submit-btn').textContent = 'Send';
@@ -2178,9 +2184,31 @@ function openKickBackModal(taskId, fromName, toName) {
   setTimeout(() => document.getElementById('kickback-message').focus(), 80);
 }
 
+// Resolving still goes through the same thread — closing it out with total
+// silence loses context, so this reuses the kickback modal to let the
+// resolver leave a closing reply. Unlike a normal kickback, the message is
+// optional: a bare "Mark Resolved" with nothing to add should still work.
+function openResolveModal(taskId, fromName, toName) {
+  kickBackTaskId = taskId;
+  kickBackFrom = fromName;
+  kickBackTo = toName;
+  kickBackMode = 'resolve';
+  document.getElementById('kickback-modal-title').textContent = 'Mark Resolved';
+  document.getElementById('kickback-modal-sub').textContent = 'Resolving as ' + fromName + ' — ' + toName + ' will see your reply';
+  document.getElementById('kickback-type-field').style.display = 'none';
+  document.getElementById('kickback-message-label').textContent = 'Closing reply (optional)';
+  document.getElementById('kickback-message').placeholder = 'Anything to add before closing this out?';
+  document.getElementById('kickback-message').value = '';
+  document.getElementById('kickback-submit-btn').disabled = false;
+  document.getElementById('kickback-submit-btn').textContent = 'Resolve';
+  document.getElementById('kickback-modal').classList.add('open');
+  setTimeout(() => document.getElementById('kickback-message').focus(), 80);
+}
+
 function closeKickBackModal() {
   document.getElementById('kickback-modal').classList.remove('open');
   kickBackTaskId = null;
+  kickBackMode = 'send';
 }
 
 function closeKickBackModalOutside(e) {
@@ -2188,9 +2216,12 @@ function closeKickBackModalOutside(e) {
 }
 
 async function submitKickBack() {
-  const type = document.getElementById('kickback-type').value;
+  const isResolve = kickBackMode === 'resolve';
+  const type = isResolve ? 'resolved' : document.getElementById('kickback-type').value;
   const message = document.getElementById('kickback-message').value.trim();
-  if (!message) { document.getElementById('kickback-message').focus(); return; }
+  // Resolving is allowed to close out silently (message optional); a normal
+  // kick-back question/reply still needs something to say.
+  if (!message && !isResolve) { document.getElementById('kickback-message').focus(); return; }
   const task = allTasks.find(t => t.id === kickBackTaskId);
   if (!task) { closeKickBackModal(); return; }
 
@@ -2200,7 +2231,7 @@ async function submitKickBack() {
   // from this tab's possibly-stale cache, which silently overwrote it).
   const btn = document.getElementById('kickback-submit-btn');
   btn.disabled = true;
-  btn.textContent = 'Sending…';
+  btn.textContent = isResolve ? 'Resolving…' : 'Sending…';
   try {
     const res = await fetch(WORKER_URL + '/tasks/' + task.id, {
       method: 'PATCH',
@@ -2216,40 +2247,15 @@ async function submitKickBack() {
     openThreads.add(task.id); // auto-expand so the thread is visible right away
     renderKanban();
     closeKickBackModal();
-    showToast((type === 'question' ? 'Question' : 'Reply') + ' sent to ' + kickBackTo);
+    if (isResolve) {
+      showToast(message ? 'Marked resolved with a reply' : 'Marked resolved');
+    } else {
+      showToast((type === 'question' ? 'Question' : 'Reply') + ' sent to ' + kickBackTo);
+    }
   } catch (err) {
     btn.disabled = false;
-    btn.textContent = 'Send';
+    btn.textContent = isResolve ? 'Resolve' : 'Send';
     showToast('Could not send: ' + err.message);
-  }
-}
-
-async function markResolved(id, byName) {
-  const task = allTasks.find(t => t.id === id);
-  if (!task) return;
-  const prevResolved = task.resolved;
-  const prevThread = task.thread;
-  task.resolved = true; // optimistic
-  renderKanban();
-  try {
-    const res = await fetch(WORKER_URL + '/tasks/' + id, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        appendThreadEntry: { type: 'resolved', from: byName || '', to: '' },
-      }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allTasks.findIndex(t => t.id === id);
-    if (idx !== -1) allTasks[idx] = updated; // picks up the audit-trail entry
-    renderKanban();
-    showToast('Marked resolved');
-  } catch (err) {
-    task.resolved = prevResolved; // revert
-    task.thread = prevThread;
-    renderKanban();
-    showToast('Could not update: ' + err.message);
   }
 }
 
