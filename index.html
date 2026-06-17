@@ -1889,18 +1889,28 @@ function toggleCompletedSection(staffName) {
 }
 
 // ── Kick-back helpers ────────────────────────────────────────────────────────
-// A task with an unresolved thread entry shows up in BOTH the assignee's
-// column and the assignedBy's column (as a linked duplicate) until either
-// person marks it resolved.
+// A task lives in exactly ONE column at a time — whoever currently "holds"
+// it. Normally that's the assignee. Kicking back hands it to the other
+// party: the task disappears from the kicker's column and appears solely
+// in the recipient's column, where THEY can check it off. Checking it off
+// while a kickback is pending auto-resolves the thread (see toggleTaskComplete).
 function hasUnresolvedKickback(t) {
   return Array.isArray(t.thread) && t.thread.length > 0 && !t.resolved;
 }
+const STAFF_NAMES = new Set(STAFF.map(s => s.name));
+function getTaskHolder(t) {
+  if (hasUnresolvedKickback(t)) {
+    const last = t.thread[t.thread.length - 1];
+    // Only trust last.to if it actually resolves to a real column — a stale
+    // name (board edited mid-kickback, retyped staff name, etc.) must not
+    // make the task vanish from every column. Falling back to the assignee
+    // guarantees it always lands somewhere.
+    if (last && last.to && STAFF_NAMES.has(last.to)) return last.to;
+  }
+  return t.assignee;
+}
 function getTasksForColumn(staffName) {
-  return allTasks.filter(t => {
-    if (t.assignee === staffName) return true;
-    if (t.assignedBy === staffName && t.assignedBy !== t.assignee && hasUnresolvedKickback(t)) return true;
-    return false;
-  });
+  return allTasks.filter(t => getTaskHolder(t) === staffName);
 }
 
 async function loadTasks() {
@@ -1928,10 +1938,10 @@ function renderKanban() {
     const allColTasks = getTasksForColumn(s.name);
     const openTasks = allColTasks.filter(t => !t.completed);
     const doneTasks = allColTasks.filter(t => t.completed);
-    // Count badge should reflect tasks this person actually owns, not the
-    // kicked-back duplicates that are just showing up for visibility.
-    const ownedOpenCount = openTasks.filter(t => t.assignee === s.name).length;
-    const dupCount = openTasks.length - ownedOpenCount;
+    // Tasks currently sitting here because they got kicked back from
+    // whoever they're normally assigned to — worth flagging separately
+    // from this person's own open count.
+    const kickedToMeCount = openTasks.filter(t => t.assignee !== s.name).length;
     const isOpen = completedOpenCols.has(s.name);
     const chevronSvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
     return `
@@ -1939,8 +1949,8 @@ function renderKanban() {
         <div class="kanban-col-header">
           <div class="kanban-col-avatar" style="background:${s.bg};color:${s.color}">${s.initials}</div>
           <span class="kanban-col-name">${escapeHtml(s.name)}</span>
-          <span class="kanban-col-count">${ownedOpenCount}</span>
-          ${dupCount > 0 ? `<span class="kanban-col-alert">+${dupCount} need reply</span>` : ''}
+          <span class="kanban-col-count">${openTasks.length}</span>
+          ${kickedToMeCount > 0 ? `<span class="kanban-col-alert">+${kickedToMeCount} kicked back</span>` : ''}
         </div>
         <div class="kanban-add-row">
           <button class="kanban-add-inline" onclick="openTaskModal('${escapeHtml(s.name)}')">
@@ -1967,21 +1977,24 @@ function renderKanban() {
 function renderTaskCard(t, actingAs) {
   const dueInfo = getDueInfo(t.dueDate);
   const checked = t.completed ? 'checked' : '';
-  const isDuplicate = actingAs !== t.assignee;
+  // actingAs is always the current holder (see getTaskHolder) — they're the
+  // only one this column shows the card to, so they own the checkbox and
+  // the Edit/Delete actions outright, no read-only "linked view" needed.
+  const kickedToMe = t.assignee !== actingAs;
   const otherParty = actingAs === t.assignee ? (t.assignedBy || '') : t.assignee;
   const canKickBack = !!otherParty && otherParty !== actingAs;
   return `
     <div class="task-card ${t.completed ? 'completed' : ''}" id="card-${t.id}-${escapeHtml(actingAs).replace(/[^a-zA-Z0-9]/g,'')}">
-      ${isDuplicate ? `<div class="duplicate-tag" title="This is a linked view of ${escapeHtml(t.assignee)}'s task — completion is managed on their board">↩ Linked from ${escapeHtml(t.assignee)}'s board</div>` : ''}
+      ${kickedToMe ? `<div class="duplicate-tag" title="Originally assigned to ${escapeHtml(t.assignee)} — it's on your board now because of a kickback">↩ Kicked back from ${escapeHtml(t.assignee)}'s board</div>` : ''}
       ${renderKickbackBanner(t, actingAs)}
       <div class="task-card-top">
-        ${isDuplicate
-          ? `<div class="task-check readonly ${checked}" title="Completion is managed on ${escapeHtml(t.assignee)}'s board"></div>`
-          : `<div class="task-check ${checked}" onclick="toggleTaskComplete('${t.id}')" title="${t.completed ? 'Mark incomplete' : 'Mark complete'}"></div>`}
+        <div class="task-check ${checked}" onclick="toggleTaskComplete('${t.id}','${escapeHtml(actingAs)}')" title="${t.completed ? 'Mark incomplete' : 'Mark complete'}"></div>
         <div class="task-priority-dot pri-${t.priority}"></div>
         <div class="task-desc-text">${escapeHtml(t.description)}</div>
       </div>
-      ${t.assignedBy ? `<div class="task-assigned-by">Assigned by ${escapeHtml(t.assignedBy)}</div>` : ''}
+      ${kickedToMe
+        ? (t.assignee ? `<div class="task-assigned-by">Originally assigned to ${escapeHtml(t.assignee)}</div>` : '')
+        : (t.assignedBy ? `<div class="task-assigned-by">Assigned by ${escapeHtml(t.assignedBy)}</div>` : '')}
       <div class="task-card-meta">
         ${t.patientInitials ? `<span class="task-patient-tag">${escapeHtml(t.patientInitials)}</span>` : '<span></span>'}
         ${t.dueDate ? `<span class="task-due ${dueInfo.cls}">
@@ -1997,7 +2010,7 @@ function renderTaskCard(t, actingAs) {
             Kick Back
           </button>` : ''}
         </div>
-        ${isDuplicate ? '' : `<div class="task-card-actions-right">
+        <div class="task-card-actions-right">
           <button class="task-edit-btn" onclick="editTask('${t.id}')">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             Edit
@@ -2006,7 +2019,7 @@ function renderTaskCard(t, actingAs) {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
             Delete
           </button>
-        </div>`}
+        </div>
       </div>
     </div>`;
 }
@@ -2060,20 +2073,38 @@ function getDueInfo(dueDate) {
   return { cls: '', label: label };
 }
 
-async function toggleTaskComplete(id) {
+async function toggleTaskComplete(id, actingAs) {
   const task = allTasks.find(t => t.id === id);
   if (!task) return;
   const newVal = !task.completed;
+  // Checking off a task that has a pending kickback also closes out that
+  // thread — the person who completed it was the one it had been handed
+  // to, so there's nothing left to resolve separately.
+  const shouldAutoResolve = newVal && hasUnresolvedKickback(task);
+  const prevResolved = task.resolved;
+  const prevThread = task.thread;
   task.completed = newVal;
+  if (shouldAutoResolve) task.resolved = true;
   renderKanban();
   try {
-    await fetch(WORKER_URL + '/tasks/' + id, {
+    const body = { completed: newVal };
+    if (shouldAutoResolve) body.appendThreadEntry = { type: 'resolved', from: actingAs || '', to: '' };
+    const res = await fetch(WORKER_URL + '/tasks/' + id, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ completed: newVal }),
+      body: JSON.stringify(body),
     });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    if (shouldAutoResolve) {
+      const updated = await res.json();
+      const idx = allTasks.findIndex(t => t.id === id);
+      if (idx !== -1) allTasks[idx] = updated; // picks up the audit-trail entry
+      renderKanban();
+    }
   } catch (err) {
     task.completed = !newVal; // revert
+    task.resolved = prevResolved;
+    task.thread = prevThread;
     renderKanban();
     showToast('Could not update task');
   }
