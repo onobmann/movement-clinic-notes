@@ -1895,12 +1895,24 @@ function toggleCompletedSection(staffName) {
 // party: the task disappears from the kicker's column and appears solely
 // in the recipient's column, where THEY can check it off. Checking it off
 // while a kickback is pending auto-resolves the thread (see toggleTaskComplete).
+//
+// "Unresolved" here means there's an open question/reply waiting on a
+// response — i.e. the most recent thread entry isn't itself a resolution.
+// This only gates the banner/"Mark Resolved" button, NOT where the task
+// lives — see getTaskHolder below for why those are different questions.
 function hasUnresolvedKickback(t) {
-  return Array.isArray(t.thread) && t.thread.length > 0 && !t.resolved;
+  if (!Array.isArray(t.thread) || t.thread.length === 0) return false;
+  return t.thread[t.thread.length - 1].type !== 'resolved';
 }
 const STAFF_NAMES = new Set(STAFF.map(s => s.name));
+// The task always lives with whoever the LAST thread entry was addressed
+// to — whether that entry was a question, a reply, or a resolution. This is
+// what makes back-and-forth possible: resolving hands the task back to
+// whoever asked the question (entry.to on the resolve action) instead of
+// snapping back to the original assignee, so they can either let it sit or
+// kick it back again to keep the thread going.
 function getTaskHolder(t) {
-  if (hasUnresolvedKickback(t)) {
+  if (Array.isArray(t.thread) && t.thread.length > 0) {
     const last = t.thread[t.thread.length - 1];
     // Only trust last.to if it actually resolves to a real column — a stale
     // name (board edited mid-kickback, retyped staff name, etc.) must not
