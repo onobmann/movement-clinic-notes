@@ -1859,7 +1859,9 @@ let kickBackTaskId = null;
 let kickBackFrom = null;
 let kickBackTo = null;
 let kickBackMode = 'send'; // 'send' (question/reply) or 'resolve' (closing reply, message optional)
-const openThreads = new Set();
+// Threads are open by default — this tracks tasks the user has explicitly
+// collapsed, rather than ones they've opened.
+const collapsedThreads = new Set();
 let taskPollInterval = null;
 
 // ── Remember last-used Task Assignee (per browser/person) ───────────────────
@@ -2053,7 +2055,7 @@ function renderKickbackBanner(t, actingAs, otherParty) {
 
 function renderThreadToggle(t) {
   if (!Array.isArray(t.thread) || t.thread.length === 0) return '';
-  const isOpen = openThreads.has(t.id);
+  const isOpen = !collapsedThreads.has(t.id);
   const chevron = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
   return `
     <button class="thread-toggle ${isOpen ? 'open' : ''}" onclick="event.stopPropagation();toggleThread('${t.id}')">
@@ -2256,7 +2258,7 @@ async function submitKickBack() {
     const updated = await res.json();
     const idx = allTasks.findIndex(t => t.id === task.id);
     if (idx !== -1) allTasks[idx] = updated;
-    openThreads.add(task.id); // auto-expand so the thread is visible right away
+    collapsedThreads.delete(task.id); // make sure it's expanded now that there's fresh activity
     renderKanban();
     closeKickBackModal();
     if (isResolve) {
@@ -2272,8 +2274,8 @@ async function submitKickBack() {
 }
 
 function toggleThread(id) {
-  if (openThreads.has(id)) openThreads.delete(id);
-  else openThreads.add(id);
+  if (collapsedThreads.has(id)) collapsedThreads.delete(id);
+  else collapsedThreads.add(id);
   renderKanban();
 }
 
