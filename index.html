@@ -922,9 +922,9 @@
   }
   .kickback-banner {
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-start;
-    justify-content: space-between;
-    gap: 8px;
+    gap: 6px 8px;
     border-radius: 8px;
     padding: 8px 10px;
     margin-bottom: 9px;
@@ -933,9 +933,13 @@
   }
   .kickback-banner.kb-question { background: #fdeee9; border: 1px solid #f0c4b3; color: #9a4a2c; }
   .kickback-banner.kb-reply { background: #e9f3fb; border: 1px solid #bcdcf2; color: #1c5c84; }
-  .kickback-banner-text { flex: 1; }
+  /* flex-basis:100% forces the message onto its own full-width row instead of
+     squeezing into whatever sliver is left beside the button — that squeeze
+     is what caused one-word-per-line wrapping in the narrow kanban column. */
+  .kickback-banner-text { flex: 1 1 100%; }
   .kickback-resolve-btn {
     flex-shrink: 0;
+    margin-left: auto;
     background: rgba(255,255,255,0.75);
     border: 1px solid currentColor;
     color: inherit;
