@@ -1026,6 +1026,24 @@
     gap: 8px;
     padding-bottom: 4px;
   }
+  .task-section-banner {
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 10px;
+    border-radius: 6px;
+  }
+  .task-section-banner.patient {
+    background: #fdf3e0;
+    color: var(--accent-dark);
+    border: 1px solid #f0dba8;
+  }
+  .task-section-banner.admin {
+    background: var(--surface2);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
   .kanban-add-row {
     padding: 8px 10px;
     flex-shrink: 0;
@@ -1980,19 +1998,38 @@ function renderKanban() {
         <div class="kanban-cards">
           ${openTasks.length === 0
             ? '<div style="text-align:center;padding:20px 12px;color:var(--text-muted);font-size:0.78rem;line-height:1.6">No tasks yet</div>'
-            : openTasks.map(t => renderTaskCard(t, s.name)).join('')}
+            : renderGroupedTaskCards(openTasks, s.name)}
           ${doneTasks.length > 0 ? `
           <div class="kanban-completed-wrap">
             <button class="kanban-completed-toggle ${isOpen ? 'open' : ''}" onclick="toggleCompletedSection('${escapeHtml(s.name)}')">
               ${chevronSvg} Completed (${doneTasks.length})
             </button>
-            ${isOpen ? `<div class="kanban-completed-list">${doneTasks.map(t => renderTaskCard(t, s.name)).join('')}</div>` : ''}
+            ${isOpen ? `<div class="kanban-completed-list">${renderGroupedTaskCards(doneTasks, s.name)}</div>` : ''}
           </div>` : ''}
         </div>
       </div>`;
   }).join('');
 }
 
+// A task counts as a "patient task" only if a patient name/initials was
+// actually entered on it — no patient means it defaults to Admin.
+function isPatientTask(t) {
+  return !!(t.patientInitials && t.patientInitials.trim());
+}
+function renderGroupedTaskCards(tasks, staffName) {
+  const patientTasks = tasks.filter(isPatientTask);
+  const adminTasks = tasks.filter(t => !isPatientTask(t));
+  let html = '';
+  if (patientTasks.length > 0) {
+    html += `<div class="task-section-banner patient">Patient Tasks (${patientTasks.length})</div>`;
+    html += patientTasks.map(t => renderTaskCard(t, staffName)).join('');
+  }
+  if (adminTasks.length > 0) {
+    html += `<div class="task-section-banner admin">Admin Tasks (${adminTasks.length})</div>`;
+    html += adminTasks.map(t => renderTaskCard(t, staffName)).join('');
+  }
+  return html;
+}
 function renderTaskCard(t, actingAs) {
   const dueInfo = getDueInfo(t.dueDate);
   const checked = t.completed ? 'checked' : '';
