@@ -1779,11 +1779,61 @@ function selectAppointment(index) {
   renderPatientList();
   renderMainPanel(appointments[index]);
 }
+let isEditingNote = false;
+
 function renderMainPanel(appt) {
   const s = appt.summary || {};
   const noSummary = !appt.summary;
   const isUnread = !appt.isRead;
   const isCompleted = !!appt.isCompleted;
+
+  if (isEditingNote) {
+    document.getElementById('main-panel').innerHTML = `
+      <div class="appt-card">
+        <div class="appt-card-header">
+          <div style="flex:1">
+            <input id="edit-patient-name" value="${escapeHtml(appt.patientName || s.patientName || '')}"
+              style="width:100%;font-size:1.25rem;font-weight:700;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-family:inherit;color:var(--text);background:var(--surface);outline:none;transition:border-color 0.2s"
+              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+              placeholder="Patient name / initials">
+            ${appt.provider ? `<div style="font-size:0.8rem;color:var(--accent-dark);font-weight:600;margin-top:6px">${escapeHtml(appt.provider)}</div>` : ''}
+          </div>
+          <span class="appt-time">${formatTime(appt.timestamp)}</span>
+        </div>
+        ${noSummary ? `
+          <div class="section-label">AI Summary</div>
+          <p style="font-size:0.85rem;color:var(--text-muted);font-style:italic;margin-bottom:24px">
+            AI summary unavailable — add an Anthropic API key to the Worker to enable this.
+          </p>
+        ` : `
+          <div class="section-label">AI Summary</div>
+          <div class="summary-grid">
+            <div class="summary-field">
+              <div class="field-label">📅 Scheduling Needs</div>
+              <textarea id="edit-scheduling" rows="2" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:0.875rem;color:var(--text);background:var(--surface);resize:vertical;outline:none;transition:border-color 0.2s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">${escapeHtml(s.schedulingNeeds || '')}</textarea>
+            </div>
+            <div class="summary-field">
+              <div class="field-label">📬 Follow-Up Actions</div>
+              <textarea id="edit-followup" rows="2" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:0.875rem;color:var(--text);background:var(--surface);resize:vertical;outline:none;transition:border-color 0.2s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">${escapeHtml(s.followUpActions || '')}</textarea>
+            </div>
+            <div class="summary-field" style="grid-column: 1 / -1">
+              <div class="field-label">📝 Additional Notes</div>
+              <textarea id="edit-addnotes" rows="2" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:0.875rem;color:var(--text);background:var(--surface);resize:vertical;outline:none;transition:border-color 0.2s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">${escapeHtml(s.additionalNotes || '')}</textarea>
+            </div>
+          </div>
+        `}
+        <div class="transcript-section">
+          <div class="section-label">Full Transcript</div>
+          <textarea id="edit-transcript" rows="10" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:inherit;font-size:0.875rem;color:var(--text);background:var(--surface);resize:vertical;outline:none;line-height:1.6;transition:border-color 0.2s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">${escapeHtml(appt.transcript)}</textarea>
+        </div>
+        <div class="action-btn-row">
+          <button class="submit-btn" style="margin-top:0;padding:10px 20px;font-size:0.875rem" onclick="saveNoteEdit('${appt.id}')">✓ Save Changes</button>
+          <button class="mark-unread-btn" onclick="cancelNoteEdit()">✕ Cancel</button>
+        </div>
+      </div>`;
+    return;
+  }
+
   document.getElementById('main-panel').innerHTML = `
     <div class="appt-card">
       <div class="appt-card-header">
@@ -1823,12 +1873,52 @@ function renderMainPanel(appt) {
         <button class="complete-btn ${isCompleted ? 'is-completed' : ''}" onclick="toggleComplete('${appt.id}')">
           ${isCompleted ? '↩ Mark Incomplete' : '✓ Mark Complete'}
         </button>
+        <button class="mark-unread-btn" onclick="editNote()">✏ Edit Note</button>
         ${!isUnread ? `<button class="mark-unread-btn" onclick="markAsUnread('${appt.id}')">◎ Mark as Unread</button>` : ''}
         <button class="delete-note-btn" style="margin-top:0" onclick="deleteNote('${appt.id}')">
           🗑 Delete
         </button>
       </div>
     </div>`;
+}
+function editNote() {
+  isEditingNote = true;
+  renderMainPanel(appointments[selectedIndex]);
+}
+function cancelNoteEdit() {
+  isEditingNote = false;
+  renderMainPanel(appointments[selectedIndex]);
+}
+async function saveNoteEdit(id) {
+  const newPatientName = document.getElementById('edit-patient-name').value.trim();
+  const newTranscript = document.getElementById('edit-transcript').value.trim();
+  const appt = appointments.find(a => a.id === id);
+  if (!appt) return;
+  const payload = { patientName: newPatientName, transcript: newTranscript };
+  if (appt.summary) {
+    payload.summary = Object.assign({}, appt.summary, {
+      schedulingNeeds: document.getElementById('edit-scheduling')?.value.trim() || '',
+      followUpActions: document.getElementById('edit-followup')?.value.trim() || '',
+      additionalNotes: document.getElementById('edit-addnotes')?.value.trim() || '',
+    });
+  }
+  try {
+    const res = await fetch(WORKER_URL + '/notes/' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = appointments.findIndex(a => a.id === id);
+    if (idx !== -1) appointments[idx] = updated;
+    isEditingNote = false;
+    renderPatientList();
+    renderMainPanel(appointments[idx !== -1 ? idx : selectedIndex]);
+    showToast('✓ Note updated');
+  } catch (err) {
+    showToast('Could not save: ' + err.message);
+  }
 }
 // ── Delete note ───────────────────────────────────────────────────────────────
 async function deleteNote(id) {
@@ -1868,6 +1958,7 @@ function showToast(msg) {
 
 // ── Tasks ─────────────────────────────────────────────────────────────────────
 const STAFF = [
+  { name: 'Bree',        initials: 'BR', color: '#9c3b8a', bg: '#f9eaf7' },
   { name: 'Christy',    initials: 'CH', color: '#185fa5', bg: '#e6f1fb' },
   { name: 'Dr. Hodson', initials: 'DH', color: '#5b4fcf', bg: '#eeedfe' },
   { name: 'Dr. Meyers', initials: 'DM', color: '#0f6e56', bg: '#e1f5ee' },
