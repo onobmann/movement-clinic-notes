@@ -1190,6 +1190,52 @@
   .modal-submit:hover { background: var(--accent-dark); }
   .modal-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
+  /* Assignee multi-select pills */
+  .assignee-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .assignee-pill {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .assignee-pill:has(input:checked) {
+    border-color: var(--accent);
+    background: #fdf3e0;
+    color: var(--charcoal);
+    font-weight: 600;
+  }
+  .assignee-pill input[type="checkbox"] { display: none; }
+  /* Co-assignee chips shown on task cards */
+  .co-assignees {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+    margin-bottom: 4px;
+  }
+  .co-assignee-chip {
+    font-size: 0.64rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 10px;
+    background: #e8f4fd;
+    border: 1px solid #bcdcf2;
+    color: #1c5c84;
+  }
+
   @media (max-width: 700px) {
     .summary-grid { grid-template-columns: 1fr; }
     .patient-list { width: 190px; }
@@ -1341,17 +1387,17 @@
     </div>
     <div class="modal-body">
       <div class="modal-field">
-        <label class="modal-label">Assign to</label>
-        <select id="task-assignee" class="modal-select">
-          <option value="">— Select person —</option>
-          <option value="Bree">Bree</option>
-          <option value="Dr. Hodson">Dr. Hodson</option>
-          <option value="Dr. Meyers">Dr. Meyers</option>
-          <option value="Scott">Scott</option>
-          <option value="Jenna">Jenna</option>
-          <option value="Christy">Christy</option>
-          <option value="Oshyn">Oshyn</option>
-        </select>
+        <label class="modal-label">Assign to <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted);font-size:0.67rem">(select one or more — first to complete removes it from all)</span></label>
+        <div class="assignee-pills" id="assignee-checkboxes">
+          <label class="assignee-pill"><input type="checkbox" name="assignee" value="Bree"><span>Bree</span></label>
+          <label class="assignee-pill"><input type="checkbox" name="assignee" value="Christy"><span>Christy</span></label>
+          <label class="assignee-pill"><input type="checkbox" name="assignee" value="Dr. Hodson"><span>Dr. Hodson</span></label>
+          <label class="assignee-pill"><input type="checkbox" name="assignee" value="Dr. Meyers"><span>Dr. Meyers</span></label>
+          <label class="assignee-pill"><input type="checkbox" name="assignee" value="Jenna"><span>Jenna</span></label>
+          <label class="assignee-pill"><input type="checkbox" name="assignee" value="Oshyn"><span>Oshyn</span></label>
+          <label class="assignee-pill"><input type="checkbox" name="assignee" value="Scott"><span>Scott</span></label>
+          <label class="assignee-pill"><input type="checkbox" name="assignee" value="Scheduling"><span>📅 Scheduling</span></label>
+        </div>
       </div>
       <div class="modal-field">
         <label class="modal-label">Task Assignee</label>
@@ -1967,6 +2013,7 @@ const STAFF = [
   { name: 'Jenna',      initials: 'JE', color: '#993556', bg: '#fbeaf0' },
   { name: 'Oshyn',      initials: 'OS', color: '#3b6d11', bg: '#eaf3de' },
   { name: 'Scott',      initials: 'SC', color: '#c4861a', bg: '#fdf3e0' },
+  { name: 'Scheduling', initials: '📅', color: '#2980b9', bg: '#e8f4fd' },
 ];
 
 let allTasks = [];
@@ -2043,8 +2090,32 @@ function getTaskHolder(t) {
   }
   return t.assignee;
 }
+// Returns the assignees as an array — handles legacy single-assignee tasks
+// (stored as t.assignee string) and new multi-assignee tasks (t.assignees array).
+function getAssignees(t) {
+  if (Array.isArray(t.assignees) && t.assignees.length > 0) return t.assignees;
+  if (t.assignee) return [t.assignee];
+  return [];
+}
+function getSelectedAssignees() {
+  return Array.from(document.querySelectorAll('#assignee-checkboxes input:checked')).map(el => el.value);
+}
+function setSelectedAssignees(assignees) {
+  document.querySelectorAll('#assignee-checkboxes input').forEach(el => {
+    el.checked = assignees.includes(el.value);
+  });
+}
+
 function getTasksForColumn(staffName) {
-  return allTasks.filter(t => getTaskHolder(t) === staffName);
+  return allTasks.filter(t => {
+    const assignees = getAssignees(t);
+    if (assignees.length > 1) {
+      // Multi-assignee: show the task in ALL assigned columns simultaneously
+      return assignees.includes(staffName);
+    }
+    // Single-assignee: use kickback routing logic as before
+    return getTaskHolder(t) === staffName;
+  });
 }
 
 async function loadTasks() {
@@ -2075,7 +2146,7 @@ function renderKanban() {
     // Tasks currently sitting here because they got kicked back from
     // whoever they're normally assigned to — worth flagging separately
     // from this person's own open count.
-    const kickedToMeCount = openTasks.filter(t => t.assignee !== s.name).length;
+    const kickedToMeCount = openTasks.filter(t => getAssignees(t).length === 1 && t.assignee !== s.name).length;
     const isOpen = completedOpenCols.has(s.name);
     const chevronSvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
     return `
@@ -2130,12 +2201,14 @@ function renderGroupedTaskCards(tasks, staffName) {
 function renderTaskCard(t, actingAs) {
   const dueInfo = getDueInfo(t.dueDate);
   const checked = t.completed ? 'checked' : '';
-  // actingAs is always the current holder (see getTaskHolder) — they're the
-  // only one this column shows the card to, so they own the checkbox and
-  // the Edit/Delete actions outright, no read-only "linked view" needed.
-  const kickedToMe = t.assignee !== actingAs;
-  const otherParty = actingAs === t.assignee ? (t.assignedBy || '') : t.assignee;
-  const canKickBack = !!otherParty && otherParty !== actingAs;
+  const allAssignees = getAssignees(t);
+  const isMultiAssignee = allAssignees.length > 1;
+  // For multi-assignee tasks: show in all columns, no kickback routing
+  // For single-assignee tasks: keep existing kickback-holder logic
+  const kickedToMe = !isMultiAssignee && t.assignee !== actingAs;
+  const otherParty = isMultiAssignee ? '' : (actingAs === t.assignee ? (t.assignedBy || '') : t.assignee);
+  const canKickBack = !isMultiAssignee && !!otherParty && otherParty !== actingAs;
+  const coAssignees = isMultiAssignee ? allAssignees.filter(a => a !== actingAs) : [];
   return `
     <div class="task-card ${t.completed ? 'completed' : ''}" id="card-${t.id}-${escapeHtml(actingAs).replace(/[^a-zA-Z0-9]/g,'')}">
       ${kickedToMe ? `<div class="duplicate-tag" title="Originally assigned to ${escapeHtml(t.assignee)} — it's on your board now because of a kickback">↩ Kicked back from ${escapeHtml(t.assignee)}'s board</div>` : ''}
@@ -2148,6 +2221,11 @@ function renderTaskCard(t, actingAs) {
       ${kickedToMe
         ? (t.assignee ? `<div class="task-assigned-by">Originally assigned to ${escapeHtml(t.assignee)}</div>` : '')
         : (t.assignedBy ? `<div class="task-assigned-by">Assigned by ${escapeHtml(t.assignedBy)}</div>` : '')}
+      ${coAssignees.length > 0 ? `
+      <div class="co-assignees">
+        <span style="font-size:0.64rem;color:var(--text-muted);margin-right:2px">Also:</span>
+        ${coAssignees.map(a => `<span class="co-assignee-chip">${escapeHtml(a)}</span>`).join('')}
+      </div>` : ''}
       <div class="task-card-meta">
         ${t.patientInitials ? `<span class="task-patient-tag">${escapeHtml(t.patientInitials)}</span>` : '<span></span>'}
         ${t.dueDate ? `<span class="task-due ${dueInfo.cls}">
@@ -2284,7 +2362,7 @@ function openTaskModal(assignee) {
   document.getElementById('task-patient').value = '';
   document.getElementById('task-due').value = '';
   document.getElementById('task-priority').value = 'medium';
-  document.getElementById('task-assignee').value = assignee || '';
+  setSelectedAssignees(assignee ? [assignee] : []);
   document.getElementById('task-assigned-by').value = getRememberedAssignedBy() || '';
   document.getElementById('task-submit-btn').disabled = false;
   document.getElementById('task-submit-btn').textContent = 'Add Task';
@@ -2297,7 +2375,7 @@ function editTask(id) {
   if (!task) return;
   editingTaskId = id;
   document.querySelector('.modal-title').textContent = 'Edit Task';
-  document.getElementById('task-assignee').value = task.assignee || '';
+  setSelectedAssignees(getAssignees(task));
   document.getElementById('task-assigned-by').value = task.assignedBy || '';
   document.getElementById('task-desc').value = task.description || '';
   document.getElementById('task-patient').value = task.patientInitials || '';
@@ -2418,14 +2496,19 @@ function toggleThread(id) {
 }
 
 async function submitTask() {
-  const assignee = document.getElementById('task-assignee').value;
+  const assignees = getSelectedAssignees();
   const assignedBy = document.getElementById('task-assigned-by').value;
   const desc = document.getElementById('task-desc').value.trim();
   const patient = document.getElementById('task-patient').value.trim();
   const due = document.getElementById('task-due').value;
   const priority = document.getElementById('task-priority').value;
 
-  if (!assignee) { document.getElementById('task-assignee').focus(); return; }
+  if (!assignees.length) {
+    document.getElementById('assignee-checkboxes').style.outline = '2px solid var(--danger)';
+    document.getElementById('assignee-checkboxes').style.borderRadius = '8px';
+    setTimeout(() => { document.getElementById('assignee-checkboxes').style.outline = ''; }, 1500);
+    return;
+  }
   if (!desc) { document.getElementById('task-desc').focus(); return; }
 
   rememberAssignedBy(assignedBy);
@@ -2434,10 +2517,13 @@ async function submitTask() {
   btn.disabled = true;
   btn.textContent = 'Saving…';
 
+  // Send both assignees (array) and assignee (first, for backward compat with any legacy reads)
+  const assignee = assignees[0];
+
   try {
     if (editingTaskId) {
       // Update existing task
-      const payload = { assignee, assignedBy, description: desc, patientInitials: patient, dueDate: due, priority };
+      const payload = { assignee, assignees, assignedBy, description: desc, patientInitials: patient, dueDate: due, priority };
       const res = await fetch(WORKER_URL + '/tasks/' + editingTaskId, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -2455,7 +2541,7 @@ async function submitTask() {
       const res = await fetch(WORKER_URL + '/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assignee, assignedBy, description: desc, patientInitials: patient, dueDate: due, priority }),
+        body: JSON.stringify({ assignee, assignees, assignedBy, description: desc, patientInitials: patient, dueDate: due, priority }),
       });
       if (!res.ok) throw new Error('Server error ' + res.status);
       const task = await res.json();
