@@ -733,7 +733,23 @@
     justify-content: space-between;
     gap: 8px;
     flex-shrink: 0;
+    cursor: grab;
+    user-select: none;
   }
+  .kanban-col-header:active { cursor: grabbing; }
+  .col-drag-handle {
+    color: var(--border);
+    flex-shrink: 0;
+    transition: color 0.15s;
+  }
+  .kanban-col-header:hover .col-drag-handle { color: var(--text-muted); }
+  .kanban-col.drag-over {
+    outline: 2px dashed var(--accent);
+    outline-offset: -2px;
+    background: #fdf9f0;
+  }
+  .kanban-col.dragging { opacity: 0.4; }
+  .kanban-cards { cursor: default; }
   .kanban-col-name {
     font-size: 0.82rem;
     font-weight: 700;
@@ -2073,6 +2089,72 @@ function hasUnresolvedKickback(t) {
   return t.thread[t.thread.length - 1].type !== 'resolved';
 }
 const STAFF_NAMES = new Set(STAFF.map(s => s.name));
+
+// ── Column order (drag-to-reorder, persisted in localStorage) ────────────────
+let staffOrder = null;
+let dragSourceCol = null;
+
+function getStaffOrder() {
+  if (staffOrder) return staffOrder;
+  try {
+    const saved = localStorage.getItem('mc_col_order');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      const allNames = STAFF.map(s => s.name);
+      // Keep saved order for known names, append any new names at the end
+      const filtered = parsed.filter(n => allNames.includes(n));
+      const extra = allNames.filter(n => !parsed.includes(n));
+      staffOrder = [...filtered, ...extra];
+      return staffOrder;
+    }
+  } catch(e) {}
+  staffOrder = STAFF.map(s => s.name);
+  return staffOrder;
+}
+function saveColOrder() {
+  try { localStorage.setItem('mc_col_order', JSON.stringify(staffOrder)); } catch(e) {}
+}
+function colDragStart(e, name) {
+  dragSourceCol = name;
+  e.dataTransfer.effectAllowed = 'move';
+  // defer adding class so the ghost image captures the pre-dim state
+  setTimeout(() => {
+    const el = document.getElementById('kcol-' + name.replace(/[^a-zA-Z0-9]/g, ''));
+    if (el) el.classList.add('dragging');
+  }, 0);
+}
+function colDragOver(e, name) {
+  if (!dragSourceCol || dragSourceCol === name) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.kanban-col.drag-over').forEach(el => el.classList.remove('drag-over'));
+  const el = document.getElementById('kcol-' + name.replace(/[^a-zA-Z0-9]/g, ''));
+  if (el) el.classList.add('drag-over');
+}
+function colDragLeave(e, name) {
+  const el = document.getElementById('kcol-' + name.replace(/[^a-zA-Z0-9]/g, ''));
+  if (el) el.classList.remove('drag-over');
+}
+function colDrop(e, targetName) {
+  e.preventDefault();
+  if (!dragSourceCol || dragSourceCol === targetName) { colDragEnd(); return; }
+  const order = getStaffOrder();
+  const fromIdx = order.indexOf(dragSourceCol);
+  const toIdx = order.indexOf(targetName);
+  if (fromIdx !== -1 && toIdx !== -1) {
+    order.splice(fromIdx, 1);
+    order.splice(toIdx, 0, dragSourceCol);
+    staffOrder = [...order];
+    saveColOrder();
+  }
+  colDragEnd();
+  renderKanban();
+}
+function colDragEnd() {
+  document.querySelectorAll('.kanban-col.dragging, .kanban-col.drag-over')
+    .forEach(el => el.classList.remove('dragging', 'drag-over'));
+  dragSourceCol = null;
+}
 // The task always lives with whoever the LAST thread entry was addressed
 // to — whether that entry was a question, a reply, or a resolution. This is
 // what makes back-and-forth possible: resolving hands the task back to
@@ -2139,7 +2221,8 @@ async function reloadTasks() {
 
 function renderKanban() {
   const container = document.getElementById('kanban-cols');
-  container.innerHTML = STAFF.map(s => {
+  const orderedStaff = getStaffOrder().map(name => STAFF.find(s => s.name === name)).filter(Boolean);
+  container.innerHTML = orderedStaff.map(s => {
     const allColTasks = getTasksForColumn(s.name);
     const openTasks = allColTasks.filter(t => !t.completed);
     const doneTasks = allColTasks.filter(t => t.completed);
@@ -2149,11 +2232,24 @@ function renderKanban() {
     const kickedToMeCount = openTasks.filter(t => getAssignees(t).length === 1 && t.assignee !== s.name).length;
     const isOpen = completedOpenCols.has(s.name);
     const chevronSvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+    const colId = 'kcol-' + s.name.replace(/[^a-zA-Z0-9]/g, '');
+    const safeN = escapeHtml(s.name);
     return `
-      <div class="kanban-col">
+      <div class="kanban-col" id="${colId}"
+        draggable="true"
+        ondragstart="colDragStart(event,'${safeN}')"
+        ondragover="colDragOver(event,'${safeN}')"
+        ondragleave="colDragLeave(event,'${safeN}')"
+        ondrop="colDrop(event,'${safeN}')"
+        ondragend="colDragEnd()">
         <div class="kanban-col-header">
+          <svg class="col-drag-handle" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+            <rect x="2" y="1" width="2" height="2" rx="1"/><rect x="8" y="1" width="2" height="2" rx="1"/>
+            <rect x="2" y="5" width="2" height="2" rx="1"/><rect x="8" y="5" width="2" height="2" rx="1"/>
+            <rect x="2" y="9" width="2" height="2" rx="1"/><rect x="8" y="9" width="2" height="2" rx="1"/>
+          </svg>
           <div class="kanban-col-avatar" style="background:${s.bg};color:${s.color}">${s.initials}</div>
-          <span class="kanban-col-name">${escapeHtml(s.name)}</span>
+          <span class="kanban-col-name">${safeN}</span>
           <span class="kanban-col-count">${openTasks.length}</span>
           ${kickedToMeCount > 0 ? `<span class="kanban-col-alert">+${kickedToMeCount} kicked back</span>` : ''}
         </div>
