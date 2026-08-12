@@ -920,40 +920,11 @@
   .pri-high { background: var(--danger); }
   .pri-medium { background: var(--accent); }
   .pri-low { background: #27ae60; }
-  /* Urgency badge — replaces the plain dot with a labeled, colored pill so
-     priority is readable at a glance instead of requiring color-decoding. */
-  .task-priority-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.62rem;
-    font-weight: 800;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    padding: 2px 8px 2px 6px;
-    border-radius: 20px;
-    flex-shrink: 0;
-    margin-top: 1px;
-    white-space: nowrap;
-  }
-  .task-priority-badge::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    display: inline-block;
-  }
-  .task-priority-badge.pri-high { background: #fdeceb; color: #a5301f; border: 1px solid #f3c6c1; }
-  .task-priority-badge.pri-high::before { background: var(--danger); }
-  .task-priority-badge.pri-medium { background: #fdf3e0; color: var(--accent-dark); border: 1px solid #f0dba8; }
-  .task-priority-badge.pri-medium::before { background: var(--accent); }
-  .task-priority-badge.pri-low { background: #e7f7ee; color: #1e8449; border: 1px solid #bfe8d2; }
-  .task-priority-badge.pri-low::before { background: #27ae60; }
-  /* Left-edge stripe on the card itself so urgency reads even when the
-     board is scanned quickly, not just from the badge text. */
-  .task-card.card-pri-high { border-left: 3px solid var(--danger); }
-  .task-card.card-pri-medium { border-left: 3px solid var(--accent); }
-  .task-card.card-pri-low { border-left: 3px solid #27ae60; }
+  /* Urgency reads from the card's left-edge stripe alone — no inline badge,
+     so card width/height stays driven by the description text only. */
+  .task-card.card-pri-high { border-left: 4px solid var(--danger); }
+  .task-card.card-pri-medium { border-left: 4px solid var(--accent); }
+  .task-card.card-pri-low { border-left: 4px solid #27ae60; }
   .task-desc-text {
     font-size: 0.82rem;
     color: var(--text);
@@ -2511,12 +2482,11 @@ function renderTaskCard(t, actingAs) {
   const pri = t.priority || 'medium';
   const priLabel = pri === 'high' ? 'High' : pri === 'low' ? 'Low' : 'Medium';
   return `
-    <div class="task-card card-pri-${pri} ${t.completed ? 'completed' : ''}" id="card-${t.id}-${escapeHtml(actingAs).replace(/[^a-zA-Z0-9]/g,'')}">
+    <div class="task-card card-pri-${pri} ${t.completed ? 'completed' : ''}" id="card-${t.id}-${escapeHtml(actingAs).replace(/[^a-zA-Z0-9]/g,'')}" title="${priLabel} priority">
       ${kickedToMe ? `<div class="duplicate-tag" title="Originally assigned to ${escapeHtml(t.assignee)} — it's on your board now because of a kickback">↩ Kicked back from ${escapeHtml(t.assignee)}'s board</div>` : ''}
       ${renderKickbackBanner(t, actingAs, otherParty)}
       <div class="task-card-top">
         <div class="task-check ${checked}" onclick="toggleTaskComplete('${t.id}','${escapeHtml(actingAs)}')" title="${t.completed ? 'Mark incomplete' : 'Mark complete'}"></div>
-        <span class="task-priority-badge pri-${pri}" title="${priLabel} priority">${priLabel}</span>
         <div class="task-desc-text">${escapeHtml(t.description)}</div>
       </div>
       ${kickedToMe
