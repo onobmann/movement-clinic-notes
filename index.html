@@ -703,6 +703,77 @@
     letter-spacing: 0.02em;
   }
   .task-add-btn:hover { background: var(--accent-dark); }
+  .tasks-filterbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 28px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+    flex-wrap: wrap;
+  }
+  .filter-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-right: 2px;
+  }
+  .filter-select {
+    padding: 6px 28px 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--surface);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a7670' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+  }
+  .filter-select:hover { border-color: var(--accent); }
+  .filter-sort-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--surface);
+    user-select: none;
+  }
+  .filter-sort-toggle:hover { border-color: var(--accent); }
+  .filter-sort-toggle input { cursor: pointer; }
+  .filter-clear-btn {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent-dark);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 4px;
+    text-decoration: underline;
+  }
+  .filter-clear-btn:hover { color: var(--charcoal); }
+  .filter-active-count {
+    font-size: 0.68rem;
+    font-weight: 700;
+    background: var(--accent);
+    color: var(--charcoal);
+    border-radius: 20px;
+    padding: 1px 7px;
+    margin-left: -2px;
+  }
   .kanban-scroll {
     flex: 1;
     overflow-x: auto;
@@ -849,6 +920,40 @@
   .pri-high { background: var(--danger); }
   .pri-medium { background: var(--accent); }
   .pri-low { background: #27ae60; }
+  /* Urgency badge — replaces the plain dot with a labeled, colored pill so
+     priority is readable at a glance instead of requiring color-decoding. */
+  .task-priority-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding: 2px 8px 2px 6px;
+    border-radius: 20px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    white-space: nowrap;
+  }
+  .task-priority-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .task-priority-badge.pri-high { background: #fdeceb; color: #a5301f; border: 1px solid #f3c6c1; }
+  .task-priority-badge.pri-high::before { background: var(--danger); }
+  .task-priority-badge.pri-medium { background: #fdf3e0; color: var(--accent-dark); border: 1px solid #f0dba8; }
+  .task-priority-badge.pri-medium::before { background: var(--accent); }
+  .task-priority-badge.pri-low { background: #e7f7ee; color: #1e8449; border: 1px solid #bfe8d2; }
+  .task-priority-badge.pri-low::before { background: #27ae60; }
+  /* Left-edge stripe on the card itself so urgency reads even when the
+     board is scanned quickly, not just from the badge text. */
+  .task-card.card-pri-high { border-left: 3px solid var(--danger); }
+  .task-card.card-pri-medium { border-left: 3px solid var(--accent); }
+  .task-card.card-pri-low { border-left: 3px solid #27ae60; }
   .task-desc-text {
     font-size: 0.82rem;
     color: var(--text);
@@ -1385,6 +1490,28 @@
           Add Task
         </button>
       </div>
+    </div>
+    <div class="tasks-filterbar">
+      <span class="filter-label">Filter</span>
+      <select class="filter-select" id="filter-priority" onchange="setPriorityFilter(this.value)">
+        <option value="all">All urgency</option>
+        <option value="high">🔴 High only</option>
+        <option value="medium">🟡 Medium only</option>
+        <option value="low">🟢 Low only</option>
+      </select>
+      <select class="filter-select" id="filter-due" onchange="setDueFilter(this.value)">
+        <option value="all">All due dates</option>
+        <option value="overdue">Overdue</option>
+        <option value="soon">Due soon (≤2 days)</option>
+        <option value="week">Due this week</option>
+        <option value="none">No due date</option>
+      </select>
+      <label class="filter-sort-toggle">
+        <input type="checkbox" id="filter-sort-due" onchange="toggleSortByDue(this.checked)">
+        Sort by due date
+      </label>
+      <span id="filter-active-count"></span>
+      <button class="filter-clear-btn" id="filter-clear-btn" onclick="clearTaskFilters()" style="display:none">Clear filters</button>
     </div>
     <div class="kanban-scroll">
       <div class="kanban-cols" id="kanban-cols"></div>
@@ -2039,6 +2166,10 @@ let allTasks = [];
 let taskModalAssignee = null;
 let editingTaskId = null;
 const completedOpenCols = new Set();
+// ── Task board filters (priority / due date / sort) ─────────────────────────
+let taskPriorityFilter = 'all';   // 'all' | 'high' | 'medium' | 'low'
+let taskDueFilter = 'all';        // 'all' | 'overdue' | 'soon' | 'week' | 'none'
+let taskSortByDue = false;
 // ── Kick-back state ───────────────────────────────────────────────────────
 let kickBackTaskId = null;
 let kickBackFrom = null;
@@ -2203,6 +2334,75 @@ function getTasksForColumn(staffName) {
   });
 }
 
+// ── Task board filters (priority / due date / sort-by-due) ──────────────────
+// Applied per-column, after routing/kickback logic decides which tasks
+// belong to that column at all — filters only hide/reorder within that set.
+function taskMatchesDueFilter(t) {
+  if (taskDueFilter === 'all') return true;
+  if (taskDueFilter === 'none') return !t.dueDate;
+  if (!t.dueDate) return false;
+  const info = getDueInfo(t.dueDate);
+  if (taskDueFilter === 'overdue') return info.cls === 'overdue';
+  if (taskDueFilter === 'soon') return info.cls === 'soon';
+  if (taskDueFilter === 'week') {
+    const due = new Date(t.dueDate + 'T00:00:00');
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const diff = Math.round((due - today) / 86400000);
+    return diff >= 0 && diff <= 7;
+  }
+  return true;
+}
+function applyTaskFilters(tasks) {
+  let result = tasks.filter(t => {
+    if (taskPriorityFilter !== 'all' && (t.priority || 'medium') !== taskPriorityFilter) return false;
+    if (!taskMatchesDueFilter(t)) return false;
+    return true;
+  });
+  if (taskSortByDue) {
+    result = result.slice().sort((a, b) => {
+      if (!a.dueDate && !b.dueDate) return 0;
+      if (!a.dueDate) return 1;   // no due date sinks to the bottom
+      if (!b.dueDate) return -1;
+      return a.dueDate.localeCompare(b.dueDate);
+    });
+  }
+  return result;
+}
+function setPriorityFilter(val) {
+  taskPriorityFilter = val;
+  updateFilterUI();
+  renderKanban();
+}
+function setDueFilter(val) {
+  taskDueFilter = val;
+  updateFilterUI();
+  renderKanban();
+}
+function toggleSortByDue(checked) {
+  taskSortByDue = checked;
+  renderKanban();
+}
+function clearTaskFilters() {
+  taskPriorityFilter = 'all';
+  taskDueFilter = 'all';
+  taskSortByDue = false;
+  const pEl = document.getElementById('filter-priority');
+  const dEl = document.getElementById('filter-due');
+  const sEl = document.getElementById('filter-sort-due');
+  if (pEl) pEl.value = 'all';
+  if (dEl) dEl.value = 'all';
+  if (sEl) sEl.checked = false;
+  updateFilterUI();
+  renderKanban();
+}
+function updateFilterUI() {
+  const activeCount = (taskPriorityFilter !== 'all' ? 1 : 0) + (taskDueFilter !== 'all' ? 1 : 0);
+  const countEl = document.getElementById('filter-active-count');
+  const clearBtn = document.getElementById('filter-clear-btn');
+  if (countEl) countEl.innerHTML = activeCount > 0 ? `<span class="filter-active-count">${activeCount} active</span>` : '';
+  if (clearBtn) clearBtn.style.display = (activeCount > 0 || taskSortByDue) ? '' : 'none';
+}
+
 async function loadTasks() {
   try {
     const res = await fetch(WORKER_URL + '/tasks');
@@ -2226,7 +2426,7 @@ function renderKanban() {
   const container = document.getElementById('kanban-cols');
   const orderedStaff = getStaffOrder().map(name => STAFF.find(s => s.name === name)).filter(Boolean);
   container.innerHTML = orderedStaff.map(s => {
-    const allColTasks = getTasksForColumn(s.name);
+    const allColTasks = applyTaskFilters(getTasksForColumn(s.name));
     const openTasks = allColTasks.filter(t => !t.completed);
     const doneTasks = allColTasks.filter(t => t.completed);
     // Tasks currently sitting here because they got kicked back from
@@ -2264,7 +2464,7 @@ function renderKanban() {
         </div>
         <div class="kanban-cards">
           ${openTasks.length === 0
-            ? '<div style="text-align:center;padding:20px 12px;color:var(--text-muted);font-size:0.78rem;line-height:1.6">No tasks yet</div>'
+            ? `<div style="text-align:center;padding:20px 12px;color:var(--text-muted);font-size:0.78rem;line-height:1.6">${(taskPriorityFilter !== 'all' || taskDueFilter !== 'all') ? 'No tasks match your filters' : 'No tasks yet'}</div>`
             : renderGroupedTaskCards(openTasks, s.name)}
           ${doneTasks.length > 0 ? `
           <div class="kanban-completed-wrap">
@@ -2308,13 +2508,15 @@ function renderTaskCard(t, actingAs) {
   const otherParty = isMultiAssignee ? '' : (actingAs === t.assignee ? (t.assignedBy || '') : t.assignee);
   const canKickBack = !isMultiAssignee && !!otherParty && otherParty !== actingAs;
   const coAssignees = isMultiAssignee ? allAssignees.filter(a => a !== actingAs) : [];
+  const pri = t.priority || 'medium';
+  const priLabel = pri === 'high' ? 'High' : pri === 'low' ? 'Low' : 'Medium';
   return `
-    <div class="task-card ${t.completed ? 'completed' : ''}" id="card-${t.id}-${escapeHtml(actingAs).replace(/[^a-zA-Z0-9]/g,'')}">
+    <div class="task-card card-pri-${pri} ${t.completed ? 'completed' : ''}" id="card-${t.id}-${escapeHtml(actingAs).replace(/[^a-zA-Z0-9]/g,'')}">
       ${kickedToMe ? `<div class="duplicate-tag" title="Originally assigned to ${escapeHtml(t.assignee)} — it's on your board now because of a kickback">↩ Kicked back from ${escapeHtml(t.assignee)}'s board</div>` : ''}
       ${renderKickbackBanner(t, actingAs, otherParty)}
       <div class="task-card-top">
         <div class="task-check ${checked}" onclick="toggleTaskComplete('${t.id}','${escapeHtml(actingAs)}')" title="${t.completed ? 'Mark incomplete' : 'Mark complete'}"></div>
-        <div class="task-priority-dot pri-${t.priority}"></div>
+        <span class="task-priority-badge pri-${pri}" title="${priLabel} priority">${priLabel}</span>
         <div class="task-desc-text">${escapeHtml(t.description)}</div>
       </div>
       ${kickedToMe
