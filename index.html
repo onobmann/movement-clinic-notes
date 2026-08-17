@@ -1090,6 +1090,81 @@
   }
   .thread-entry-time { font-size: 0.64rem; color: var(--text-muted); margin-left: auto; }
   .thread-entry-msg { color: var(--text); line-height: 1.45; }
+  /* ── Comments — deliberately minimal footprint: one collapsed toggle row
+     unless opened, sharing the thread-entry visual language so it doesn't
+     read as a second, competing UI. ── */
+  .comment-bar { margin-bottom: 4px; }
+  .comment-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    padding: 3px 2px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+  .comment-toggle:hover { color: var(--charcoal); }
+  .comment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .comment-entry {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 6px 9px;
+    font-size: 0.74rem;
+  }
+  .comment-entry-head {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 2px;
+  }
+  .comment-entry-time { font-size: 0.62rem; color: var(--text-muted); margin-left: auto; }
+  .comment-entry-msg { color: var(--text); line-height: 1.4; }
+  .comment-add-row {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 6px;
+  }
+  .comment-input {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.74rem;
+    background: var(--surface);
+    color: var(--text);
+  }
+  .comment-input:focus { outline: none; border-color: var(--accent); }
+  .comment-send-btn {
+    flex-shrink: 0;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .comment-send-btn:hover { background: var(--accent-dark); }
+  .task-created-at {
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
   .kanban-completed-wrap {
     margin-top: 4px;
     border-top: 1px dashed var(--border);
@@ -2151,6 +2226,11 @@ let kickBackMode = 'send'; // 'send' (question/reply) or 'resolve' (closing repl
 const collapsedThreads = new Set();
 let taskPollInterval = null;
 
+// Comments are collapsed by default (opposite of threads) — the whole point
+// is to keep the card compact until someone actually wants to read/add one.
+// Tracks task ids the user has explicitly opened.
+const openComments = new Set();
+
 // ── Remember last-used Task Assignee (per browser/person) ───────────────────
 function saveAssignedByCookie(value) {
   document.cookie = 'mc_assigned_by=' + encodeURIComponent(value) + '; path=/; max-age=31536000; SameSite=Lax';
@@ -2492,6 +2572,7 @@ function renderTaskCard(t, actingAs) {
       ${kickedToMe
         ? (t.assignee ? `<div class="task-assigned-by">Originally assigned to ${escapeHtml(t.assignee)}</div>` : '')
         : (t.assignedBy ? `<div class="task-assigned-by">Assigned by ${escapeHtml(t.assignedBy)}</div>` : '')}
+      ${t.createdAt ? `<div class="task-created-at">Added ${formatTime(t.createdAt)}</div>` : ''}
       ${coAssignees.length > 0 ? `
       <div class="co-assignees">
         <span style="font-size:0.64rem;color:var(--text-muted);margin-right:2px">Also:</span>
@@ -2505,6 +2586,7 @@ function renderTaskCard(t, actingAs) {
         </span>` : ''}
       </div>
       ${renderThreadToggle(t)}
+      ${renderCommentSection(t, actingAs)}
       <div class="task-card-actions">
         <div class="task-card-actions-left">
           ${canKickBack ? `<button class="task-kickback-btn" onclick="event.stopPropagation();openKickBackModal('${t.id}','${escapeHtml(actingAs)}','${escapeHtml(otherParty)}')" title="Send a question or reply to ${escapeHtml(otherParty)}">
@@ -2563,6 +2645,77 @@ function renderThreadEntry(e) {
     <div class="thread-entry-head">${icon} <strong>${escapeHtml(e.from)}</strong><span class="thread-entry-time">${formatTime(e.at)}</span></div>
     <div class="thread-entry-msg">${escapeHtml(e.message)}</div>
   </div>`;
+}
+
+// ── Comments ──────────────────────────────────────────────────────────────────
+// Deliberately separate from the kickback `thread` (see the worker-side
+// comment on appendComment) and collapsed by default so a task with a long
+// comment history doesn't blow up the card — the count is always visible,
+// the messages only render once someone opens it.
+function commentInputId(taskId, actingAs) {
+  return 'comment-input-' + taskId + '-' + escapeHtml(actingAs).replace(/[^a-zA-Z0-9]/g, '');
+}
+function renderCommentSection(t, actingAs) {
+  const comments = Array.isArray(t.comments) ? t.comments : [];
+  const isOpen = openComments.has(t.id);
+  const chevron = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+  const label = comments.length > 0
+    ? (isOpen ? 'Hide comments' : 'Comments') + ' (' + comments.length + ')'
+    : 'Comment';
+  return `
+    <div class="comment-bar">
+      <button class="comment-toggle ${isOpen ? 'open' : ''}" onclick="event.stopPropagation();toggleComments('${t.id}')">
+        💬 ${label}${comments.length > 0 ? '' : chevron}
+      </button>
+    </div>
+    ${isOpen ? `
+    ${comments.length > 0 ? `<div class="comment-list">${comments.map(renderCommentEntry).join('')}</div>` : ''}
+    <div class="comment-add-row" onclick="event.stopPropagation()">
+      <input type="text" class="comment-input" id="${commentInputId(t.id, actingAs)}" placeholder="Add a comment…"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();submitComment('${t.id}','${escapeHtml(actingAs)}');}">
+      <button class="comment-send-btn" onclick="submitComment('${t.id}','${escapeHtml(actingAs)}')">Post</button>
+    </div>` : ''}`;
+}
+function renderCommentEntry(c) {
+  return `<div class="comment-entry">
+    <div class="comment-entry-head"><strong>${escapeHtml(c.from)}</strong><span class="comment-entry-time">${formatTime(c.at)}</span></div>
+    <div class="comment-entry-msg">${escapeHtml(c.message)}</div>
+  </div>`;
+}
+function toggleComments(id) {
+  if (openComments.has(id)) openComments.delete(id);
+  else openComments.add(id);
+  renderKanban();
+}
+async function submitComment(taskId, actingAs) {
+  const input = document.getElementById(commentInputId(taskId, actingAs));
+  if (!input) return;
+  const message = input.value.trim();
+  if (!message) { input.focus(); return; }
+  const task = allTasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  input.disabled = true;
+  try {
+    const res = await fetch(WORKER_URL + '/tasks/' + taskId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        appendComment: { message: message, from: actingAs },
+      }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allTasks.findIndex(t => t.id === taskId);
+    if (idx !== -1) allTasks[idx] = updated;
+    openComments.add(taskId); // keep it expanded so the new comment is visible
+    renderKanban();
+    const freshInput = document.getElementById(commentInputId(taskId, actingAs));
+    if (freshInput) freshInput.focus();
+  } catch (err) {
+    input.disabled = false;
+    showToast('Could not post comment: ' + err.message);
+  }
 }
 
 function getDueInfo(dueDate) {
