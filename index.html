@@ -1004,6 +1004,43 @@
   .task-del-btn:hover { color: var(--danger); }
   .task-kickback-btn { color: var(--accent-dark); font-weight: 600; }
   .task-kickback-btn:hover { color: var(--charcoal); }
+  /* Pin ("bump to top" / most important) */
+  .task-pin-btn {
+    background: none;
+    border: 1.5px solid var(--border);
+    cursor: pointer;
+    color: var(--text-muted);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .task-pin-btn:hover { color: var(--danger); border-color: var(--danger); }
+  .task-pin-btn.active { color: #fff; background: var(--danger); border-color: var(--danger); }
+  .task-card.pinned {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 1px var(--danger);
+  }
+  .pin-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #fff;
+    background: var(--danger);
+    border-radius: 4px;
+    padding: 3px 7px;
+    margin-bottom: 8px;
+  }
   /* Kick-back banner */
   .duplicate-tag {
     font-size: 0.66rem;
@@ -2478,7 +2515,10 @@ function renderKanban() {
   const orderedStaff = getStaffOrder().map(name => STAFF.find(s => s.name === name)).filter(Boolean);
   container.innerHTML = orderedStaff.map(s => {
     const allColTasks = applyTaskFilters(getTasksForColumn(s.name));
-    const openTasks = allColTasks.filter(t => !t.completed);
+    // Pinned ("bumped to top") tasks float above everything else in their
+    // section; sort() is stable so it doesn't disturb ordering otherwise.
+    const openTasks = allColTasks.filter(t => !t.completed)
+      .slice().sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
     const doneTasks = allColTasks.filter(t => t.completed);
     // Tasks currently sitting here because they got kicked back from
     // whoever they're normally assigned to — worth flagging separately
@@ -2562,7 +2602,8 @@ function renderTaskCard(t, actingAs) {
   const pri = t.priority || 'medium';
   const priLabel = pri === 'high' ? 'High' : pri === 'low' ? 'Low' : 'Medium';
   return `
-    <div class="task-card card-pri-${pri} ${t.completed ? 'completed' : ''}" id="card-${t.id}-${escapeHtml(actingAs).replace(/[^a-zA-Z0-9]/g,'')}" title="${priLabel} priority">
+    <div class="task-card card-pri-${pri} ${t.completed ? 'completed' : ''} ${t.pinned ? 'pinned' : ''}" id="card-${t.id}-${escapeHtml(actingAs).replace(/[^a-zA-Z0-9]/g,'')}" title="${priLabel} priority">
+      ${t.pinned ? `<div class="pin-badge">❗ Most Important</div>` : ''}
       ${kickedToMe ? `<div class="duplicate-tag" title="Originally assigned to ${escapeHtml(t.assignee)} — it's on your board now because of a kickback">↩ Kicked back from ${escapeHtml(t.assignee)}'s board</div>` : ''}
       ${renderKickbackBanner(t, actingAs, otherParty)}
       <div class="task-card-top">
@@ -2589,6 +2630,7 @@ function renderTaskCard(t, actingAs) {
       ${renderCommentSection(t, actingAs)}
       <div class="task-card-actions">
         <div class="task-card-actions-left">
+          <button class="task-pin-btn ${t.pinned ? 'active' : ''}" onclick="event.stopPropagation();togglePin('${t.id}')" title="${t.pinned ? 'Unpin from top' : 'Bump to top — mark as most important'}">!</button>
           ${canKickBack ? `<button class="task-kickback-btn" onclick="event.stopPropagation();openKickBackModal('${t.id}','${escapeHtml(actingAs)}','${escapeHtml(otherParty)}')" title="Send a question or reply to ${escapeHtml(otherParty)}">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
             Kick Back
@@ -2761,6 +2803,27 @@ async function toggleTaskComplete(id, actingAs) {
     task.completed = !newVal; // revert
     task.resolved = prevResolved;
     task.thread = prevThread;
+    renderKanban();
+    showToast('Could not update task');
+  }
+}
+
+async function togglePin(id) {
+  const task = allTasks.find(t => t.id === id);
+  if (!task) return;
+  const newVal = !task.pinned;
+  task.pinned = newVal;
+  renderKanban();
+  try {
+    const res = await fetch(WORKER_URL + '/tasks/' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pinned: newVal }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    showToast(newVal ? 'Bumped to top' : 'Unpinned');
+  } catch (err) {
+    task.pinned = !newVal; // revert
     renderKanban();
     showToast('Could not update task');
   }
