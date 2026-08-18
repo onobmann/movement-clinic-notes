@@ -738,6 +738,44 @@
     background-position: right 8px center;
   }
   .filter-select:hover { border-color: var(--accent); }
+  .filter-search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .filter-search-wrap svg {
+    position: absolute;
+    left: 9px;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+  .filter-search-input {
+    padding: 6px 10px 6px 28px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--surface);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text);
+    outline: none;
+    width: 170px;
+    transition: border-color 0.15s, width 0.15s;
+  }
+  .filter-search-input:focus { border-color: var(--accent); width: 210px; }
+  .filter-search-input::placeholder { color: var(--text-muted); font-weight: 500; }
+  .filter-search-clear {
+    position: absolute;
+    right: 6px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px;
+    display: flex;
+    line-height: 0;
+  }
+  .filter-search-clear:hover { color: var(--danger); }
   .filter-sort-toggle {
     display: flex;
     align-items: center;
@@ -1576,6 +1614,13 @@
     </div>
     <div class="tasks-filterbar">
       <span class="filter-label">Filter</span>
+      <div class="filter-search-wrap">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" class="filter-search-input" id="filter-patient-search" placeholder="Search patient name…" oninput="setPatientSearch(this.value)" autocomplete="off">
+        <button class="filter-search-clear" id="filter-patient-search-clear" style="display:none" onclick="setPatientSearch('')" title="Clear search">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
       <select class="filter-select" id="filter-priority" onchange="setPriorityFilter(this.value)">
         <option value="all">All urgency</option>
         <option value="high">🔴 High only</option>
@@ -2253,6 +2298,7 @@ const completedOpenCols = new Set();
 let taskPriorityFilter = 'all';   // 'all' | 'high' | 'medium' | 'low'
 let taskDueFilter = 'all';        // 'all' | 'overdue' | 'soon' | 'week' | 'none'
 let taskSortByDue = false;
+let taskPatientSearch = '';       // free-text patient name search — versatile/partial match
 // ── Kick-back state ───────────────────────────────────────────────────────
 let kickBackTaskId = null;
 let kickBackFrom = null;
@@ -2440,10 +2486,39 @@ function taskMatchesDueFilter(t) {
   }
   return true;
 }
+// Patient name search — versatile because patients get entered inconsistently
+// (full name, first name only, initials, extra punctuation/spacing). Strips
+// accents/punctuation and matches on individual words so "jane s", "smith",
+// or "j.s." all find "Jane Smith", in any order and with partial words.
+function normalizeForSearch(s) {
+  return (s || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+function taskMatchesPatientSearch(t) {
+  const q = normalizeForSearch(taskPatientSearch);
+  if (!q) return true;
+  const target = normalizeForSearch(t.patientInitials);
+  if (!target) return false;
+  const qTokens = q.split(' ').filter(Boolean);
+  // Every search word must appear as a substring of the patient field —
+  // handles partial names/initials and word order ("smith jane").
+  const tokenMatch = qTokens.every(tok => target.includes(tok));
+  if (tokenMatch) return true;
+  // Fallback for initials-style entries like "J.S." vs a search of "js":
+  // compare with all whitespace stripped, either direction.
+  const qSquished = q.replace(/\s+/g, '');
+  const targetSquished = target.replace(/\s+/g, '');
+  return targetSquished.includes(qSquished) || qSquished.includes(targetSquished);
+}
 function applyTaskFilters(tasks) {
   let result = tasks.filter(t => {
     if (taskPriorityFilter !== 'all' && (t.priority || 'medium') !== taskPriorityFilter) return false;
     if (!taskMatchesDueFilter(t)) return false;
+    if (!taskMatchesPatientSearch(t)) return false;
     return true;
   });
   if (taskSortByDue) {
@@ -2470,25 +2545,39 @@ function toggleSortByDue(checked) {
   taskSortByDue = checked;
   renderKanban();
 }
+function setPatientSearch(val) {
+  taskPatientSearch = val;
+  const input = document.getElementById('filter-patient-search');
+  // Keep the input in sync in case this was triggered by the clear button
+  // rather than direct typing.
+  if (input && input.value !== val) input.value = val;
+  updateFilterUI();
+  renderKanban();
+}
 function clearTaskFilters() {
   taskPriorityFilter = 'all';
   taskDueFilter = 'all';
   taskSortByDue = false;
+  taskPatientSearch = '';
   const pEl = document.getElementById('filter-priority');
   const dEl = document.getElementById('filter-due');
   const sEl = document.getElementById('filter-sort-due');
+  const qEl = document.getElementById('filter-patient-search');
   if (pEl) pEl.value = 'all';
   if (dEl) dEl.value = 'all';
   if (sEl) sEl.checked = false;
+  if (qEl) qEl.value = '';
   updateFilterUI();
   renderKanban();
 }
 function updateFilterUI() {
-  const activeCount = (taskPriorityFilter !== 'all' ? 1 : 0) + (taskDueFilter !== 'all' ? 1 : 0);
+  const activeCount = (taskPriorityFilter !== 'all' ? 1 : 0) + (taskDueFilter !== 'all' ? 1 : 0) + (taskPatientSearch.trim() ? 1 : 0);
   const countEl = document.getElementById('filter-active-count');
   const clearBtn = document.getElementById('filter-clear-btn');
+  const searchClearBtn = document.getElementById('filter-patient-search-clear');
   if (countEl) countEl.innerHTML = activeCount > 0 ? `<span class="filter-active-count">${activeCount} active</span>` : '';
   if (clearBtn) clearBtn.style.display = (activeCount > 0 || taskSortByDue) ? '' : 'none';
+  if (searchClearBtn) searchClearBtn.style.display = taskPatientSearch.trim() ? '' : 'none';
 }
 
 async function loadTasks() {
@@ -2555,7 +2644,7 @@ function renderKanban() {
         </div>
         <div class="kanban-cards">
           ${openTasks.length === 0
-            ? `<div style="text-align:center;padding:20px 12px;color:var(--text-muted);font-size:0.78rem;line-height:1.6">${(taskPriorityFilter !== 'all' || taskDueFilter !== 'all') ? 'No tasks match your filters' : 'No tasks yet'}</div>`
+            ? `<div style="text-align:center;padding:20px 12px;color:var(--text-muted);font-size:0.78rem;line-height:1.6">${(taskPriorityFilter !== 'all' || taskDueFilter !== 'all' || taskPatientSearch.trim()) ? 'No tasks match your filters' : 'No tasks yet'}</div>`
             : renderGroupedTaskCards(openTasks, s.name)}
           ${doneTasks.length > 0 ? `
           <div class="kanban-completed-wrap">
