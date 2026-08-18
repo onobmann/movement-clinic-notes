@@ -2613,7 +2613,12 @@ function renderKanban() {
     // whoever they're normally assigned to — worth flagging separately
     // from this person's own open count.
     const kickedToMeCount = openTasks.filter(t => getAssignees(t).length === 1 && t.assignee !== s.name).length;
-    const isOpen = completedOpenCols.has(s.name);
+    // While a patient search is active, auto-expand "Completed" so a match
+    // sitting in there isn't hidden behind the collapsed toggle. This only
+    // affects display — it doesn't touch the user's manual toggle state,
+    // so the section collapses back to whatever they had once they clear
+    // the search.
+    const isOpen = completedOpenCols.has(s.name) || (!!taskPatientSearch.trim() && doneTasks.length > 0);
     const chevronSvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
     const colId = 'kcol-' + s.name.replace(/[^a-zA-Z0-9]/g, '');
     const safeN = escapeHtml(s.name);
