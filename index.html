@@ -1207,8 +1207,28 @@
   .comment-entry-msg { color: var(--text); line-height: 1.4; }
   .comment-add-row {
     display: flex;
+    flex-direction: column;
     gap: 5px;
     margin-bottom: 6px;
+  }
+  .comment-author-row {
+    display: flex;
+  }
+  .comment-author-select {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    background: var(--surface);
+    color: var(--text);
+  }
+  .comment-author-select:focus { outline: none; border-color: var(--accent); }
+  .comment-input-row {
+    display: flex;
+    gap: 5px;
   }
   .comment-input {
     flex: 1;
@@ -2335,6 +2355,30 @@ function getRememberedAssignedBy() {
   return getAssignedByCookie() || (function(){ try { return localStorage.getItem('mc_assigned_by'); } catch(e) { return null; } })();
 }
 
+// ── Remember last-used comment author (per browser/person) ──────────────────
+// Comments can be added by anyone from any column, so the author isn't
+// implied by which board the comment box happens to be on — the person
+// posting has to say who they are. This just saves them re-picking every time.
+function saveCommentAuthorCookie(value) {
+  document.cookie = 'mc_comment_from=' + encodeURIComponent(value) + '; path=/; max-age=31536000; SameSite=Lax';
+}
+function getCommentAuthorCookie() {
+  const match = document.cookie.match(/(?:^|;\s*)mc_comment_from=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+function rememberCommentAuthor(value) {
+  if (value) {
+    saveCommentAuthorCookie(value);
+    try { localStorage.setItem('mc_comment_from', value); } catch(e) {}
+  } else {
+    saveCommentAuthorCookie('');
+    try { localStorage.removeItem('mc_comment_from'); } catch(e) {}
+  }
+}
+function getRememberedCommentAuthor() {
+  return getCommentAuthorCookie() || (function(){ try { return localStorage.getItem('mc_comment_from'); } catch(e) { return null; } })();
+}
+
 function toggleCompletedSection(staffName) {
   if (completedOpenCols.has(staffName)) completedOpenCols.delete(staffName);
   else completedOpenCols.add(staffName);
@@ -2791,6 +2835,9 @@ function renderThreadEntry(e) {
 function commentInputId(taskId, actingAs) {
   return 'comment-input-' + taskId + '-' + escapeHtml(actingAs).replace(/[^a-zA-Z0-9]/g, '');
 }
+function commentAuthorId(taskId, actingAs) {
+  return 'comment-author-' + taskId + '-' + escapeHtml(actingAs).replace(/[^a-zA-Z0-9]/g, '');
+}
 function renderCommentSection(t, actingAs) {
   const comments = Array.isArray(t.comments) ? t.comments : [];
   const isOpen = openComments.has(t.id);
@@ -2798,6 +2845,11 @@ function renderCommentSection(t, actingAs) {
   const label = comments.length > 0
     ? (isOpen ? 'Hide comments' : 'Comments') + ' (' + comments.length + ')'
     : 'Comment';
+  // Anyone can comment on anyone's task, regardless of whose column it's
+  // rendered in — so the author isn't inferred from the column, it's
+  // explicitly picked, defaulting to whoever last picked themselves on this
+  // browser (falls back to the column owner if nobody's picked yet).
+  const defaultAuthor = getRememberedCommentAuthor() || actingAs || '';
   return `
     <div class="comment-bar">
       <button class="comment-toggle ${isOpen ? 'open' : ''}" onclick="event.stopPropagation();toggleComments('${t.id}')">
@@ -2807,9 +2859,17 @@ function renderCommentSection(t, actingAs) {
     ${isOpen ? `
     ${comments.length > 0 ? `<div class="comment-list">${comments.map(renderCommentEntry).join('')}</div>` : ''}
     <div class="comment-add-row" onclick="event.stopPropagation()">
-      <input type="text" class="comment-input" id="${commentInputId(t.id, actingAs)}" placeholder="Add a comment…"
-        onkeydown="if(event.key==='Enter'){event.preventDefault();submitComment('${t.id}','${escapeHtml(actingAs)}');}">
-      <button class="comment-send-btn" onclick="submitComment('${t.id}','${escapeHtml(actingAs)}')">Post</button>
+      <div class="comment-author-row">
+        <select class="comment-author-select" id="${commentAuthorId(t.id, actingAs)}" onchange="rememberCommentAuthor(this.value)">
+          <option value="">— Commenting as… —</option>
+          ${STAFF.map(s => `<option value="${escapeHtml(s.name)}" ${s.name === defaultAuthor ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="comment-input-row">
+        <input type="text" class="comment-input" id="${commentInputId(t.id, actingAs)}" placeholder="Add a comment…"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();submitComment('${t.id}','${escapeHtml(actingAs)}');}">
+        <button class="comment-send-btn" onclick="submitComment('${t.id}','${escapeHtml(actingAs)}')">Post</button>
+      </div>
     </div>` : ''}`;
 }
 function renderCommentEntry(c) {
@@ -2825,8 +2885,11 @@ function toggleComments(id) {
 }
 async function submitComment(taskId, actingAs) {
   const input = document.getElementById(commentInputId(taskId, actingAs));
+  const authorSelect = document.getElementById(commentAuthorId(taskId, actingAs));
   if (!input) return;
   const message = input.value.trim();
+  const from = authorSelect ? authorSelect.value : '';
+  if (!from) { if (authorSelect) authorSelect.focus(); showToast('Select who is commenting'); return; }
   if (!message) { input.focus(); return; }
   const task = allTasks.find(t => t.id === taskId);
   if (!task) return;
@@ -2837,13 +2900,14 @@ async function submitComment(taskId, actingAs) {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        appendComment: { message: message, from: actingAs },
+        appendComment: { message: message, from: from },
       }),
     });
     if (!res.ok) throw new Error('Server error ' + res.status);
     const updated = await res.json();
     const idx = allTasks.findIndex(t => t.id === taskId);
     if (idx !== -1) allTasks[idx] = updated;
+    rememberCommentAuthor(from); // remember for next comment on any task
     openComments.add(taskId); // keep it expanded so the new comment is visible
     renderKanban();
     const freshInput = document.getElementById(commentInputId(taskId, actingAs));
