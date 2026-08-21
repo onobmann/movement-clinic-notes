@@ -1520,6 +1520,137 @@
     .modal-row { flex-direction: column; gap: 14px; }
     .doctor-btns { flex-direction: column; }
   }
+
+  /* ── Task-complete celebration ─────────────────────────────────────────── */
+  #confetti-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    pointer-events: none;
+  }
+  .celebration-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(30, 26, 20, 0.55);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: celeb-fade-in 0.2s ease;
+  }
+  @keyframes celeb-fade-in { from { opacity: 0; } to { opacity: 1; } }
+  .celebration-card {
+    background: var(--surface, #fff);
+    border-radius: 18px;
+    padding: 32px 36px 28px;
+    width: min(420px, 90vw);
+    max-height: 85vh;
+    overflow-y: auto;
+    text-align: center;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+    animation: celeb-pop 0.28s cubic-bezier(.2,1.4,.4,1);
+  }
+  @keyframes celeb-pop {
+    from { transform: scale(0.85) translateY(10px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  .celebration-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--charcoal, #2b2620);
+    margin-bottom: 4px;
+  }
+  .celebration-sub {
+    font-size: 0.82rem;
+    color: var(--text-muted, #8a8377);
+    margin-bottom: 20px;
+  }
+  .love-lang-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .love-lang-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 16px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border, #e5e0d8);
+    background: var(--surface2, #faf8f4);
+    cursor: pointer;
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--charcoal, #2b2620);
+    transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+  }
+  .love-lang-btn:hover { background: #fdf3df; border-color: #e8c877; transform: translateY(-2px); }
+  .love-lang-btn .ll-emoji { font-size: 1.6rem; }
+  .celebration-result {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--charcoal, #2b2620);
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+  }
+  .celeb-countdown {
+    font-size: 2.6rem;
+    font-weight: 800;
+    color: #e8a33d;
+  }
+  .celeb-gift-box {
+    font-size: 3rem;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+    user-select: none;
+  }
+  .celeb-gift-box:hover { transform: scale(1.08) rotate(-3deg); }
+  .celeb-gift-box.opened { pointer-events: none; }
+  .celeb-stars {
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    color: #e8a33d;
+    font-weight: 800;
+    word-break: break-word;
+  }
+  .celeb-highfive {
+    font-size: 3rem;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.15s ease;
+  }
+  .celeb-highfive:hover { transform: scale(1.1); }
+  .celeb-highfive.slapped { animation: celeb-shake 0.35s ease; }
+  @keyframes celeb-shake {
+    0%, 100% { transform: translateX(0) scale(1.2); }
+    20% { transform: translateX(-6px) scale(1.2); }
+    40% { transform: translateX(6px) scale(1.2); }
+    60% { transform: translateX(-4px) scale(1.2); }
+    80% { transform: translateX(4px) scale(1.2); }
+  }
+  .celeb-close-btn {
+    margin-top: 22px;
+    padding: 8px 22px;
+    border-radius: 20px;
+    border: 1px solid var(--border, #e5e0d8);
+    background: var(--surface2, #faf8f4);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--charcoal, #2b2620);
+    cursor: pointer;
+  }
+  .celeb-close-btn:hover { background: #f0ece3; }
+  .celeb-chore-list { text-align: left; font-size: 0.85rem; }
+  .celeb-chore-item { display: flex; align-items: center; gap: 8px; padding: 3px 0; opacity: 0.35; transition: opacity 0.25s ease; }
+  .celeb-chore-item.checked { opacity: 1; }
+  .celeb-chore-item .ci-box { width: 16px; height: 16px; border-radius: 4px; border: 1px solid var(--border, #e5e0d8); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; background: var(--surface, #fff); }
+  .celeb-chore-item.checked .ci-box { background: #4caf7d; border-color: #4caf7d; color: #fff; }
 </style>
 </head>
 <body>
@@ -2954,6 +3085,171 @@ function getDueInfo(dueDate) {
   return { cls: '', label: label };
 }
 
+// ── Task-complete celebration (confetti + love-language popup) ──────────────
+const LOVE_LANG_COMPLIMENTS = [
+  "{name}, you knock this stuff out faster than anyone else on this team.",
+  "{name}, the way you just handled that was genuinely impressive.",
+  "{name}, patients are lucky to have someone as on-top-of-it as you.",
+  "{name}, that's one more thing off the list — you make this look easy.",
+  "{name}, your attention to detail does not go unnoticed.",
+  "{name}, you're the kind of teammate everyone wants to work with.",
+  "{name}, seriously — great work. Keep it up.",
+];
+
+function fireConfetti() {
+  const old = document.getElementById('confetti-canvas');
+  if (old) old.remove();
+  const canvas = document.createElement('canvas');
+  canvas.id = 'confetti-canvas';
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  const colors = ['#e8a33d', '#4caf7d', '#4a90d9', '#e05c5c', '#b573d9', '#f2c94c'];
+  const pieces = [];
+  const count = 140;
+  for (let i = 0; i < count; i++) {
+    pieces.push({
+      x: Math.random() * canvas.width,
+      y: -20 - Math.random() * canvas.height * 0.5,
+      w: 6 + Math.random() * 6,
+      h: 8 + Math.random() * 8,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      speed: 2 + Math.random() * 3,
+      drift: (Math.random() - 0.5) * 2,
+      spin: Math.random() * Math.PI * 2,
+      spinSpeed: (Math.random() - 0.5) * 0.3,
+    });
+  }
+  const start = Date.now();
+  const duration = 3200;
+  function frame() {
+    const elapsed = Date.now() - start;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(p => {
+      p.y += p.speed;
+      p.x += p.drift;
+      p.spin += p.spinSpeed;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.spin);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+    });
+    if (elapsed < duration) {
+      requestAnimationFrame(frame);
+    } else {
+      canvas.remove();
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+function closeCelebration() {
+  const el = document.getElementById('celebration-overlay');
+  if (el) el.remove();
+}
+
+function showCelebration(personName) {
+  closeCelebration();
+  fireConfetti();
+  const overlay = document.createElement('div');
+  overlay.className = 'celebration-overlay';
+  overlay.id = 'celebration-overlay';
+  overlay.innerHTML = `
+    <div class="celebration-card" id="celebration-card">
+      <div class="celebration-title">\u{1F389} Task complete!</div>
+      <div class="celebration-sub">Pick your love language:</div>
+      <div class="love-lang-grid">
+        <button class="love-lang-btn" onclick="runLoveLanguage('words','${escapeHtml(personName)}')"><span class="ll-emoji">\u{1F4AC}</span>Words of Affirmation</button>
+        <button class="love-lang-btn" onclick="runLoveLanguage('time','${escapeHtml(personName)}')"><span class="ll-emoji">⏱️</span>Quality Time</button>
+        <button class="love-lang-btn" onclick="runLoveLanguage('gifts','${escapeHtml(personName)}')"><span class="ll-emoji">\u{1F381}</span>Gifts</button>
+        <button class="love-lang-btn" onclick="runLoveLanguage('acts','${escapeHtml(personName)}')"><span class="ll-emoji">\u{1F9F9}</span>Acts of Service</button>
+        <button class="love-lang-btn" style="grid-column: 1 / -1" onclick="runLoveLanguage('touch','${escapeHtml(personName)}')"><span class="ll-emoji">\u{1F91D}</span>Physical Touch (virtual high-five)</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeCelebration(); });
+}
+
+function celebResultShell(bodyHtml) {
+  const card = document.getElementById('celebration-card');
+  if (!card) return;
+  card.innerHTML = `
+    <div class="celebration-result">${bodyHtml}</div>
+    <button class="celeb-close-btn" onclick="closeCelebration()">Close</button>
+  `;
+}
+
+function runLoveLanguage(kind, personName) {
+  if (kind === 'words') {
+    const template = LOVE_LANG_COMPLIMENTS[Math.floor(Math.random() * LOVE_LANG_COMPLIMENTS.length)];
+    celebResultShell(`<div style="font-size:1.5rem">\u{1F49B}</div><div>${escapeHtml(template.replace('{name}', personName))}</div>`);
+  } else if (kind === 'time') {
+    celebResultShell(`<div class="celeb-countdown" id="celeb-countdown">5</div><div id="celeb-time-msg">Just take a breath for a second.</div>`);
+    let n = 5;
+    const tick = () => {
+      n -= 1;
+      const el = document.getElementById('celeb-countdown');
+      if (!el) return; // overlay was closed early
+      if (n > 0) {
+        el.textContent = n;
+        setTimeout(tick, 1000);
+      } else {
+        el.textContent = '✨';
+        const msg = document.getElementById('celeb-time-msg');
+        if (msg) msg.textContent = "Wow, wasn't that nice?";
+      }
+    };
+    setTimeout(tick, 1000);
+  } else if (kind === 'gifts') {
+    celebResultShell(`<div class="celeb-gift-box" id="celeb-gift" onclick="openCelebGift()">\u{1F381}</div><div id="celeb-gift-msg">Click the present to open it</div>`);
+  } else if (kind === 'acts') {
+    celebResultShell(`
+      <div class="celeb-chore-list" id="celeb-chores">
+        <div class="celeb-chore-item" data-i="0"><span class="ci-box"></span> Restocking your coffee</div>
+        <div class="celeb-chore-item" data-i="1"><span class="ci-box"></span> Fluffing your chair cushion</div>
+        <div class="celeb-chore-item" data-i="2"><span class="ci-box"></span> Warming up your next task</div>
+      </div>
+      <div id="celeb-acts-msg" style="font-weight:700">Sit tight, we've got this one…</div>
+    `);
+    const items = document.querySelectorAll('#celeb-chores .celeb-chore-item');
+    items.forEach((item, i) => {
+      setTimeout(() => {
+        item.classList.add('checked');
+        item.querySelector('.ci-box').textContent = '✓';
+        if (i === items.length - 1) {
+          const msg = document.getElementById('celeb-acts-msg');
+          if (msg) msg.textContent = "Okay, we can't actually do your next task — but hey, nice try. Consider this one done!";
+        }
+      }, 500 + i * 650);
+    });
+  } else if (kind === 'touch') {
+    celebResultShell(`<div class="celeb-highfive" id="celeb-hf" onclick="doCelebHighFive()">\u{1F91A}</div><div id="celeb-hf-msg">Give it a click for a virtual high-five</div>`);
+  }
+}
+
+function openCelebGift() {
+  const box = document.getElementById('celeb-gift');
+  const msg = document.getElementById('celeb-gift-msg');
+  if (!box || box.classList.contains('opened')) return;
+  box.classList.add('opened');
+  box.textContent = '✨';
+  if (msg) msg.innerHTML = `<div class="celeb-stars">${'⭐'.repeat(20)}</div><div style="margin-top:8px">100 gold stars, just for you.</div>`;
+}
+
+function doCelebHighFive() {
+  const hand = document.getElementById('celeb-hf');
+  const msg = document.getElementById('celeb-hf-msg');
+  if (!hand) return;
+  hand.classList.add('slapped');
+  hand.textContent = '\u{1F91D}';
+  if (msg) msg.textContent = "\u{1F64C} That's a virtual high-five for a job well done!";
+  setTimeout(() => hand.classList.remove('slapped'), 400);
+}
+
 async function toggleTaskComplete(id, actingAs) {
   const task = allTasks.find(t => t.id === id);
   if (!task) return;
@@ -2967,6 +3263,7 @@ async function toggleTaskComplete(id, actingAs) {
   task.completed = newVal;
   if (shouldAutoResolve) task.resolved = true;
   renderKanban();
+  if (newVal) showCelebration(actingAs || 'you');
   try {
     const body = { completed: newVal };
     if (shouldAutoResolve) body.appendThreadEntry = { type: 'resolved', from: actingAs || '', to: '' };
