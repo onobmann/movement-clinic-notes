@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Movement Clinic — Patient Notes</title>
+<meta name="description" content="Internal Movement Clinic tool for logging post-appointment notes, routing them to the care team, and tracking follow-up tasks.">
+<meta name="theme-color" content="#2b2b2b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%232b2b2b'/%3E%3Ctext x='50' y='68' font-family='Arial,Helvetica,sans-serif' font-size='58' font-weight='700' fill='%23e8a020' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap');
   :root {
@@ -21,6 +24,7 @@
     --shadow: 0 2px 16px rgba(0,0,0,0.08);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { overflow-x: hidden; }
   body {
     font-family: 'Inter', sans-serif;
     background: var(--bg);
@@ -28,6 +32,7 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow-x: hidden;
   }
   /* HEADER */
   header {
@@ -42,7 +47,7 @@
     z-index: 100;
     box-shadow: 0 2px 20px rgba(0,0,0,0.25);
   }
-  .logo-wrap { display: flex; align-items: center; gap: 12px; }
+  .logo-wrap { display: flex; align-items: center; gap: 12px; cursor: pointer; }
   .logo-text { display: flex; flex-direction: column; line-height: 1; }
   .logo-text .brand {
     font-family: 'Bebas Neue', sans-serif;
@@ -1506,11 +1511,20 @@
     .toggle-btn { padding: 8px 10px; font-size: 0.75rem; }
     #doctor-select { font-size: 0.78rem; padding: 8px 28px 8px 10px; }
   }
+  /* Below 480px the 190px sidebar next to the main panel gets too cramped to
+     read — stack the Care Team view instead of squeezing both columns. */
+  @media (max-width: 480px) {
+    #sec-view { flex-direction: column; height: auto; overflow: visible; }
+    .patient-list { width: 100%; max-height: 220px; }
+    .kanban-col { width: 180px; }
+    .modal-row { flex-direction: column; gap: 14px; }
+    .doctor-btns { flex-direction: column; }
+  }
 </style>
 </head>
 <body>
 <header>
-  <div class="logo-wrap">
+  <div class="logo-wrap" onclick="setView('dr', document.querySelector('.toggle-btn'))" title="Back to Doctor view">
     <div class="logo-text">
       <span class="brand">Movement Clinic</span>
       <span class="sub">Patient Notes</span>
