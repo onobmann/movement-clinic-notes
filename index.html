@@ -847,15 +847,15 @@
     justify-content: space-between;
     gap: 8px;
     flex-shrink: 0;
-    cursor: grab;
-    user-select: none;
   }
-  .kanban-col-header:active { cursor: grabbing; }
   .col-drag-handle {
     color: var(--border);
     flex-shrink: 0;
     transition: color 0.15s;
+    cursor: grab;
+    user-select: none;
   }
+  .col-drag-handle:active { cursor: grabbing; }
   .kanban-col-header:hover .col-drag-handle { color: var(--text-muted); }
   .kanban-col.drag-over {
     outline: 2px dashed var(--accent);
@@ -2440,6 +2440,14 @@ function getStaffOrder() {
 function saveColOrder() {
   try { localStorage.setItem('mc_col_order', JSON.stringify(staffOrder)); } catch(e) {}
 }
+function colHandleMouseDown(e) {
+  const col = e.currentTarget.closest('.kanban-col');
+  if (col) col.setAttribute('draggable', 'true');
+}
+function colHandleMouseUp(e) {
+  const col = e.currentTarget.closest('.kanban-col');
+  if (col) col.setAttribute('draggable', 'false');
+}
 function colDragStart(e, name) {
   dragSourceCol = name;
   e.dataTransfer.effectAllowed = 'move';
@@ -2479,6 +2487,8 @@ function colDrop(e, targetName) {
 function colDragEnd() {
   document.querySelectorAll('.kanban-col.dragging, .kanban-col.drag-over')
     .forEach(el => el.classList.remove('dragging', 'drag-over'));
+  document.querySelectorAll('.kanban-col[draggable="true"]')
+    .forEach(el => el.setAttribute('draggable', 'false'));
   dragSourceCol = null;
 }
 // The task always lives with whoever the LAST thread entry was addressed
@@ -2682,14 +2692,15 @@ function renderKanban() {
     const safeN = escapeHtml(s.name);
     return `
       <div class="kanban-col" id="${colId}"
-        draggable="true"
+        draggable="false"
         ondragstart="colDragStart(event,'${safeN}')"
         ondragover="colDragOver(event,'${safeN}')"
         ondragleave="colDragLeave(event,'${safeN}')"
         ondrop="colDrop(event,'${safeN}')"
         ondragend="colDragEnd()">
         <div class="kanban-col-header">
-          <svg class="col-drag-handle" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+          <svg class="col-drag-handle" width="12" height="12" viewBox="0 0 12 12" fill="currentColor"
+            onmousedown="colHandleMouseDown(event)" onmouseup="colHandleMouseUp(event)" title="Drag to reorder">
             <rect x="2" y="1" width="2" height="2" rx="1"/><rect x="8" y="1" width="2" height="2" rx="1"/>
             <rect x="2" y="5" width="2" height="2" rx="1"/><rect x="8" y="5" width="2" height="2" rx="1"/>
             <rect x="2" y="9" width="2" height="2" rx="1"/><rect x="8" y="9" width="2" height="2" rx="1"/>
