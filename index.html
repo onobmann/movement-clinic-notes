@@ -919,6 +919,11 @@
     font-weight: 700;
     color: var(--charcoal);
     letter-spacing: 0.02em;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .kanban-col-avatar {
     width: 28px;
@@ -941,6 +946,7 @@
     padding: 2px 8px;
     color: var(--text-muted);
     margin-left: auto;
+    flex-shrink: 0;
   }
   .kanban-col-alert {
     font-size: 0.64rem;
@@ -950,6 +956,8 @@
     color: #9a4a2c;
     border-radius: 20px;
     padding: 2px 7px;
+    flex-shrink: 0;
+    white-space: nowrap;
   }
   .kanban-col-minimize-btn {
     background: none;
