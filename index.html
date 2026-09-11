@@ -1858,6 +1858,7 @@
         <div class="col-filter-panel" id="col-filter-panel" style="display:none">
           <div class="col-filter-panel-actions">
             <button type="button" onclick="showAllCols()">Show all</button>
+            <button type="button" onclick="hideAllCols()">Hide all</button>
           </div>
           <div class="col-filter-list" id="col-filter-list"></div>
         </div>
@@ -1894,6 +1895,8 @@
           <label class="assignee-pill"><input type="checkbox" name="assignee" value="Scott"><span>Scott</span></label>
           <label class="assignee-pill"><input type="checkbox" name="assignee" value="Peptides"><span>Peptides</span></label>
           <label class="assignee-pill"><input type="checkbox" name="assignee" value="Scheduling"><span>📅 Scheduling</span></label>
+          <label class="assignee-pill"><input type="checkbox" name="assignee" value="Repair &amp; Clear/Apex"><span>Repair &amp; Clear/Apex</span></label>
+          <label class="assignee-pill"><input type="checkbox" name="assignee" value="Labs"><span>Labs</span></label>
         </div>
       </div>
       <div class="modal-field">
@@ -2505,16 +2508,21 @@ function showToast(msg) {
 
 // ── Tasks ─────────────────────────────────────────────────────────────────────
 const STAFF = [
-  { name: 'Bella',       initials: 'BE', color: '#0e7c86', bg: '#e3f3f4' },
-  { name: 'Bree',        initials: 'BR', color: '#9c3b8a', bg: '#f9eaf7' },
-  { name: 'Christy',    initials: 'CH', color: '#185fa5', bg: '#e6f1fb' },
-  { name: 'Dr. Hodson', initials: 'DH', color: '#5b4fcf', bg: '#eeedfe' },
-  { name: 'Dr. Meyers', initials: 'DM', color: '#0f6e56', bg: '#e1f5ee' },
-  { name: 'Jenna',      initials: 'JE', color: '#993556', bg: '#fbeaf0' },
-  { name: 'Oshyn',      initials: 'OS', color: '#3b6d11', bg: '#eaf3de' },
-  { name: 'Scott',      initials: 'SC', color: '#c4861a', bg: '#fdf3e0' },
-  { name: 'Peptides',   initials: 'PE', color: '#b8562e', bg: '#fdece3' },
-  { name: 'Scheduling', initials: '📅', color: '#2980b9', bg: '#e8f4fd' },
+  // isPerson: false marks a column that's a work category/routing bucket
+  // rather than an actual team member — those are excluded from the
+  // comment-author dropdown (you can't leave a comment "as Labs").
+  { name: 'Bella',       initials: 'BE', color: '#0e7c86', bg: '#e3f3f4', isPerson: true },
+  { name: 'Bree',        initials: 'BR', color: '#9c3b8a', bg: '#f9eaf7', isPerson: true },
+  { name: 'Christy',    initials: 'CH', color: '#185fa5', bg: '#e6f1fb', isPerson: true },
+  { name: 'Dr. Hodson', initials: 'DH', color: '#5b4fcf', bg: '#eeedfe', isPerson: true },
+  { name: 'Dr. Meyers', initials: 'DM', color: '#0f6e56', bg: '#e1f5ee', isPerson: true },
+  { name: 'Jenna',      initials: 'JE', color: '#993556', bg: '#fbeaf0', isPerson: true },
+  { name: 'Oshyn',      initials: 'OS', color: '#3b6d11', bg: '#eaf3de', isPerson: true },
+  { name: 'Scott',      initials: 'SC', color: '#c4861a', bg: '#fdf3e0', isPerson: true },
+  { name: 'Peptides',   initials: 'PE', color: '#b8562e', bg: '#fdece3', isPerson: false },
+  { name: 'Scheduling', initials: '📅', color: '#2980b9', bg: '#e8f4fd', isPerson: false },
+  { name: 'Repair & Clear/Apex', initials: 'RC', color: '#7a5c1e', bg: '#f7efdc', isPerson: false },
+  { name: 'Labs',       initials: 'LB', color: '#6b4fa0', bg: '#f0eafb', isPerson: false },
 ];
 
 let allTasks = [];
@@ -2693,9 +2701,10 @@ function getVisibleCols() {
   if (visibleCols) return visibleCols;
   try {
     const saved = localStorage.getItem('mc_visible_cols');
-    if (saved) {
+    if (saved !== null) {
       const parsed = JSON.parse(saved).filter(n => STAFF_NAMES.has(n));
-      if (parsed.length > 0) { visibleCols = new Set(parsed); return visibleCols; }
+      visibleCols = new Set(parsed); // may be empty — that's a valid "all hidden" choice
+      return visibleCols;
     }
   } catch(e) {}
   visibleCols = new Set(STAFF.map(s => s.name)); // default: show every column
@@ -2707,13 +2716,18 @@ function saveVisibleCols() {
 function toggleColVisible(name, checked) {
   const cols = getVisibleCols();
   if (checked) cols.add(name);
-  else if (cols.size > 1) cols.delete(name); // never allow hiding every column
+  else cols.delete(name);
   visibleCols = cols;
   saveVisibleCols();
   renderKanban();
 }
 function showAllCols() {
   visibleCols = new Set(STAFF.map(s => s.name));
+  saveVisibleCols();
+  renderKanban();
+}
+function hideAllCols() {
+  visibleCols = new Set();
   saveVisibleCols();
   renderKanban();
 }
@@ -2734,6 +2748,7 @@ function updateColFilterUI() {
   const label = document.getElementById('col-filter-btn-label');
   if (label) {
     if (cols.size === STAFF.length) label.textContent = 'All columns';
+    else if (cols.size === 0) label.textContent = 'No columns';
     else if (cols.size === 1) label.textContent = Array.from(cols)[0];
     else label.textContent = cols.size + ' columns';
   }
@@ -2928,6 +2943,10 @@ function renderKanban() {
   const container = document.getElementById('kanban-cols');
   const cols = getVisibleCols();
   const orderedStaff = getStaffOrder().map(name => STAFF.find(s => s.name === name)).filter(Boolean).filter(s => cols.has(s.name));
+  if (orderedStaff.length === 0) {
+    container.innerHTML = '<div style="padding:40px 20px;color:var(--text-muted);font-size:0.85rem">No columns selected — pick some from the Columns filter above.</div>';
+    return;
+  }
   container.innerHTML = orderedStaff.map(s => {
     const allColTasks = applyTaskFilters(getTasksForColumn(s.name));
     // Pinned ("bumped to top") tasks float above everything else in their
@@ -3145,7 +3164,7 @@ function renderCommentSection(t, actingAs) {
       <div class="comment-author-row">
         <select class="comment-author-select" id="${commentAuthorId(t.id, actingAs)}" onchange="rememberCommentAuthor(this.value)">
           <option value="">— Commenting as… —</option>
-          ${STAFF.map(s => `<option value="${escapeHtml(s.name)}" ${s.name === defaultAuthor ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
+          ${STAFF.filter(s => s.isPerson).map(s => `<option value="${escapeHtml(s.name)}" ${s.name === defaultAuthor ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}
         </select>
       </div>
       <div class="comment-input-row">
