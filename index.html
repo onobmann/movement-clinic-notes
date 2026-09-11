@@ -874,97 +874,121 @@
     display: flex;
     gap: 14px;
     height: 100%;
-    min-width: max-content;
+    width: 100%;
     /* Center columns when they don't fill the row; "safe" keeps them
        scrollable from the start instead of clipping the first column
        when there are enough of them to overflow. */
     justify-content: safe center;
     margin: 0 auto;
   }
-  /* ── Focus mode: exactly one column selected ──────────────────────────────
-     Nothing to compare it against side-by-side, so it stretches out and its
-     tasks lay out as a bigger, denser grid ("waffle") instead of one thin
-     vertical stack. */
-  .kanban-cols.focus-mode {
-    width: 100%;
-  }
-  .kanban-cols.focus-mode .kanban-col {
-    width: min(1180px, 94vw);
-  }
-  .kanban-cols.focus-mode .kanban-col-header {
-    padding: 20px 26px 16px;
-  }
-  .kanban-cols.focus-mode .kanban-col-avatar {
-    width: 38px;
-    height: 38px;
-    font-size: 0.85rem;
-  }
-  .kanban-cols.focus-mode .kanban-col-name {
-    font-size: 1.15rem;
-  }
-  .kanban-cols.focus-mode .kanban-col-count {
-    font-size: 0.78rem;
-    padding: 3px 10px;
-  }
-  .kanban-cols.focus-mode .kanban-add-row {
-    padding: 12px 24px;
-  }
-  .kanban-cols.focus-mode .kanban-add-inline {
-    font-size: 0.9rem;
-    padding: 8px 4px;
-  }
-  .kanban-cols.focus-mode .kanban-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    align-content: start;
-    gap: 16px;
-    padding: 18px 24px 26px;
-  }
-  .kanban-cols.focus-mode .kanban-completed-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 16px;
-  }
-  .kanban-cols.focus-mode .task-section-banner {
-    grid-column: 1 / -1;
-    font-size: 0.72rem;
-    padding: 8px 12px;
-  }
-  .kanban-cols.focus-mode .task-card {
-    padding: 20px 22px 16px;
-    border-radius: 14px;
-  }
-  .kanban-cols.focus-mode .task-check {
-    width: 22px;
-    height: 22px;
-  }
-  .kanban-cols.focus-mode .task-desc-text {
-    font-size: 1.06rem;
-    line-height: 1.6;
-  }
-  .kanban-cols.focus-mode .task-patient-tag,
-  .kanban-cols.focus-mode .task-due,
-  .kanban-cols.focus-mode .task-assigned-by,
-  .kanban-cols.focus-mode .task-created-at,
-  .kanban-cols.focus-mode .co-assignee-chip {
-    font-size: 0.82rem;
-  }
-  .kanban-cols.focus-mode .task-edit-btn,
-  .kanban-cols.focus-mode .task-del-btn,
-  .kanban-cols.focus-mode .task-kickback-btn,
-  .kanban-cols.focus-mode .task-pin-btn {
-    font-size: 0.82rem;
-    padding: 5px 8px;
-  }
+  /* ── Waffle layout: every column grows to soak up empty space ─────────────
+     Columns are flexible (grow + shrink around a 220px basis, floored at
+     220px) instead of a fixed width, so whenever fewer columns are visible
+     than would fill the row, the remaining ones stretch out rather than
+     leaving a gap. Each column is its own CSS containment context, and
+     container queries below key off that column's own rendered width — so
+     a column "waffles" (its tasks switch from a thin vertical stack to a
+     bigger, denser grid) purely because it has the room, whether that's
+     because it's the only column selected or just one of a few on a wide
+     screen. No JS-computed "focus mode" needed. */
   .kanban-col {
-    width: 220px;
-    flex-shrink: 0;
+    flex: 1 1 220px;
+    min-width: 220px;
+    max-width: 1180px;
+    container-type: inline-size;
+    container-name: kcol;
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: 12px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+  }
+  /* Selectors below are prefixed with the .kanban-col ancestor (rather than
+     left bare) purely to out-rank the later, same-name base rules in the
+     cascade — @container blocks don't get any specificity boost of their
+     own, so without this a plain ".kanban-cards { display:grid }" here
+     would lose to a plain ".kanban-cards { display:flex }" that happens to
+     be written further down the stylesheet. */
+  @container kcol (min-width: 400px) {
+    .kanban-col .kanban-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      align-content: start;
+      gap: 14px;
+      padding: 16px 20px 22px;
+    }
+    .kanban-col .kanban-completed-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .kanban-col .task-section-banner {
+      grid-column: 1 / -1;
+    }
+  }
+  @container kcol (min-width: 560px) {
+    .kanban-col .kanban-col-header {
+      padding: 20px 26px 16px;
+    }
+    .kanban-col .kanban-col-avatar {
+      width: 38px;
+      height: 38px;
+      font-size: 0.85rem;
+    }
+    .kanban-col .kanban-col-name {
+      font-size: 1.15rem;
+    }
+    .kanban-col .kanban-col-count {
+      font-size: 0.78rem;
+      padding: 3px 10px;
+    }
+    .kanban-col .kanban-add-row {
+      padding: 12px 24px;
+    }
+    .kanban-col .kanban-add-inline {
+      font-size: 0.9rem;
+      padding: 8px 4px;
+    }
+    .kanban-col .kanban-cards {
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+      padding: 18px 24px 26px;
+    }
+    .kanban-col .kanban-completed-list {
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+    .kanban-col .task-section-banner {
+      font-size: 0.72rem;
+      padding: 8px 12px;
+    }
+    .kanban-col .task-card {
+      padding: 20px 22px 16px;
+      border-radius: 14px;
+    }
+    .kanban-col .task-check {
+      width: 22px;
+      height: 22px;
+    }
+    .kanban-col .task-desc-text {
+      font-size: 1.06rem;
+      line-height: 1.6;
+    }
+    .kanban-col .task-patient-tag,
+    .kanban-col .task-due,
+    .kanban-col .task-assigned-by,
+    .kanban-col .task-created-at,
+    .kanban-col .co-assignee-chip {
+      font-size: 0.82rem;
+    }
+    .kanban-col .task-edit-btn,
+    .kanban-col .task-del-btn,
+    .kanban-col .task-kickback-btn,
+    .kanban-col .task-pin-btn {
+      font-size: 0.82rem;
+      padding: 5px 8px;
+    }
   }
   .kanban-col-header {
     padding: 14px 16px 10px;
@@ -1055,8 +1079,10 @@
      count — everything else (add-task row, cards) is hidden. Clicking
      anywhere in the strip re-expands it. */
   .kanban-col.minimized {
+    flex: 0 0 46px;
     width: 46px;
     min-width: 46px;
+    max-width: 46px;
     cursor: pointer;
   }
   .kanban-col.minimized .kanban-add-row,
@@ -1701,7 +1727,7 @@
   @media (max-width: 480px) {
     #sec-view { flex-direction: column; height: auto; overflow: visible; }
     .patient-list { width: 100%; max-height: 220px; }
-    .kanban-col { width: 180px; }
+    .kanban-col:not(.minimized) { flex-basis: 180px; min-width: 180px; }
     .modal-row { flex-direction: column; gap: 14px; }
     .doctor-btns { flex-direction: column; }
   }
@@ -3025,12 +3051,11 @@ function renderKanban() {
     container.innerHTML = '<div style="padding:40px 20px;color:var(--text-muted);font-size:0.85rem">No columns selected — pick some from the Columns filter above.</div>';
     return;
   }
-  // With exactly one column selected there's nothing to compare it against
-  // side-by-side, so it gets to stretch out: bigger cards, laid out as a
-  // grid ("waffle") instead of a single vertical stack. Two-plus columns
-  // keep the normal side-by-side board.
-  const focusMode = orderedStaff.length === 1 && !getMinimizedCols().has(orderedStaff[0].name);
-  container.className = 'kanban-cols' + (focusMode ? ' focus-mode' : '');
+  // Columns are flexible-width (see .kanban-col CSS) and each one waffles
+  // its own tasks into a bigger grid once it has enough room via CSS
+  // container queries — so fewer columns selected just naturally means
+  // more space per column, and that space gets used automatically.
+  container.className = 'kanban-cols';
   container.innerHTML = orderedStaff.map(s => {
     const allColTasks = applyTaskFilters(getTasksForColumn(s.name));
     // Pinned ("bumped to top") tasks float above everything else in their
