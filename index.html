@@ -990,15 +990,25 @@
       padding: 5px 8px;
     }
   }
+  /* The header is always two predictable pieces stacked vertically: a
+     top row that never wraps (drag handle, avatar, name, count, minimize
+     button — same shape on every column, every time) and, only when a
+     column has kicked-back tasks, a second full-width strip below it for
+     that alert. Nothing ever competes for space within the top row, so it
+     can't reflow differently from one column to the next. */
   .kanban-col-header {
     padding: 14px 16px 10px;
     border-bottom: 1px solid var(--border);
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px 8px;
+    flex-direction: column;
+    gap: 8px;
     flex-shrink: 0;
+  }
+  .kanban-col-toprow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
   }
   .col-drag-handle {
     color: var(--border);
@@ -1021,11 +1031,11 @@
     font-weight: 700;
     color: var(--charcoal);
     letter-spacing: 0.02em;
-    /* Shrinks and truncates instead of pushing the count/alert/minimize
-       button past the column's edge, where they'd get clipped by the
-       column's overflow:hidden and become unreachable. */
+    /* Shrinks and truncates instead of pushing the count/minimize button
+       past the column's edge, where they'd get clipped by the column's
+       overflow:hidden and become unreachable. */
     flex: 1 1 auto;
-    min-width: 50px;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1053,15 +1063,17 @@
     margin-left: auto;
     flex-shrink: 0;
   }
+  .kanban-col-alert-row {
+    display: flex;
+  }
   .kanban-col-alert {
-    font-size: 0.64rem;
+    font-size: 0.66rem;
     font-weight: 700;
     background: #fdeee9;
     border: 1px solid #f0c4b3;
     color: #9a4a2c;
     border-radius: 20px;
-    padding: 2px 7px;
-    flex-shrink: 0;
+    padding: 3px 10px;
   }
   .kanban-col-minimize-btn {
     background: none;
@@ -1076,8 +1088,8 @@
   .kanban-col-minimize-btn:hover { background: var(--surface); color: var(--charcoal); }
   /* Minimized: still a full-height column in its normal spot in the order,
      just shrunk down to a thin strip showing only the avatar, name and
-     count — everything else (add-task row, cards) is hidden. Clicking
-     anywhere in the strip re-expands it. */
+     count — everything else (add-task row, cards, the alert strip) is
+     hidden. Clicking anywhere in the strip re-expands it. */
   .kanban-col.minimized {
     flex: 0 0 46px;
     width: 46px;
@@ -1090,15 +1102,18 @@
     display: none;
   }
   .kanban-col.minimized .kanban-col-header {
-    flex-direction: column;
-    justify-content: flex-start;
     padding: 12px 4px;
-    gap: 10px;
     height: 100%;
     border-bottom: none;
   }
+  .kanban-col.minimized .kanban-col-toprow {
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 10px;
+    height: 100%;
+  }
   .kanban-col.minimized .col-drag-handle,
-  .kanban-col.minimized .kanban-col-alert {
+  .kanban-col.minimized .kanban-col-alert-row {
     display: none;
   }
   .kanban-col.minimized .kanban-col-name {
@@ -3090,19 +3105,21 @@ function renderKanban() {
         ondragend="colDragEnd()"
         ${isMin ? `onclick="toggleColMinimized('${safeN}')" title="Click to expand"` : ''}>
         <div class="kanban-col-header">
-          <svg class="col-drag-handle" width="12" height="12" viewBox="0 0 12 12" fill="currentColor"
-            onmousedown="colHandleMouseDown(event)" onmouseup="colHandleMouseUp(event)" title="Drag to reorder">
-            <rect x="2" y="1" width="2" height="2" rx="1"/><rect x="8" y="1" width="2" height="2" rx="1"/>
-            <rect x="2" y="5" width="2" height="2" rx="1"/><rect x="8" y="5" width="2" height="2" rx="1"/>
-            <rect x="2" y="9" width="2" height="2" rx="1"/><rect x="8" y="9" width="2" height="2" rx="1"/>
-          </svg>
-          <div class="kanban-col-avatar" style="background:${s.bg};color:${s.color}">${s.initials}</div>
-          <span class="kanban-col-name">${safeN}</span>
-          <span class="kanban-col-count">${openTasks.length}</span>
-          ${kickedToMeCount > 0 ? `<span class="kanban-col-alert" title="${kickedToMeCount} task${kickedToMeCount === 1 ? '' : 's'} kicked back to this column">+${kickedToMeCount} back</span>` : ''}
-          <button class="kanban-col-minimize-btn" onclick="event.stopPropagation();toggleColMinimized('${safeN}')" title="${isMin ? 'Expand column' : 'Minimize column'}">
-            ${minimizeIcon}
-          </button>
+          <div class="kanban-col-toprow">
+            <svg class="col-drag-handle" width="12" height="12" viewBox="0 0 12 12" fill="currentColor"
+              onmousedown="colHandleMouseDown(event)" onmouseup="colHandleMouseUp(event)" title="Drag to reorder">
+              <rect x="2" y="1" width="2" height="2" rx="1"/><rect x="8" y="1" width="2" height="2" rx="1"/>
+              <rect x="2" y="5" width="2" height="2" rx="1"/><rect x="8" y="5" width="2" height="2" rx="1"/>
+              <rect x="2" y="9" width="2" height="2" rx="1"/><rect x="8" y="9" width="2" height="2" rx="1"/>
+            </svg>
+            <div class="kanban-col-avatar" style="background:${s.bg};color:${s.color}">${s.initials}</div>
+            <span class="kanban-col-name">${safeN}</span>
+            <span class="kanban-col-count">${openTasks.length}</span>
+            <button class="kanban-col-minimize-btn" onclick="event.stopPropagation();toggleColMinimized('${safeN}')" title="${isMin ? 'Expand column' : 'Minimize column'}">
+              ${minimizeIcon}
+            </button>
+          </div>
+          ${kickedToMeCount > 0 ? `<div class="kanban-col-alert-row"><span class="kanban-col-alert" title="${kickedToMeCount} task${kickedToMeCount === 1 ? '' : 's'} kicked back to this column">+${kickedToMeCount} back</span></div>` : ''}
         </div>
         <div class="kanban-add-row">
           <button class="kanban-add-inline" onclick="openTaskModal('${escapeHtml(s.name)}')">
