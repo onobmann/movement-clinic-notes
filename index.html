@@ -819,16 +819,18 @@
   }
   .col-filter-wrap { position: relative; }
   .col-filter-panel {
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 0;
-    z-index: 20;
+    /* Fixed (not absolute) so it renders above everything else on the page
+       and is never clipped by an ancestor's overflow:hidden (several
+       containers between here and the button have one). Top/left are set
+       from JS when it opens, positioned off the button's actual location. */
+    position: fixed;
+    z-index: 9999;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 9px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-    padding: 10px;
-    min-width: 190px;
+    border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+    padding: 12px;
+    width: min(680px, 94vw);
   }
   .col-filter-panel-actions {
     display: flex;
@@ -849,7 +851,8 @@
     cursor: pointer;
   }
   .col-filter-panel-actions button:hover { border-color: var(--accent); }
-  .col-filter-list { display: flex; flex-direction: column; gap: 2px; max-height: 260px; overflow-y: auto; }
+  /* Grid, not a scrolling column — every option should be visible at once. */
+  .col-filter-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 2px 8px; max-height: none; overflow: visible; }
   .col-filter-item {
     display: flex;
     align-items: center;
@@ -2731,11 +2734,38 @@ function hideAllCols() {
   saveVisibleCols();
   renderKanban();
 }
+function positionColFilterPanel() {
+  const panel = document.getElementById('col-filter-panel');
+  const btn = document.getElementById('col-filter-btn');
+  if (!panel || !btn) return;
+  const rect = btn.getBoundingClientRect();
+  panel.style.top = (rect.bottom + 6) + 'px';
+  panel.style.left = rect.left + 'px';
+  // Nudge back on-screen if the panel would run off the right/bottom edge —
+  // it's wide now that every option shows at once, so this matters more
+  // than it used to.
+  const pw = panel.offsetWidth, ph = panel.offsetHeight;
+  const maxLeft = window.innerWidth - pw - 12;
+  if (rect.left > maxLeft) panel.style.left = Math.max(12, maxLeft) + 'px';
+  const maxTop = window.innerHeight - ph - 12;
+  if (rect.bottom + 6 > maxTop) panel.style.top = Math.max(12, maxTop) + 'px';
+}
 function toggleColFilterPanel(e) {
   if (e) e.stopPropagation();
   const panel = document.getElementById('col-filter-panel');
-  if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  if (!panel) return;
+  const opening = panel.style.display === 'none' || !panel.style.display;
+  if (opening) {
+    panel.style.display = 'block';
+    positionColFilterPanel();
+  } else {
+    panel.style.display = 'none';
+  }
 }
+window.addEventListener('resize', () => {
+  const panel = document.getElementById('col-filter-panel');
+  if (panel && panel.style.display !== 'none') positionColFilterPanel();
+});
 document.addEventListener('click', (e) => {
   const wrap = document.getElementById('col-filter-wrap');
   const panel = document.getElementById('col-filter-panel');
