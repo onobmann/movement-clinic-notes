@@ -817,6 +817,53 @@
     padding: 1px 7px;
     margin-left: -2px;
   }
+  .col-filter-wrap { position: relative; }
+  .col-filter-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 20;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    padding: 10px;
+    min-width: 190px;
+  }
+  .col-filter-panel-actions {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .col-filter-panel-actions button {
+    flex: 1;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--accent-dark);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 6px;
+    cursor: pointer;
+  }
+  .col-filter-panel-actions button:hover { border-color: var(--accent); }
+  .col-filter-list { display: flex; flex-direction: column; gap: 2px; max-height: 260px; overflow-y: auto; }
+  .col-filter-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text);
+    padding: 5px 4px;
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .col-filter-item:hover { background: var(--surface2); }
+  .col-filter-item input { cursor: pointer; }
   .kanban-scroll {
     flex: 1;
     overflow-x: auto;
@@ -1803,6 +1850,18 @@
         <input type="checkbox" id="filter-sort-due" onchange="toggleSortByDue(this.checked)">
         Sort by due date
       </label>
+      <div class="col-filter-wrap" id="col-filter-wrap">
+        <button type="button" class="filter-sort-toggle" id="col-filter-btn" onclick="toggleColFilterPanel(event)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
+          <span id="col-filter-btn-label">All columns</span>
+        </button>
+        <div class="col-filter-panel" id="col-filter-panel" style="display:none">
+          <div class="col-filter-panel-actions">
+            <button type="button" onclick="showAllCols()">Show all</button>
+          </div>
+          <div class="col-filter-list" id="col-filter-list"></div>
+        </div>
+      </div>
       <span id="filter-active-count"></span>
       <button class="filter-clear-btn" id="filter-clear-btn" onclick="clearTaskFilters()" style="display:none">Clear filters</button>
     </div>
@@ -1825,6 +1884,7 @@
       <div class="modal-field">
         <label class="modal-label">Assign to <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted);font-size:0.67rem">(select one or more — first to complete removes it from all)</span></label>
         <div class="assignee-pills" id="assignee-checkboxes">
+          <label class="assignee-pill"><input type="checkbox" name="assignee" value="Bella"><span>Bella</span></label>
           <label class="assignee-pill"><input type="checkbox" name="assignee" value="Bree"><span>Bree</span></label>
           <label class="assignee-pill"><input type="checkbox" name="assignee" value="Christy"><span>Christy</span></label>
           <label class="assignee-pill"><input type="checkbox" name="assignee" value="Dr. Hodson"><span>Dr. Hodson</span></label>
@@ -1840,6 +1900,7 @@
         <label class="modal-label">Task Assignee</label>
         <select id="task-assigned-by" class="modal-select" onchange="rememberAssignedBy(this.value)">
           <option value="">— Select person —</option>
+          <option value="Bella">Bella</option>
           <option value="Bree">Bree</option>
           <option value="Dr. Hodson">Dr. Hodson</option>
           <option value="Dr. Meyers">Dr. Meyers</option>
@@ -2444,6 +2505,7 @@ function showToast(msg) {
 
 // ── Tasks ─────────────────────────────────────────────────────────────────────
 const STAFF = [
+  { name: 'Bella',       initials: 'BE', color: '#0e7c86', bg: '#e3f3f4' },
   { name: 'Bree',        initials: 'BR', color: '#9c3b8a', bg: '#f9eaf7' },
   { name: 'Christy',    initials: 'CH', color: '#185fa5', bg: '#e6f1fb' },
   { name: 'Dr. Hodson', initials: 'DH', color: '#5b4fcf', bg: '#eeedfe' },
@@ -2622,6 +2684,69 @@ function colDragEnd() {
     .forEach(el => el.setAttribute('draggable', 'false'));
   dragSourceCol = null;
 }
+
+// ── Column visibility filter (which staff columns are shown) ────────────────
+// Pick any combination of columns from the dropdown checklist. Selection
+// persists per browser in localStorage.
+let visibleCols = null; // Set of staff names currently shown; null = not loaded yet
+function getVisibleCols() {
+  if (visibleCols) return visibleCols;
+  try {
+    const saved = localStorage.getItem('mc_visible_cols');
+    if (saved) {
+      const parsed = JSON.parse(saved).filter(n => STAFF_NAMES.has(n));
+      if (parsed.length > 0) { visibleCols = new Set(parsed); return visibleCols; }
+    }
+  } catch(e) {}
+  visibleCols = new Set(STAFF.map(s => s.name)); // default: show every column
+  return visibleCols;
+}
+function saveVisibleCols() {
+  try { localStorage.setItem('mc_visible_cols', JSON.stringify(Array.from(visibleCols))); } catch(e) {}
+}
+function toggleColVisible(name, checked) {
+  const cols = getVisibleCols();
+  if (checked) cols.add(name);
+  else if (cols.size > 1) cols.delete(name); // never allow hiding every column
+  visibleCols = cols;
+  saveVisibleCols();
+  renderKanban();
+}
+function showAllCols() {
+  visibleCols = new Set(STAFF.map(s => s.name));
+  saveVisibleCols();
+  renderKanban();
+}
+function toggleColFilterPanel(e) {
+  if (e) e.stopPropagation();
+  const panel = document.getElementById('col-filter-panel');
+  if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('col-filter-wrap');
+  const panel = document.getElementById('col-filter-panel');
+  if (wrap && panel && panel.style.display !== 'none' && !wrap.contains(e.target)) {
+    panel.style.display = 'none';
+  }
+});
+function updateColFilterUI() {
+  const cols = getVisibleCols();
+  const label = document.getElementById('col-filter-btn-label');
+  if (label) {
+    if (cols.size === STAFF.length) label.textContent = 'All columns';
+    else if (cols.size === 1) label.textContent = Array.from(cols)[0];
+    else label.textContent = cols.size + ' columns';
+  }
+  const list = document.getElementById('col-filter-list');
+  if (list) {
+    list.innerHTML = STAFF.map(s => `
+      <label class="col-filter-item">
+        <input type="checkbox" value="${escapeHtml(s.name)}" ${cols.has(s.name) ? 'checked' : ''}
+          onchange="toggleColVisible('${escapeHtml(s.name)}', this.checked)">
+        <span>${escapeHtml(s.name)}</span>
+      </label>`).join('');
+  }
+}
 // The task always lives with whoever the LAST thread entry was addressed
 // to — whether that entry was a question, a reply, or a resolution. This is
 // what makes back-and-forth possible: resolving hands the task back to
@@ -2799,8 +2924,10 @@ async function reloadTasks() {
 }
 
 function renderKanban() {
+  updateColFilterUI();
   const container = document.getElementById('kanban-cols');
-  const orderedStaff = getStaffOrder().map(name => STAFF.find(s => s.name === name)).filter(Boolean);
+  const cols = getVisibleCols();
+  const orderedStaff = getStaffOrder().map(name => STAFF.find(s => s.name === name)).filter(Boolean).filter(s => cols.has(s.name));
   container.innerHTML = orderedStaff.map(s => {
     const allColTasks = applyTaskFilters(getTasksForColumn(s.name));
     // Pinned ("bumped to top") tasks float above everything else in their
