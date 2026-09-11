@@ -970,9 +970,10 @@
     padding: 14px 16px 10px;
     border-bottom: 1px solid var(--border);
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    gap: 6px 8px;
     flex-shrink: 0;
   }
   .col-drag-handle {
@@ -996,6 +997,14 @@
     font-weight: 700;
     color: var(--charcoal);
     letter-spacing: 0.02em;
+    /* Shrinks and truncates instead of pushing the count/alert/minimize
+       button past the column's edge, where they'd get clipped by the
+       column's overflow:hidden and become unreachable. */
+    flex: 1 1 auto;
+    min-width: 50px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .kanban-col-avatar {
     width: 28px;
@@ -1018,6 +1027,7 @@
     padding: 2px 8px;
     color: var(--text-muted);
     margin-left: auto;
+    flex-shrink: 0;
   }
   .kanban-col-alert {
     font-size: 0.64rem;
@@ -1027,6 +1037,7 @@
     color: #9a4a2c;
     border-radius: 20px;
     padding: 2px 7px;
+    flex-shrink: 0;
   }
   .kanban-col-minimize-btn {
     background: none;
@@ -3063,7 +3074,7 @@ function renderKanban() {
           <div class="kanban-col-avatar" style="background:${s.bg};color:${s.color}">${s.initials}</div>
           <span class="kanban-col-name">${safeN}</span>
           <span class="kanban-col-count">${openTasks.length}</span>
-          ${kickedToMeCount > 0 ? `<span class="kanban-col-alert">+${kickedToMeCount} kicked back</span>` : ''}
+          ${kickedToMeCount > 0 ? `<span class="kanban-col-alert" title="${kickedToMeCount} task${kickedToMeCount === 1 ? '' : 's'} kicked back to this column">+${kickedToMeCount} back</span>` : ''}
           <button class="kanban-col-minimize-btn" onclick="event.stopPropagation();toggleColMinimized('${safeN}')" title="${isMin ? 'Expand column' : 'Minimize column'}">
             ${minimizeIcon}
           </button>
