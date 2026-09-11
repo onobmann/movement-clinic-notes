@@ -951,6 +951,53 @@
     border-radius: 20px;
     padding: 2px 7px;
   }
+  .kanban-col-minimize-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 3px;
+    border-radius: 5px;
+    display: flex;
+    flex-shrink: 0;
+  }
+  .kanban-col-minimize-btn:hover { background: var(--surface); color: var(--charcoal); }
+  /* Minimized: still a full-height column in its normal spot in the order,
+     just shrunk down to a thin strip showing only the avatar, name and
+     count — everything else (add-task row, cards) is hidden. Clicking
+     anywhere in the strip re-expands it. */
+  .kanban-col.minimized {
+    width: 46px;
+    min-width: 46px;
+    cursor: pointer;
+  }
+  .kanban-col.minimized .kanban-add-row,
+  .kanban-col.minimized .kanban-cards {
+    display: none;
+  }
+  .kanban-col.minimized .kanban-col-header {
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 12px 4px;
+    gap: 10px;
+    height: 100%;
+    border-bottom: none;
+  }
+  .kanban-col.minimized .col-drag-handle,
+  .kanban-col.minimized .kanban-col-alert {
+    display: none;
+  }
+  .kanban-col.minimized .kanban-col-name {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    white-space: nowrap;
+  }
+  .kanban-col.minimized .kanban-col-count {
+    margin-left: 0;
+  }
+  .kanban-col.minimized .kanban-col-minimize-btn {
+    margin-top: auto;
+  }
   .kanban-cards {
     flex: 1;
     overflow-y: auto;
@@ -2673,6 +2720,37 @@ function updateColFilterUI() {
       </label>`).join('');
   }
 }
+
+// ── Column minimize (separate from the visibility filter above) ────────────
+// Minimizing keeps the column on the board, in its normal place in the
+// order, but shrinks it down to just the name + task count so you can park
+// columns you don't need right now without losing your "which ones are
+// selected" filter state. Persisted per browser, same pattern as the rest.
+let minimizedCols = null;
+function getMinimizedCols() {
+  if (minimizedCols) return minimizedCols;
+  try {
+    const saved = localStorage.getItem('mc_minimized_cols');
+    if (saved !== null) {
+      minimizedCols = new Set(JSON.parse(saved).filter(n => STAFF_NAMES.has(n)));
+      return minimizedCols;
+    }
+  } catch(e) {}
+  minimizedCols = new Set();
+  return minimizedCols;
+}
+function saveMinimizedCols() {
+  try { localStorage.setItem('mc_minimized_cols', JSON.stringify(Array.from(minimizedCols))); } catch(e) {}
+}
+function toggleColMinimized(name) {
+  const cols = getMinimizedCols();
+  if (cols.has(name)) cols.delete(name);
+  else cols.add(name);
+  minimizedCols = cols;
+  saveMinimizedCols();
+  renderKanban();
+}
+
 // The task always lives with whoever the LAST thread entry was addressed
 // to — whether that entry was a question, a reply, or a resolution. This is
 // what makes back-and-forth possible: resolving hands the task back to
@@ -2878,14 +2956,19 @@ function renderKanban() {
     const chevronSvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
     const colId = 'kcol-' + s.name.replace(/[^a-zA-Z0-9]/g, '');
     const safeN = escapeHtml(s.name);
+    const isMin = getMinimizedCols().has(s.name);
+    const minimizeIcon = isMin
+      ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`
+      : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>`;
     return `
-      <div class="kanban-col" id="${colId}"
+      <div class="kanban-col${isMin ? ' minimized' : ''}" id="${colId}"
         draggable="false"
         ondragstart="colDragStart(event,'${safeN}')"
         ondragover="colDragOver(event,'${safeN}')"
         ondragleave="colDragLeave(event,'${safeN}')"
         ondrop="colDrop(event,'${safeN}')"
-        ondragend="colDragEnd()">
+        ondragend="colDragEnd()"
+        ${isMin ? `onclick="toggleColMinimized('${safeN}')" title="Click to expand"` : ''}>
         <div class="kanban-col-header">
           <svg class="col-drag-handle" width="12" height="12" viewBox="0 0 12 12" fill="currentColor"
             onmousedown="colHandleMouseDown(event)" onmouseup="colHandleMouseUp(event)" title="Drag to reorder">
@@ -2897,6 +2980,9 @@ function renderKanban() {
           <span class="kanban-col-name">${safeN}</span>
           <span class="kanban-col-count">${openTasks.length}</span>
           ${kickedToMeCount > 0 ? `<span class="kanban-col-alert">+${kickedToMeCount} kicked back</span>` : ''}
+          <button class="kanban-col-minimize-btn" onclick="event.stopPropagation();toggleColMinimized('${safeN}')" title="${isMin ? 'Expand column' : 'Minimize column'}">
+            ${minimizeIcon}
+          </button>
         </div>
         <div class="kanban-add-row">
           <button class="kanban-add-inline" onclick="openTaskModal('${escapeHtml(s.name)}')">
