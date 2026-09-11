@@ -875,6 +875,86 @@
     gap: 14px;
     height: 100%;
     min-width: max-content;
+    /* Center columns when they don't fill the row; "safe" keeps them
+       scrollable from the start instead of clipping the first column
+       when there are enough of them to overflow. */
+    justify-content: safe center;
+    margin: 0 auto;
+  }
+  /* ── Focus mode: exactly one column selected ──────────────────────────────
+     Nothing to compare it against side-by-side, so it stretches out and its
+     tasks lay out as a bigger, denser grid ("waffle") instead of one thin
+     vertical stack. */
+  .kanban-cols.focus-mode {
+    width: 100%;
+  }
+  .kanban-cols.focus-mode .kanban-col {
+    width: min(1180px, 94vw);
+  }
+  .kanban-cols.focus-mode .kanban-col-header {
+    padding: 20px 26px 16px;
+  }
+  .kanban-cols.focus-mode .kanban-col-avatar {
+    width: 38px;
+    height: 38px;
+    font-size: 0.85rem;
+  }
+  .kanban-cols.focus-mode .kanban-col-name {
+    font-size: 1.15rem;
+  }
+  .kanban-cols.focus-mode .kanban-col-count {
+    font-size: 0.78rem;
+    padding: 3px 10px;
+  }
+  .kanban-cols.focus-mode .kanban-add-row {
+    padding: 12px 24px;
+  }
+  .kanban-cols.focus-mode .kanban-add-inline {
+    font-size: 0.9rem;
+    padding: 8px 4px;
+  }
+  .kanban-cols.focus-mode .kanban-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    align-content: start;
+    gap: 16px;
+    padding: 18px 24px 26px;
+  }
+  .kanban-cols.focus-mode .kanban-completed-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  .kanban-cols.focus-mode .task-section-banner {
+    grid-column: 1 / -1;
+    font-size: 0.72rem;
+    padding: 8px 12px;
+  }
+  .kanban-cols.focus-mode .task-card {
+    padding: 20px 22px 16px;
+    border-radius: 14px;
+  }
+  .kanban-cols.focus-mode .task-check {
+    width: 22px;
+    height: 22px;
+  }
+  .kanban-cols.focus-mode .task-desc-text {
+    font-size: 1.06rem;
+    line-height: 1.6;
+  }
+  .kanban-cols.focus-mode .task-patient-tag,
+  .kanban-cols.focus-mode .task-due,
+  .kanban-cols.focus-mode .task-assigned-by,
+  .kanban-cols.focus-mode .task-created-at,
+  .kanban-cols.focus-mode .co-assignee-chip {
+    font-size: 0.82rem;
+  }
+  .kanban-cols.focus-mode .task-edit-btn,
+  .kanban-cols.focus-mode .task-del-btn,
+  .kanban-cols.focus-mode .task-kickback-btn,
+  .kanban-cols.focus-mode .task-pin-btn {
+    font-size: 0.82rem;
+    padding: 5px 8px;
   }
   .kanban-col {
     width: 220px;
@@ -2930,9 +3010,16 @@ function renderKanban() {
   const cols = getVisibleCols();
   const orderedStaff = getStaffOrder().map(name => STAFF.find(s => s.name === name)).filter(Boolean).filter(s => cols.has(s.name));
   if (orderedStaff.length === 0) {
+    container.className = 'kanban-cols';
     container.innerHTML = '<div style="padding:40px 20px;color:var(--text-muted);font-size:0.85rem">No columns selected — pick some from the Columns filter above.</div>';
     return;
   }
+  // With exactly one column selected there's nothing to compare it against
+  // side-by-side, so it gets to stretch out: bigger cards, laid out as a
+  // grid ("waffle") instead of a single vertical stack. Two-plus columns
+  // keep the normal side-by-side board.
+  const focusMode = orderedStaff.length === 1 && !getMinimizedCols().has(orderedStaff[0].name);
+  container.className = 'kanban-cols' + (focusMode ? ' focus-mode' : '');
   container.innerHTML = orderedStaff.map(s => {
     const allColTasks = applyTaskFilters(getTasksForColumn(s.name));
     // Pinned ("bumped to top") tasks float above everything else in their
