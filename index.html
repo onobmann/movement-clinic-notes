@@ -1755,7 +1755,14 @@
     pointer-events: none;
   }
   /* -- Peptide tracker ------------------------------------------------------ */
-  .pep-col { flex-basis: 220px; min-width: 200px; }
+  .pep-col { flex-basis: 220px; min-width: 200px; max-width: 260px; transition: flex-basis 0.2s ease, min-width 0.2s ease, max-width 0.2s ease; }
+  .pep-col.pep-col-empty { flex: 0 0 64px; min-width: 64px; max-width: 64px; }
+  .pep-col.pep-col-empty .kanban-col-header { padding: 10px 4px; align-items: center; text-align: center; }
+  .pep-col.pep-col-empty .kanban-col-name {
+    font-size: 0.62rem; line-height: 1.2; white-space: normal; word-break: break-word;
+    text-align: center;
+  }
+  .pep-col.pep-col-empty .kanban-cards { display: none; }
   .pep-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -3980,7 +3987,7 @@ function renderPeptideBoard() {
         '</div>';
     }).join('');
     return '' +
-      '<div class="kanban-col pep-col" ondragover="pepColDragOver(event)" ondragleave="pepColDragLeave(event)" ondrop="pepColDrop(event,\'' + stage.key + '\')">' +
+      '<div class="kanban-col pep-col' + (cards.length === 0 ? ' pep-col-empty' : '') + '" title="' + escapeHtml(stage.label) + '" ondragover="pepColDragOver(event)" ondragleave="pepColDragLeave(event)" ondrop="pepColDrop(event,\'' + stage.key + '\')">' +
         '<div class="kanban-col-header">' +
           '<span class="kanban-col-name">' + stage.label + '</span>' +
           '<span class="kanban-col-count">' + cards.length + '</span>' +
