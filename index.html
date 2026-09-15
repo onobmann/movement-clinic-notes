@@ -1782,6 +1782,7 @@
   }
   .pep-card-meta { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; }
   .pep-card-files { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; }
+  .pep-card-consult { color: var(--accent-dark); font-weight: 600; }
   .pep-move-select {
     margin-top: 8px; width: 100%; font-size: 0.72rem; padding: 5px 8px;
     border: 1px solid var(--border); border-radius: 7px; background: var(--surface2);
@@ -3984,6 +3985,7 @@ function renderPeptideBoard() {
           'onclick="openPeptideDetail(\'' + patient.id + '\')">' +
           '<div class="pep-card-name">' + escapeHtml(patient.name) + (multiOrder ? ' <span class="pep-order-badge">Order ' + (orderIndex + 1) + '</span>' : '') + '</div>' +
           (order.orderNumber ? '<div class="pep-card-meta">#' + escapeHtml(order.orderNumber) + (order.orderDate ? ' · ' + order.orderDate : '') + '</div>' : '') +
+          (order.consultDate ? '<div class="pep-card-meta pep-card-consult">🩺 ' + formatTime(order.consultDate) + (order.consultDoctor ? ' — ' + escapeHtml(order.consultDoctor) : '') + '</div>' : '') +
           '<div class="pep-card-meta">' + (lastEntry ? formatTime(lastEntry.at) : '') + '</div>' +
           (filesCount ? '<div class="pep-card-files">' + filesCount + ' file' + (filesCount === 1 ? '' : 's') + ' attached</div>' : '') +
           ageHtml +
@@ -4184,6 +4186,21 @@ function renderPeptideOrderBlock(patient, order, orderIndex, isActive) {
       '</div>' +
       '<div class="modal-row">' +
         '<div class="modal-field" style="flex:1">' +
+          '<label class="modal-label">Consult date &amp; time</label>' +
+          '<input type="datetime-local" class="modal-input" id="' + orderMetaId + '-consultat" value="' + (order.consultDate ? toLocalInputValue(order.consultDate) : '') + '">' +
+        '</div>' +
+        '<div class="modal-field" style="flex:1">' +
+          '<label class="modal-label">Doctor</label>' +
+          '<select class="modal-select" id="' + orderMetaId + '-consultdoc">' +
+            '<option value=""' + (!order.consultDoctor ? ' selected' : '') + '>\u2014 Select \u2014</option>' +
+            '<option value="Dr. Meyers"' + (order.consultDoctor === 'Dr. Meyers' ? ' selected' : '') + '>Dr. Meyers</option>' +
+            '<option value="Dr. Hodson"' + (order.consultDoctor === 'Dr. Hodson' ? ' selected' : '') + '>Dr. Hodson</option>' +
+          '</select>' +
+        '</div>' +
+        '<button class="modal-submit" style="align-self:flex-end;padding:9px 16px;font-size:0.78rem" onclick="saveConsultInfo(\'' + patient.id + '\',\'' + order.id + '\',\'' + orderMetaId + '\')">Save</button>' +
+      '</div>' +
+      '<div class="modal-row">' +
+        '<div class="modal-field" style="flex:1">' +
           '<label class="modal-label">Peptides tracking #</label>' +
           '<input type="text" class="modal-input" id="' + orderMetaId + '-trackpep" value="' + escapeHtml(order.trackingPeptides || '') + '" placeholder="Carrier tracking #">' +
         '</div>' +
@@ -4335,6 +4352,26 @@ async function saveOrderMeta(patientId, orderId, rowId) {
     renderPeptideDetail(patientId);
     renderPeptideBoard();
     showToast('Order info saved');
+  } catch (err) {
+    showToast('Could not save: ' + err.message);
+  }
+}
+async function saveConsultInfo(patientId, orderId, rowId) {
+  const atLocal = document.getElementById(rowId + '-consultat').value;
+  const consultDoctor = document.getElementById(rowId + '-consultdoc').value;
+  const consultDate = atLocal ? new Date(atLocal).toISOString() : '';
+  try {
+    const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ updateConsult: { orderId, consultDate, consultDoctor } }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allPeptides.findIndex(p => p.id === patientId);
+    if (idx !== -1) allPeptides[idx] = updated;
+    renderPeptideDetail(patientId);
+    renderPeptideBoard();
+    showToast('Consult info saved');
   } catch (err) {
     showToast('Could not save: ' + err.message);
   }
