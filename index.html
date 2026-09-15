@@ -1754,6 +1754,67 @@
     z-index: 9998;
     pointer-events: none;
   }
+  /* -- Peptide tracker ------------------------------------------------------ */
+  .pep-col { flex-basis: 220px; min-width: 200px; }
+  .pep-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: grab;
+    transition: box-shadow 0.15s, border-color 0.15s;
+  }
+  .pep-card:hover { border-color: var(--accent); box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+  .pep-card.completed { opacity: 0.75; }
+  .pep-card-name { font-weight: 700; font-size: 0.86rem; color: var(--charcoal); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .pep-order-badge {
+    font-size: 0.62rem; font-weight: 700; padding: 2px 7px; border-radius: 10px;
+    background: #fdf3e0; border: 1px solid var(--accent); color: var(--accent-dark);
+  }
+  .pep-card-meta { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; }
+  .pep-card-files { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; }
+  .pep-move-select {
+    margin-top: 8px; width: 100%; font-size: 0.72rem; padding: 5px 8px;
+    border: 1px solid var(--border); border-radius: 7px; background: var(--surface2);
+    color: var(--text-muted); cursor: pointer;
+  }
+  .pep-col.drag-over { background: rgba(207,178,92,0.12); border-radius: 12px; }
+  .pep-detail-box { max-width: 620px; max-height: 85vh; display: flex; flex-direction: column; }
+  .pep-detail-box .modal-body { overflow-y: auto; }
+  .pep-section-title {
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-muted); margin: 4px 0 2px;
+  }
+  .pep-history-row {
+    border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; overflow: hidden;
+  }
+  .pep-history-summary {
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    padding: 8px 10px; cursor: pointer; background: var(--surface2); font-size: 0.8rem;
+  }
+  .pep-history-summary strong { color: var(--charcoal); }
+  .pep-history-detail { display: none; padding: 10px; gap: 8px; flex-direction: column; }
+  .pep-history-detail.open { display: flex; }
+  .pep-file-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; font-size: 0.8rem;
+  }
+  .pep-file-row a { color: var(--accent-dark); font-weight: 600; text-decoration: none; }
+  .pep-file-row a:hover { text-decoration: underline; }
+  .pep-order-block { border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 10px; }
+  .pep-card-age {
+    display: inline-block; font-size: 0.66rem; font-weight: 700; padding: 2px 8px;
+    border-radius: 10px; margin-top: 6px;
+  }
+  .pep-card-age.age-ok { background: var(--surface2); color: var(--text-muted); }
+  .pep-card-age.age-warn { background: #fdf1d9; color: #96690c; border: 1px solid #eecb8a; }
+  .pep-card-age.age-alert { background: #fbe4e1; color: var(--danger); border: 1px solid #f0b3ab; }
+  .pep-stuck-summary {
+    font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 20px;
+    background: #fbe4e1; color: var(--danger); border: 1px solid #f0b3ab; white-space: nowrap;
+  }
+  .pep-stuck-summary.none { background: var(--surface2); color: var(--text-muted); border-color: var(--border); }
 </style>
 </head>
 <body>
@@ -1769,6 +1830,7 @@
       <button class="toggle-btn active" onclick="setView('dr', this)">Doctor</button>
       <button class="toggle-btn" onclick="setView('sec', this)">Care Team</button>
       <button class="toggle-btn" onclick="setView('tasks', this)">Tasks</button>
+      <button class="toggle-btn" onclick="setView('peptides', this)">Peptides</button>
     </div>
   </div>
 </header>
@@ -1928,6 +1990,41 @@
   </div>
 </div>
 
+<!-- PEPTIDES VIEW -->
+<div id="peptides-view" class="view">
+  <div class="tasks-wrap">
+    <div class="tasks-topbar">
+      <div>
+        <h2 class="tasks-heading">Peptide Tracker</h2>
+        <p class="tasks-sub">Drag a tile between stages, or use its dropdown</p>
+      </div>
+      <span class="pep-stuck-summary" id="pep-stuck-summary" style="display:none"></span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="refresh-btn" id="peptides-refresh-btn" onclick="loadPeptides()" title="Refresh" style="color:var(--text-muted);padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--surface)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+        </button>
+        <button class="task-add-btn" onclick="openAddPeptideModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Add Patient
+        </button>
+      </div>
+    </div>
+    <div class="tasks-filterbar">
+      <span class="filter-label">Filter</span>
+      <div class="filter-search-wrap">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" class="filter-search-input" id="pep-search" placeholder="Search patient name…" oninput="renderPeptideBoard()" autocomplete="off">
+      </div>
+    </div>
+    <div class="kanban-scroll">
+      <div class="kanban-cols" id="pep-cols"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ADD TASK MODAL -->
 <div id="task-modal" class="modal-overlay" onclick="closeTaskModalOutside(event)">
   <div class="modal-box">
@@ -2031,6 +2128,41 @@
       <button class="modal-cancel" onclick="closeKickBackModal()">Cancel</button>
       <button class="modal-submit" id="kickback-submit-btn" onclick="submitKickBack()">Send</button>
     </div>
+  </div>
+</div>
+
+<!-- ADD PATIENT MODAL -->
+<div id="pep-add-modal" class="modal-overlay" onclick="if(event.target===this) closeAddPeptideModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">New Peptide Patient</span>
+      <button class="modal-close" onclick="closeAddPeptideModal()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field">
+        <label class="modal-label">Patient name</label>
+        <input type="text" id="pep-new-name" class="modal-input" placeholder="Full name" onkeydown="if(event.key==='Enter') submitAddPeptide()">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeAddPeptideModal()">Cancel</button>
+      <button class="modal-submit" id="pep-add-submit-btn" onclick="submitAddPeptide()">Add Patient</button>
+    </div>
+  </div>
+</div>
+
+<!-- PEPTIDE DETAIL MODAL -->
+<div id="pep-detail-modal" class="modal-overlay" onclick="if(event.target===this) closePeptideDetail()">
+  <div class="modal-box pep-detail-box">
+    <div class="modal-header">
+      <span class="modal-title" id="pep-detail-title">Patient</span>
+      <button class="modal-close" onclick="closePeptideDetail()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="pep-detail-body"></div>
   </div>
 </div>
 
@@ -2180,6 +2312,12 @@ function setView(view, btn) {
     startTaskPolling();
   } else {
     stopTaskPolling();
+  }
+  if (view === 'peptides') {
+    loadPeptides();
+    startPeptidePolling();
+  } else {
+    stopPeptidePolling();
   }
 }
 // ── Doctor selection ──────────────────────────────────────────────────────────
@@ -2603,6 +2741,21 @@ let kickBackMode = 'send'; // 'send' (question/reply) or 'resolve' (closing repl
 // collapsed, rather than ones they've opened.
 const collapsedThreads = new Set();
 let taskPollInterval = null;
+// -- Peptide tracker state --------------------------------------------------
+const PEPTIDE_STAGES = [
+  { key: 'consult_scheduled', label: 'Consult Scheduled' },
+  { key: 'pricing_sent', label: 'Pricing Guide Sent' },
+  { key: 'purchased', label: 'Purchased' },
+  { key: 'ordered_shipped', label: 'Ordered & Shipped' },
+  { key: 'recon_shipped', label: 'Recon Kit Shipped' },
+  { key: 'dosing_sent', label: 'Dosing Guide Sent' },
+  { key: 'tracking_sent', label: 'Tracking Sent' },
+  { key: 'received', label: 'Peptides Received' },
+];
+let allPeptides = [];
+let peptidePollInterval = null;
+let pepDragData = null;
+let pepDetailPatientId = null;
 
 // Comments are collapsed by default (opposite of threads) — the whole point
 // is to keep the card compact until someone actually wants to read/add one.
@@ -3725,6 +3878,488 @@ async function submitTask() {
     btn.textContent = editingTaskId ? 'Save Changes' : 'Add Task';
     btn.disabled = false;
     showToast('Could not save task: ' + err.message);
+  }
+}
+// -- Peptide tracker ----------------------------------------------------------
+function stageLabel(key) {
+  const s = PEPTIDE_STAGES.find(s => s.key === key);
+  return s ? s.label : key;
+}
+async function loadPeptides() {
+  try {
+    const res = await fetch(WORKER_URL + '/peptides');
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    allPeptides = await res.json();
+    renderPeptideBoard();
+  } catch (err) {
+    const el = document.getElementById('pep-cols');
+    if (el) el.innerHTML = '<p style="color:var(--danger);padding:20px">Could not load peptide tracker: ' + escapeHtml(err.message) + '</p>';
+  }
+}
+function startPeptidePolling() {
+  if (peptidePollInterval) return;
+  let lastKey = null;
+  peptidePollInterval = setInterval(async () => {
+    try {
+      const metaRes = await fetch(WORKER_URL + '/peptides/meta');
+      if (!metaRes.ok) return;
+      const meta = await metaRes.json();
+      const metaKey = meta.count + ':' + (meta.savedAt || '');
+      if (metaKey === lastKey) return;
+      const isFirst = lastKey === null;
+      lastKey = metaKey;
+      if (isFirst) return;
+      await loadPeptides();
+    } catch (e) {}
+  }, 20000);
+}
+function stopPeptidePolling() {
+  clearInterval(peptidePollInterval);
+  peptidePollInterval = null;
+}
+// Aging thresholds — days sitting in the same stage before a tile gets a
+// warning (amber) or an alert (red) badge. "received" orders are done, so
+// they never count toward "stuck" no matter how old.
+const PEP_AGE_WARN_DAYS = 7;
+const PEP_AGE_ALERT_DAYS = 14;
+function daysSince(iso) {
+  const ms = Date.now() - new Date(iso).getTime();
+  return Math.max(0, Math.floor(ms / 86400000));
+}
+function renderPeptideBoard() {
+  const container = document.getElementById('pep-cols');
+  if (!container) return;
+  const searchEl = document.getElementById('pep-search');
+  const query = (searchEl && searchEl.value || '').trim().toLowerCase();
+  let stuckCount = 0;
+  container.innerHTML = PEPTIDE_STAGES.map(stage => {
+    const cards = [];
+    allPeptides.forEach(patient => {
+      if (query && !patient.name.toLowerCase().includes(query)) return;
+      (patient.orders || []).forEach((order, idx) => {
+        if (order.stage === stage.key) cards.push({ patient, order, orderIndex: idx });
+      });
+    });
+    cards.sort((a, b) => {
+      const aHist = a.order.history || [];
+      const bHist = b.order.history || [];
+      const at = (aHist.length ? aHist[aHist.length - 1].at : a.order.startedAt);
+      const bt = (bHist.length ? bHist[bHist.length - 1].at : b.order.startedAt);
+      // Completed orders: newest completion first. Everything else: oldest
+      // activity first, so tiles that have been sitting untouched the
+      // longest surface at the top of their column instead of getting
+      // buried under whatever moved most recently.
+      return stage.key === 'received' ? new Date(bt) - new Date(at) : new Date(at) - new Date(bt);
+    });
+    const cardsHtml = cards.map(({ patient, order, orderIndex }) => {
+      const hist = order.history || [];
+      const lastEntry = hist.length ? hist[hist.length - 1] : null;
+      const filesCount = (order.files || []).length;
+      const multiOrder = (patient.orders || []).length > 1;
+      const options = PEPTIDE_STAGES.filter(s => s.key !== order.stage)
+        .map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('');
+      let ageHtml = '';
+      if (lastEntry && !order.completedAt) {
+        const days = daysSince(lastEntry.at);
+        let cls = 'age-ok';
+        if (days >= PEP_AGE_ALERT_DAYS) { cls = 'age-alert'; stuckCount++; }
+        else if (days >= PEP_AGE_WARN_DAYS) { cls = 'age-warn'; stuckCount++; }
+        ageHtml = '<span class="pep-card-age ' + cls + '">' + days + (days === 1 ? ' day' : ' days') + ' in stage</span>';
+      }
+      return '' +
+        '<div class="pep-card' + (order.completedAt ? ' completed' : '') + '" draggable="true" ' +
+          'ondragstart="pepCardDragStart(event,\'' + patient.id + '\',\'' + order.id + '\')" ' +
+          'onclick="openPeptideDetail(\'' + patient.id + '\')">' +
+          '<div class="pep-card-name">' + escapeHtml(patient.name) + (multiOrder ? ' <span class="pep-order-badge">Order ' + (orderIndex + 1) + '</span>' : '') + '</div>' +
+          '<div class="pep-card-meta">' + (lastEntry ? formatTime(lastEntry.at) : '') + '</div>' +
+          (filesCount ? '<div class="pep-card-files">' + filesCount + ' file' + (filesCount === 1 ? '' : 's') + ' attached</div>' : '') +
+          ageHtml +
+          '<select class="pep-move-select" onclick="event.stopPropagation()" onchange="movePeptideStage(\'' + patient.id + '\',\'' + order.id + '\', this.value); this.selectedIndex = 0;">' +
+            '<option value="">Move to…</option>' + options +
+          '</select>' +
+        '</div>';
+    }).join('');
+    return '' +
+      '<div class="kanban-col pep-col" ondragover="pepColDragOver(event)" ondragleave="pepColDragLeave(event)" ondrop="pepColDrop(event,\'' + stage.key + '\')">' +
+        '<div class="kanban-col-header">' +
+          '<span class="kanban-col-name">' + stage.label + '</span>' +
+          '<span class="kanban-col-count">' + cards.length + '</span>' +
+        '</div>' +
+        '<div class="kanban-cards">' + cardsHtml + '</div>' +
+      '</div>';
+  }).join('');
+  const summaryEl = document.getElementById('pep-stuck-summary');
+  if (summaryEl) {
+    if (stuckCount > 0) {
+      summaryEl.style.display = 'inline-block';
+      summaryEl.classList.remove('none');
+      summaryEl.textContent = '⚠ ' + stuckCount + ' stuck ' + PEP_AGE_WARN_DAYS + '+ days';
+    } else {
+      summaryEl.style.display = 'none';
+    }
+  }
+}
+function pepCardDragStart(e, patientId, orderId) {
+  pepDragData = { patientId, orderId };
+  e.dataTransfer.effectAllowed = 'move';
+}
+function pepColDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function pepColDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+async function pepColDrop(e, stageKey) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!pepDragData) return;
+  const { patientId, orderId } = pepDragData;
+  pepDragData = null;
+  const patient = allPeptides.find(p => p.id === patientId);
+  const order = patient && (patient.orders || []).find(o => o.id === orderId);
+  if (!order || order.stage === stageKey) return;
+  await movePeptideStage(patientId, orderId, stageKey);
+}
+async function movePeptideStage(patientId, orderId, stageKey) {
+  if (!stageKey) return;
+  try {
+    const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ setStage: { orderId, stage: stageKey } }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allPeptides.findIndex(p => p.id === patientId);
+    if (idx !== -1) allPeptides[idx] = updated;
+    renderPeptideBoard();
+    if (pepDetailPatientId === patientId) renderPeptideDetail(patientId);
+    showToast('Moved to ' + stageLabel(stageKey));
+  } catch (err) {
+    showToast('Could not move: ' + err.message);
+  }
+}
+// -- Add patient --------------------------------------------------------------
+function openAddPeptideModal() {
+  document.getElementById('pep-new-name').value = '';
+  document.getElementById('pep-add-modal').classList.add('open');
+  setTimeout(() => document.getElementById('pep-new-name').focus(), 50);
+}
+function closeAddPeptideModal() {
+  document.getElementById('pep-add-modal').classList.remove('open');
+}
+async function submitAddPeptide() {
+  const name = document.getElementById('pep-new-name').value.trim();
+  if (!name) { document.getElementById('pep-new-name').focus(); return; }
+  const btn = document.getElementById('pep-add-submit-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const res = await fetch(WORKER_URL + '/peptides', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const patient = await res.json();
+    allPeptides.unshift(patient);
+    renderPeptideBoard();
+    closeAddPeptideModal();
+    showToast('Patient added');
+  } catch (err) {
+    showToast('Could not add patient: ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Add Patient';
+  }
+}
+// -- Patient detail modal -------------------------------------------------------
+function openPeptideDetail(patientId) {
+  pepDetailPatientId = patientId;
+  renderPeptideDetail(patientId);
+  document.getElementById('pep-detail-modal').classList.add('open');
+}
+function closePeptideDetail() {
+  document.getElementById('pep-detail-modal').classList.remove('open');
+  pepDetailPatientId = null;
+}
+function toggleHistoryRow(rowId) {
+  const el = document.getElementById(rowId);
+  if (el) el.classList.toggle('open');
+}
+function toLocalInputValue(iso) {
+  const d = new Date(iso);
+  const pad = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+function renderPeptideOrderBlock(patient, order, orderIndex, isActive) {
+  const hist = (order.history || []).slice().reverse();
+  const stageOptionsAll = PEPTIDE_STAGES.map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('');
+  const historyHtml = hist.map(h => {
+    const rowId = 'pep-hist-' + h.id;
+    const stageSelectOptions = PEPTIDE_STAGES.map(s =>
+      '<option value="' + s.key + '"' + (s.key === h.stage ? ' selected' : '') + '>' + s.label + '</option>').join('');
+    return '' +
+      '<div class="pep-history-row">' +
+        '<div class="pep-history-summary" onclick="toggleHistoryRow(\'' + rowId + '\')">' +
+          '<span><strong>' + escapeHtml(stageLabel(h.stage)) + '</strong> — ' + formatTime(h.at) + (h.editedAt ? ' <em style="color:var(--text-muted);font-style:italic">(edited)</em>' : '') + '</span>' +
+          '<span style="color:var(--text-muted)">' + (h.comment ? '💬 ' : '') + '▾</span>' +
+        '</div>' +
+        '<div class="pep-history-detail" id="' + rowId + '">' +
+          '<div class="modal-field">' +
+            '<label class="modal-label">Stage</label>' +
+            '<select class="modal-select" id="' + rowId + '-stage">' + stageSelectOptions + '</select>' +
+          '</div>' +
+          '<div class="modal-field">' +
+            '<label class="modal-label">Timestamp</label>' +
+            '<input type="datetime-local" class="modal-input" id="' + rowId + '-at" value="' + toLocalInputValue(h.at) + '">' +
+          '</div>' +
+          '<div class="modal-field">' +
+            '<label class="modal-label">Comment</label>' +
+            '<textarea class="modal-textarea" id="' + rowId + '-comment" style="min-height:50px">' + escapeHtml(h.comment || '') + '</textarea>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;gap:8px">' +
+            '<button class="modal-cancel" style="border-color:var(--danger);color:var(--danger);padding:6px 14px;font-size:0.78rem" onclick="deletePepHistoryEntry(\'' + patient.id + '\',\'' + order.id + '\',\'' + h.id + '\')">Delete entry</button>' +
+            '<button class="modal-submit" style="padding:6px 16px;font-size:0.78rem" onclick="saveHistoryEdit(\'' + patient.id + '\',\'' + order.id + '\',\'' + h.id + '\',\'' + rowId + '\')">Save</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  }).join('');
+  const addRowId = 'pep-addhist-' + order.id;
+  const addHistoryHtml = '' +
+    '<div class="pep-history-row">' +
+      '<div class="pep-history-summary" onclick="toggleHistoryRow(\'' + addRowId + '\')">' +
+        '<span style="color:var(--accent-dark)">+ Add a step that was missed or happened out of order</span>' +
+        '<span style="color:var(--text-muted)">▾</span>' +
+      '</div>' +
+      '<div class="pep-history-detail" id="' + addRowId + '">' +
+        '<div class="modal-field">' +
+          '<label class="modal-label">Stage</label>' +
+          '<select class="modal-select" id="' + addRowId + '-stage">' + stageOptionsAll + '</select>' +
+        '</div>' +
+        '<div class="modal-field">' +
+          '<label class="modal-label">Timestamp</label>' +
+          '<input type="datetime-local" class="modal-input" id="' + addRowId + '-at" value="' + toLocalInputValue(new Date().toISOString()) + '">' +
+        '</div>' +
+        '<div class="modal-field">' +
+          '<label class="modal-label">Comment</label>' +
+          '<textarea class="modal-textarea" id="' + addRowId + '-comment" style="min-height:50px" placeholder="Optional note — e.g. \'never actually had a consult\'"></textarea>' +
+        '</div>' +
+        '<button class="modal-submit" style="align-self:flex-end;padding:6px 16px;font-size:0.78rem" onclick="addPepHistoryEntry(\'' + patient.id + '\',\'' + order.id + '\',\'' + addRowId + '\')">Add to timeline</button>' +
+      '</div>' +
+    '</div>';
+  const files = order.files || [];
+  const filesHtml = files.length ? files.map(f => '' +
+    '<div class="pep-file-row">' +
+      '<a href="' + WORKER_URL + '/peptides/files/' + f.id + '" target="_blank" rel="noopener">' + escapeHtml(f.name) + ' <span style="color:var(--text-muted);font-weight:400">(' + escapeHtml(f.category || 'other') + ')</span></a>' +
+      '<button class="modal-close" onclick="removePeptideFile(\'' + patient.id + '\',\'' + order.id + '\',\'' + f.id + '\')" title="Remove file">' +
+        '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
+      '</button>' +
+    '</div>').join('') : '<p style="color:var(--text-muted);font-size:0.8rem">No files yet.</p>';
+  const moveOptions = isActive ? PEPTIDE_STAGES.filter(s => s.key !== order.stage)
+    .map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('') : '';
+  return '' +
+    '<div class="pep-order-block">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
+        '<span class="pep-section-title">Order ' + (orderIndex + 1) + (order.completedAt ? ' — Completed' : ' — In Progress') + '</span>' +
+        (isActive ? '<select class="modal-select" style="width:auto;font-size:0.78rem;padding:6px 10px" onchange="movePeptideStage(\'' + patient.id + '\',\'' + order.id + '\', this.value); this.selectedIndex=0;">' +
+          '<option value="">Move to…</option>' + moveOptions + '</select>' : '') +
+      '</div>' +
+      '<p style="font-size:0.78rem;color:var(--text-muted);margin:4px 0 10px">Current stage: <strong style="color:var(--charcoal)">' + escapeHtml(stageLabel(order.stage)) + '</strong></p>' +
+      '<div class="pep-section-title">History</div>' +
+      historyHtml +
+      addHistoryHtml +
+      '<div class="pep-section-title" style="margin-top:12px">Files</div>' +
+      filesHtml +
+      '<div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">' +
+        '<select class="modal-select" id="pep-file-cat-' + order.id + '" style="width:auto;font-size:0.78rem;padding:6px 10px">' +
+          '<option value="pricing">Pricing Guide</option>' +
+          '<option value="dosing">Dosing Guide</option>' +
+          '<option value="other">Other</option>' +
+        '</select>' +
+        '<label class="modal-cancel" style="padding:6px 14px;font-size:0.78rem;cursor:pointer">' +
+          'Attach PDF' +
+          '<input type="file" accept="application/pdf" style="display:none" onchange="uploadPeptideFile(\'' + patient.id + '\',\'' + order.id + '\', this)">' +
+        '</label>' +
+      '</div>' +
+    '</div>';
+}
+function renderPeptideDetail(patientId) {
+  const patient = allPeptides.find(p => p.id === patientId);
+  const body = document.getElementById('pep-detail-body');
+  if (!patient) { body.innerHTML = '<p>Patient not found.</p>'; return; }
+  document.getElementById('pep-detail-title').textContent = patient.name;
+  const orders = patient.orders || [];
+  let activeOrder = null;
+  for (let i = orders.length - 1; i >= 0; i--) { if (!orders[i].completedAt) { activeOrder = orders[i]; break; } }
+  if (!activeOrder && orders.length) activeOrder = orders[orders.length - 1];
+  const canStartNew = orders.length > 0 && !!orders[orders.length - 1].completedAt;
+
+  const orderBlocks = orders.slice().reverse()
+    .map(o => renderPeptideOrderBlock(patient, o, orders.indexOf(o), activeOrder && o.id === activeOrder.id))
+    .join('');
+
+  body.innerHTML = '' +
+    '<div class="modal-field">' +
+      '<label class="modal-label">Patient name</label>' +
+      '<div style="display:flex;gap:8px">' +
+        '<input type="text" class="modal-input" id="pep-detail-name" value="' + escapeHtml(patient.name) + '">' +
+        '<button class="modal-submit" style="padding:8px 16px;font-size:0.78rem" onclick="savePeptideName(\'' + patient.id + '\')">Save</button>' +
+      '</div>' +
+    '</div>' +
+    (canStartNew ? '<button class="modal-submit" style="width:100%" onclick="startNewOrder(\'' + patient.id + '\')">+ Start New Order</button>' : '') +
+    orderBlocks +
+    '<button class="modal-cancel" style="border-color:var(--danger);color:var(--danger);width:100%;margin-top:10px" onclick="deletePeptidePatient(\'' + patient.id + '\')">Delete Patient</button>';
+}
+async function saveHistoryEdit(patientId, orderId, historyId, rowId) {
+  const atLocal = document.getElementById(rowId + '-at').value;
+  const comment = document.getElementById(rowId + '-comment').value;
+  const stageEl = document.getElementById(rowId + '-stage');
+  const stage = stageEl ? stageEl.value : undefined;
+  if (!atLocal) return;
+  try {
+    const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ editHistory: { orderId, historyId, at: new Date(atLocal).toISOString(), comment, stage } }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allPeptides.findIndex(p => p.id === patientId);
+    if (idx !== -1) allPeptides[idx] = updated;
+    renderPeptideDetail(patientId);
+    renderPeptideBoard();
+    showToast('History updated');
+  } catch (err) {
+    showToast('Could not save: ' + err.message);
+  }
+}
+async function deletePepHistoryEntry(patientId, orderId, historyId) {
+  if (!confirm('Delete this timeline entry? This cannot be undone.')) return;
+  try {
+    const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deleteHistoryEntry: { orderId, historyId } }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allPeptides.findIndex(p => p.id === patientId);
+    if (idx !== -1) allPeptides[idx] = updated;
+    renderPeptideDetail(patientId);
+    renderPeptideBoard();
+    showToast('Entry deleted');
+  } catch (err) {
+    showToast('Could not delete: ' + err.message);
+  }
+}
+async function addPepHistoryEntry(patientId, orderId, rowId) {
+  const stage = document.getElementById(rowId + '-stage').value;
+  const atLocal = document.getElementById(rowId + '-at').value;
+  const comment = document.getElementById(rowId + '-comment').value;
+  if (!atLocal) return;
+  try {
+    const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ addHistoryEntry: { orderId, stage, at: new Date(atLocal).toISOString(), comment } }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allPeptides.findIndex(p => p.id === patientId);
+    if (idx !== -1) allPeptides[idx] = updated;
+    renderPeptideDetail(patientId);
+    renderPeptideBoard();
+    showToast('Entry added');
+  } catch (err) {
+    showToast('Could not add entry: ' + err.message);
+  }
+}
+async function savePeptideName(patientId) {
+  const name = document.getElementById('pep-detail-name').value.trim();
+  if (!name) return;
+  try {
+    const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allPeptides.findIndex(p => p.id === patientId);
+    if (idx !== -1) allPeptides[idx] = updated;
+    renderPeptideBoard();
+    document.getElementById('pep-detail-title').textContent = updated.name;
+    showToast('Name updated');
+  } catch (err) {
+    showToast('Could not save: ' + err.message);
+  }
+}
+async function startNewOrder(patientId) {
+  try {
+    const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newOrder: true }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allPeptides.findIndex(p => p.id === patientId);
+    if (idx !== -1) allPeptides[idx] = updated;
+    renderPeptideBoard();
+    renderPeptideDetail(patientId);
+    showToast('New order started');
+  } catch (err) {
+    showToast('Could not start new order: ' + err.message);
+  }
+}
+async function deletePeptidePatient(patientId) {
+  if (!confirm('Delete this patient and all their peptide history? This cannot be undone.')) return;
+  try {
+    await fetch(WORKER_URL + '/peptides/' + patientId, { method: 'DELETE' });
+    allPeptides = allPeptides.filter(p => p.id !== patientId);
+    renderPeptideBoard();
+    closePeptideDetail();
+    showToast('Patient deleted');
+  } catch (err) {
+    showToast('Could not delete: ' + err.message);
+  }
+}
+function uploadPeptideFile(patientId, orderId, input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.type !== 'application/pdf') { showToast('Please choose a PDF file'); input.value = ''; return; }
+  const catEl = document.getElementById('pep-file-cat-' + orderId);
+  const category = catEl ? catEl.value : 'other';
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const dataUrl = reader.result;
+    const base64 = dataUrl.split(',')[1];
+    try {
+      const res = await fetch(WORKER_URL + '/peptides/' + patientId + '/files', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, name: file.name, mimeType: file.type, category, dataBase64: base64 }),
+      });
+      if (!res.ok) throw new Error('Server error ' + res.status);
+      const updated = await res.json();
+      const idx = allPeptides.findIndex(p => p.id === patientId);
+      if (idx !== -1) allPeptides[idx] = updated;
+      renderPeptideBoard();
+      renderPeptideDetail(patientId);
+      showToast('File attached');
+    } catch (err) {
+      showToast('Could not upload file: ' + err.message);
+    }
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+async function removePeptideFile(patientId, orderId, fileId) {
+  if (!confirm('Remove this file?')) return;
+  try {
+    const res = await fetch(WORKER_URL + '/peptides/files/' + fileId, {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ patientId, orderId }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      if (updated && updated.id) {
+        const idx = allPeptides.findIndex(p => p.id === patientId);
+        if (idx !== -1) allPeptides[idx] = updated;
+      }
+    }
+    renderPeptideBoard();
+    renderPeptideDetail(patientId);
+    showToast('File removed');
+  } catch (err) {
+    showToast('Could not remove file: ' + err.message);
   }
 }
 </script>
