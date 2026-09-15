@@ -3984,8 +3984,8 @@ function renderPeptideBoard() {
           'ondragstart="pepCardDragStart(event,\'' + patient.id + '\',\'' + order.id + '\')" ' +
           'onclick="openPeptideDetail(\'' + patient.id + '\')">' +
           '<div class="pep-card-name">' + escapeHtml(patient.name) + (multiOrder ? ' <span class="pep-order-badge">Order ' + (orderIndex + 1) + '</span>' : '') + '</div>' +
-          (order.orderNumber ? '<div class="pep-card-meta">#' + escapeHtml(order.orderNumber) + (order.orderDate ? ' · ' + order.orderDate : '') + '</div>' : '') +
           (order.consultDate ? '<div class="pep-card-meta pep-card-consult">🩺 ' + formatTime(order.consultDate) + (order.consultDoctor ? ' — ' + escapeHtml(order.consultDoctor) : '') + '</div>' : '') +
+          (order.orderNumber ? '<div class="pep-card-meta">#' + escapeHtml(order.orderNumber) + (order.orderDate ? ' · ' + order.orderDate : '') + '</div>' : '') +
           '<div class="pep-card-meta">' + (lastEntry ? formatTime(lastEntry.at) : '') + '</div>' +
           (filesCount ? '<div class="pep-card-files">' + filesCount + ' file' + (filesCount === 1 ? '' : 's') + ' attached</div>' : '') +
           ageHtml +
@@ -4175,17 +4175,6 @@ function renderPeptideOrderBlock(patient, order, orderIndex, isActive) {
       '</div>' +
       '<div class="modal-row" style="margin:8px 0">' +
         '<div class="modal-field" style="flex:1">' +
-          '<label class="modal-label">Order #</label>' +
-          '<input type="text" class="modal-input" id="' + orderMetaId + '-num" value="' + escapeHtml(order.orderNumber || '') + '" placeholder="e.g. 4521">' +
-        '</div>' +
-        '<div class="modal-field" style="flex:1">' +
-          '<label class="modal-label">Order date</label>' +
-          '<input type="date" class="modal-input" id="' + orderMetaId + '-date" value="' + escapeHtml(order.orderDate || '') + '">' +
-        '</div>' +
-        '<button class="modal-submit" style="align-self:flex-end;padding:9px 16px;font-size:0.78rem" onclick="saveOrderMeta(\'' + patient.id + '\',\'' + order.id + '\',\'' + orderMetaId + '\')">Save</button>' +
-      '</div>' +
-      '<div class="modal-row">' +
-        '<div class="modal-field" style="flex:1">' +
           '<label class="modal-label">Consult date &amp; time</label>' +
           '<input type="datetime-local" class="modal-input" id="' + orderMetaId + '-consultat" value="' + (order.consultDate ? toLocalInputValue(order.consultDate) : '') + '">' +
         '</div>' +
@@ -4198,6 +4187,17 @@ function renderPeptideOrderBlock(patient, order, orderIndex, isActive) {
           '</select>' +
         '</div>' +
         '<button class="modal-submit" style="align-self:flex-end;padding:9px 16px;font-size:0.78rem" onclick="saveConsultInfo(\'' + patient.id + '\',\'' + order.id + '\',\'' + orderMetaId + '\')">Save</button>' +
+      '</div>' +
+      '<div class="modal-row">' +
+        '<div class="modal-field" style="flex:1">' +
+          '<label class="modal-label">Order #</label>' +
+          '<input type="text" class="modal-input" id="' + orderMetaId + '-num" value="' + escapeHtml(order.orderNumber || '') + '" placeholder="e.g. 4521">' +
+        '</div>' +
+        '<div class="modal-field" style="flex:1">' +
+          '<label class="modal-label">Order date</label>' +
+          '<input type="date" class="modal-input" id="' + orderMetaId + '-date" value="' + escapeHtml(order.orderDate || '') + '">' +
+        '</div>' +
+        '<button class="modal-submit" style="align-self:flex-end;padding:9px 16px;font-size:0.78rem" onclick="saveOrderMeta(\'' + patient.id + '\',\'' + order.id + '\',\'' + orderMetaId + '\')">Save</button>' +
       '</div>' +
       '<div class="modal-row">' +
         '<div class="modal-field" style="flex:1">' +
