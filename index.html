@@ -657,10 +657,11 @@
   }
   #toast.show { transform: translateX(-50%) translateY(0); }
   /* ===== TASKS VIEW ===== */
-  #tasks-view {
+  #tasks-view, #peptides-view {
     flex-direction: column;
     height: calc(100vh - 68px);
     overflow: hidden;
+    width: 100%;
   }
   .tasks-wrap {
     display: flex;
@@ -1755,7 +1756,7 @@
     pointer-events: none;
   }
   /* -- Peptide tracker ------------------------------------------------------ */
-  .pep-col { flex-basis: 220px; min-width: 200px; max-width: 260px; transition: flex-basis 0.2s ease, min-width 0.2s ease, max-width 0.2s ease; }
+  .pep-col { flex: 1 1 220px; min-width: 220px; transition: flex-basis 0.2s ease, min-width 0.2s ease, max-width 0.2s ease; }
   .pep-col.pep-col-empty { flex: 0 0 64px; min-width: 64px; max-width: 64px; }
   .pep-col.pep-col-empty .kanban-col-header { padding: 10px 4px; align-items: center; text-align: center; }
   .pep-col.pep-col-empty .kanban-col-name {
@@ -1807,19 +1808,23 @@
     display: flex; align-items: center; justify-content: space-between; gap: 8px;
     padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; font-size: 0.8rem;
   }
-  .pep-file-row a { color: var(--accent-dark); font-weight: 600; text-decoration: none; }
+  .pep-file-row a {
+    color: var(--accent-dark); font-weight: 600; text-decoration: none;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1;
+  }
   .pep-file-row a:hover { text-decoration: underline; }
+  .pep-file-row .modal-close { flex-shrink: 0; }
   .pep-order-block { border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 10px; }
   .pep-card-age {
     display: inline-block; font-size: 0.66rem; font-weight: 700; padding: 2px 8px;
     border-radius: 10px; margin-top: 6px;
   }
   .pep-card-age.age-ok { background: var(--surface2); color: var(--text-muted); }
-  .pep-card-age.age-warn { background: #fdf1d9; color: #96690c; border: 1px solid #eecb8a; }
-  .pep-card-age.age-alert { background: #fbe4e1; color: var(--danger); border: 1px solid #f0b3ab; }
+  .pep-card-age.age-warn { background: #fdf3e0; color: var(--accent-dark); border: 1px solid #f0dba8; }
+  .pep-card-age.age-alert { background: #fdeee9; color: #9a4a2c; border: 1px solid #f0c4b3; }
   .pep-stuck-summary {
     font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 20px;
-    background: #fbe4e1; color: var(--danger); border: 1px solid #f0b3ab; white-space: nowrap;
+    background: #fdeee9; color: #9a4a2c; border: 1px solid #f0c4b3; white-space: nowrap;
   }
   .pep-stuck-summary.none { background: var(--surface2); color: var(--text-muted); border-color: var(--border); }
 </style>
@@ -3978,6 +3983,7 @@ function renderPeptideBoard() {
           'ondragstart="pepCardDragStart(event,\'' + patient.id + '\',\'' + order.id + '\')" ' +
           'onclick="openPeptideDetail(\'' + patient.id + '\')">' +
           '<div class="pep-card-name">' + escapeHtml(patient.name) + (multiOrder ? ' <span class="pep-order-badge">Order ' + (orderIndex + 1) + '</span>' : '') + '</div>' +
+          (order.orderNumber ? '<div class="pep-card-meta">#' + escapeHtml(order.orderNumber) + (order.orderDate ? ' · ' + order.orderDate : '') + '</div>' : '') +
           '<div class="pep-card-meta">' + (lastEntry ? formatTime(lastEntry.at) : '') + '</div>' +
           (filesCount ? '<div class="pep-card-files">' + filesCount + ' file' + (filesCount === 1 ? '' : 's') + ' attached</div>' : '') +
           ageHtml +
@@ -4157,12 +4163,35 @@ function renderPeptideOrderBlock(patient, order, orderIndex, isActive) {
     '</div>').join('') : '<p style="color:var(--text-muted);font-size:0.8rem">No files yet.</p>';
   const moveOptions = isActive ? PEPTIDE_STAGES.filter(s => s.key !== order.stage)
     .map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('') : '';
+  const orderMetaId = 'pep-ordermeta-' + order.id;
   return '' +
     '<div class="pep-order-block">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
         '<span class="pep-section-title">Order ' + (orderIndex + 1) + (order.completedAt ? ' — Completed' : ' — In Progress') + '</span>' +
         (isActive ? '<select class="modal-select" style="width:auto;font-size:0.78rem;padding:6px 10px" onchange="movePeptideStage(\'' + patient.id + '\',\'' + order.id + '\', this.value); this.selectedIndex=0;">' +
           '<option value="">Move to…</option>' + moveOptions + '</select>' : '') +
+      '</div>' +
+      '<div class="modal-row" style="margin:8px 0">' +
+        '<div class="modal-field" style="flex:1">' +
+          '<label class="modal-label">Order #</label>' +
+          '<input type="text" class="modal-input" id="' + orderMetaId + '-num" value="' + escapeHtml(order.orderNumber || '') + '" placeholder="e.g. 4521">' +
+        '</div>' +
+        '<div class="modal-field" style="flex:1">' +
+          '<label class="modal-label">Order date</label>' +
+          '<input type="date" class="modal-input" id="' + orderMetaId + '-date" value="' + escapeHtml(order.orderDate || '') + '">' +
+        '</div>' +
+        '<button class="modal-submit" style="align-self:flex-end;padding:9px 16px;font-size:0.78rem" onclick="saveOrderMeta(\'' + patient.id + '\',\'' + order.id + '\',\'' + orderMetaId + '\')">Save</button>' +
+      '</div>' +
+      '<div class="modal-row">' +
+        '<div class="modal-field" style="flex:1">' +
+          '<label class="modal-label">Peptides tracking #</label>' +
+          '<input type="text" class="modal-input" id="' + orderMetaId + '-trackpep" value="' + escapeHtml(order.trackingPeptides || '') + '" placeholder="Carrier tracking #">' +
+        '</div>' +
+        '<div class="modal-field" style="flex:1">' +
+          '<label class="modal-label">Recon kit tracking #</label>' +
+          '<input type="text" class="modal-input" id="' + orderMetaId + '-tracktrecon" value="' + escapeHtml(order.trackingRecon || '') + '" placeholder="Carrier tracking #">' +
+        '</div>' +
+        '<button class="modal-submit" style="align-self:flex-end;padding:9px 16px;font-size:0.78rem" onclick="saveTracking(\'' + patient.id + '\',\'' + order.id + '\',\'' + orderMetaId + '\')">Save</button>' +
       '</div>' +
       '<p style="font-size:0.78rem;color:var(--text-muted);margin:4px 0 10px">Current stage: <strong style="color:var(--charcoal)">' + escapeHtml(stageLabel(order.stage)) + '</strong></p>' +
       '<div class="pep-section-title">History</div>' +
@@ -4181,6 +4210,7 @@ function renderPeptideOrderBlock(patient, order, orderIndex, isActive) {
           '<input type="file" accept="application/pdf" style="display:none" onchange="uploadPeptideFile(\'' + patient.id + '\',\'' + order.id + '\', this)">' +
         '</label>' +
       '</div>' +
+      (isActive && !order.completedAt ? '<button class="modal-submit" style="width:100%;margin-top:14px" onclick="finishOrder(\'' + patient.id + '\',\'' + order.id + '\')">\u2713 Finish Order</button>' : '') +
     '</div>';
 }
 function renderPeptideDetail(patientId) {
@@ -4289,6 +4319,71 @@ async function savePeptideName(patientId) {
   } catch (err) {
     showToast('Could not save: ' + err.message);
   }
+}
+async function saveOrderMeta(patientId, orderId, rowId) {
+  const orderNumber = document.getElementById(rowId + '-num').value.trim();
+  const orderDate = document.getElementById(rowId + '-date').value;
+  try {
+    const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ updateOrderMeta: { orderId, orderNumber, orderDate } }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allPeptides.findIndex(p => p.id === patientId);
+    if (idx !== -1) allPeptides[idx] = updated;
+    renderPeptideDetail(patientId);
+    renderPeptideBoard();
+    showToast('Order info saved');
+  } catch (err) {
+    showToast('Could not save: ' + err.message);
+  }
+}
+async function saveTracking(patientId, orderId, rowId) {
+  const trackingPeptides = document.getElementById(rowId + '-trackpep').value.trim();
+  const trackingRecon = document.getElementById(rowId + '-tracktrecon').value.trim();
+  try {
+    const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ updateTracking: { orderId, trackingPeptides, trackingRecon } }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allPeptides.findIndex(p => p.id === patientId);
+    if (idx !== -1) allPeptides[idx] = updated;
+    renderPeptideDetail(patientId);
+    renderPeptideBoard();
+    showToast('Tracking numbers saved');
+  } catch (err) {
+    showToast('Could not save: ' + err.message);
+  }
+}
+// Finish Order builds a checklist of everything the pipeline expects for an
+// order (both guides attached, both tracking numbers logged) and shows it
+// to whoever's closing the order out before actually marking it done — so
+// "Finish Order" answers the literal question of whether everything is
+// done, rather than just being a fancier way to drag the tile to the last
+// column.
+function finishOrder(patientId, orderId) {
+  const patient = allPeptides.find(p => p.id === patientId);
+  const order = patient && (patient.orders || []).find(o => o.id === orderId);
+  if (!order) return;
+  const files = order.files || [];
+  const checklist = [
+    { label: 'Pricing guide attached', done: files.some(f => f.category === 'pricing') },
+    { label: 'Dosing guide attached', done: files.some(f => f.category === 'dosing') },
+    { label: 'Peptides tracking # logged', done: !!(order.trackingPeptides && order.trackingPeptides.trim()) },
+    { label: 'Recon kit tracking # logged', done: !!(order.trackingRecon && order.trackingRecon.trim()) },
+  ];
+  const missing = checklist.filter(c => !c.done);
+  const summary = checklist.map(c => (c.done ? '\u2713 ' : '\u2717 ') + c.label).join('\n');
+  const message = missing.length
+    ? 'Heads up — this order is missing:\n\n' + summary + '\n\nFinish it anyway?'
+    : 'Everything checks out:\n\n' + summary + '\n\nMark this order as finished?';
+  if (!confirm(message)) return;
+  movePeptideStage(patientId, orderId, 'received').then(() => {
+    showToast(missing.length ? 'Order finished (' + missing.length + ' item' + (missing.length === 1 ? '' : 's') + ' missing)' : 'Order finished — everything done');
+  });
 }
 async function startNewOrder(patientId) {
   try {
