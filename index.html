@@ -1816,6 +1816,11 @@
   .pep-file-row a:hover { text-decoration: underline; }
   .pep-file-row .modal-close { flex-shrink: 0; }
   .pep-order-block { border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 10px; }
+  .pep-file-drop {
+    border: 2px dashed var(--border); border-radius: 10px; padding: 10px; margin-top: 8px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .pep-file-drop.drag-over { border-color: var(--accent); background: #fdf9f0; }
   .pep-card-age {
     display: inline-block; font-size: 0.66rem; font-weight: 700; padding: 2px 8px;
     border-radius: 10px; margin-top: 6px;
@@ -4216,16 +4221,19 @@ function renderPeptideOrderBlock(patient, order, orderIndex, isActive) {
       addHistoryHtml +
       '<div class="pep-section-title" style="margin-top:12px">Files</div>' +
       filesHtml +
-      '<div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">' +
-        '<select class="modal-select" id="pep-file-cat-' + order.id + '" style="width:auto;font-size:0.78rem;padding:6px 10px">' +
-          '<option value="pricing">Pricing Guide</option>' +
-          '<option value="dosing">Dosing Guide</option>' +
-          '<option value="other">Other</option>' +
-        '</select>' +
-        '<label class="modal-cancel" style="padding:6px 14px;font-size:0.78rem;cursor:pointer">' +
-          'Attach PDF' +
-          '<input type="file" accept="application/pdf" style="display:none" onchange="uploadPeptideFile(\'' + patient.id + '\',\'' + order.id + '\', this)">' +
-        '</label>' +
+      '<div class="pep-file-drop" ondragover="pepFileDragOver(event)" ondragleave="pepFileDragLeave(event)" ondrop="pepFileDrop(event,\'' + patient.id + '\',\'' + order.id + '\')">' +
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+          '<select class="modal-select" id="pep-file-cat-' + order.id + '" style="width:auto;font-size:0.78rem;padding:6px 10px">' +
+            '<option value="pricing">Pricing Guide</option>' +
+            '<option value="dosing">Dosing Guide</option>' +
+            '<option value="other">Other</option>' +
+          '</select>' +
+          '<label class="modal-cancel" style="padding:6px 14px;font-size:0.78rem;cursor:pointer">' +
+            'Choose PDF' +
+            '<input type="file" accept="application/pdf" multiple style="display:none" onchange="uploadPeptideFile(\'' + patient.id + '\',\'' + order.id + '\', this)">' +
+          '</label>' +
+          '<span style="font-size:0.72rem;color:var(--text-muted)">or drop PDF(s) here</span>' +
+        '</div>' +
       '</div>' +
       (isActive && !order.completedAt ? '<button class="modal-submit" style="width:100%;margin-top:14px" onclick="finishOrder(\'' + patient.id + '\',\'' + order.id + '\')">\u2713 Finish Order</button>' : '') +
     '</div>';
@@ -4451,34 +4459,75 @@ async function deletePeptidePatient(patientId) {
     showToast('Could not delete: ' + err.message);
   }
 }
-function uploadPeptideFile(patientId, orderId, input) {
-  const file = input.files[0];
-  if (!file) return;
-  if (file.type !== 'application/pdf') { showToast('Please choose a PDF file'); input.value = ''; return; }
+// Shared by both the file-picker input and drag-and-drop: reads one File,
+// uploads it, and merges the result into local state. Returns a promise so
+// callers dropping multiple files at once can upload them one at a time
+// instead of racing several PATCHes against the same patient record.
+function uploadPeptideFileObject(patientId, orderId, category, file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result;
+      const base64 = dataUrl.split(',')[1];
+      try {
+        const res = await fetch(WORKER_URL + '/peptides/' + patientId + '/files', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId, name: file.name, mimeType: file.type, category, dataBase64: base64 }),
+        });
+        if (!res.ok) throw new Error('Server error ' + res.status);
+        const updated = await res.json();
+        const idx = allPeptides.findIndex(p => p.id === patientId);
+        if (idx !== -1) allPeptides[idx] = updated;
+      } catch (err) {
+        showToast('Could not upload ' + file.name + ': ' + err.message);
+      }
+      resolve();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+// Guesses a file's category from its name (so dropping "Jane_Dosing_Guide.pdf"
+// and "Jane_Pricing_Guide.pdf" together files each correctly) and falls back
+// to whatever the order's category dropdown is currently set to.
+function guessPeptideFileCategory(fileName, orderId) {
+  const lower = fileName.toLowerCase();
+  if (lower.includes('pricing') || lower.includes('price')) return 'pricing';
+  if (lower.includes('dosing') || lower.includes('dose')) return 'dosing';
   const catEl = document.getElementById('pep-file-cat-' + orderId);
-  const category = catEl ? catEl.value : 'other';
-  const reader = new FileReader();
-  reader.onload = async () => {
-    const dataUrl = reader.result;
-    const base64 = dataUrl.split(',')[1];
-    try {
-      const res = await fetch(WORKER_URL + '/peptides/' + patientId + '/files', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, name: file.name, mimeType: file.type, category, dataBase64: base64 }),
-      });
-      if (!res.ok) throw new Error('Server error ' + res.status);
-      const updated = await res.json();
-      const idx = allPeptides.findIndex(p => p.id === patientId);
-      if (idx !== -1) allPeptides[idx] = updated;
-      renderPeptideBoard();
-      renderPeptideDetail(patientId);
-      showToast('File attached');
-    } catch (err) {
-      showToast('Could not upload file: ' + err.message);
-    }
-  };
-  reader.readAsDataURL(file);
+  return catEl ? catEl.value : 'other';
+}
+async function uploadPeptideFile(patientId, orderId, input) {
+  const files = Array.from(input.files || []);
   input.value = '';
+  if (!files.length) return;
+  const pdfFiles = files.filter(f => f.type === 'application/pdf');
+  if (pdfFiles.length < files.length) showToast('Skipped non-PDF file' + (files.length - pdfFiles.length === 1 ? '' : 's'));
+  if (!pdfFiles.length) return;
+  for (const file of pdfFiles) {
+    const category = guessPeptideFileCategory(file.name, orderId);
+    await uploadPeptideFileObject(patientId, orderId, category, file);
+  }
+  renderPeptideBoard();
+  renderPeptideDetail(patientId);
+  showToast(pdfFiles.length === 1 ? 'File attached' : pdfFiles.length + ' files attached');
+}
+function pepFileDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function pepFileDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+async function pepFileDrop(e, patientId, orderId) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const files = Array.from(e.dataTransfer.files || []);
+  if (!files.length) return;
+  const pdfFiles = files.filter(f => f.type === 'application/pdf');
+  if (pdfFiles.length < files.length) showToast('Skipped non-PDF file' + (files.length - pdfFiles.length === 1 ? '' : 's'));
+  if (!pdfFiles.length) return;
+  for (const file of pdfFiles) {
+    const category = guessPeptideFileCategory(file.name, orderId);
+    await uploadPeptideFileObject(patientId, orderId, category, file);
+  }
+  renderPeptideBoard();
+  renderPeptideDetail(patientId);
+  showToast(pdfFiles.length === 1 ? 'File attached' : pdfFiles.length + ' files attached');
 }
 async function removePeptideFile(patientId, orderId, fileId) {
   if (!confirm('Remove this file?')) return;
