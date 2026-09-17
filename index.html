@@ -4392,6 +4392,20 @@ function renderPeptideOrderBlock(patient, order, orderIndex, isActive) {
         '</div>' +
         '<button class="modal-submit" style="align-self:flex-end;padding:9px 16px;font-size:0.78rem" onclick="saveTracking(\'' + patient.id + '\',\'' + order.id + '\',\'' + orderMetaId + '\')">Save</button>' +
       '</div>' +
+      '<div class="modal-row">' +
+        '<div class="modal-field" style="flex:1">' +
+          '<label class="modal-label">Ship to</label>' +
+          '<select class="modal-select" id="' + orderMetaId + '-shipto" onchange="toggleShipAddress(\'' + orderMetaId + '\')">' +
+            '<option value="clinic"' + (order.shippingTo !== 'house' ? ' selected' : '') + '>Clinic</option>' +
+            '<option value="house"' + (order.shippingTo === 'house' ? ' selected' : '') + '>Patient\'s house</option>' +
+          '</select>' +
+        '</div>' +
+        '<div class="modal-field" style="flex:2;' + (order.shippingTo === 'house' ? '' : 'display:none;') + '" id="' + orderMetaId + '-shipaddr-wrap">' +
+          '<label class="modal-label">Shipping address</label>' +
+          '<textarea class="modal-textarea" id="' + orderMetaId + '-shipaddr" style="min-height:44px" placeholder="Street, city, state, zip">' + escapeHtml(order.shippingAddress || '') + '</textarea>' +
+        '</div>' +
+        '<button class="modal-submit" style="align-self:flex-end;padding:9px 16px;font-size:0.78rem" onclick="saveShipping(\'' + patient.id + '\',\'' + order.id + '\',\'' + orderMetaId + '\')">Save</button>' +
+      '</div>' +
       '<p style="font-size:0.78rem;color:var(--text-muted);margin:4px 0 10px">Current stage: <strong style="color:var(--text)">' + escapeHtml(stageLabel(order.stage)) + '</strong></p>' +
       '<div class="pep-section-title">History</div>' +
       historyHtml +
@@ -4440,6 +4454,7 @@ function renderPeptideDetail(patientId) {
     '</div>' +
     (canStartNew ? '<button class="modal-submit" style="width:100%" onclick="startNewOrder(\'' + patient.id + '\')">+ Start New Order</button>' : '') +
     orderBlocks +
+    '<button class="modal-submit" id="pep-detail-ok-btn" style="width:100%;margin-top:14px;font-weight:600" onclick="saveAndClosePeptideDetail(\'' + patient.id + '\')">\u2713 Save & Close</button>' +
     '<button class="modal-cancel" style="border-color:var(--danger);color:var(--danger);width:100%;margin-top:10px" onclick="deletePeptidePatient(\'' + patient.id + '\')">Delete Patient</button>';
 }
 async function saveHistoryEdit(patientId, orderId, historyId, rowId) {
@@ -4578,6 +4593,100 @@ async function saveTracking(patientId, orderId, rowId) {
     showToast('Tracking numbers saved');
   } catch (err) {
     showToast('Could not save: ' + err.message);
+  }
+}
+function toggleShipAddress(orderMetaId) {
+  const sel = document.getElementById(orderMetaId + '-shipto');
+  const wrap = document.getElementById(orderMetaId + '-shipaddr-wrap');
+  if (!sel || !wrap) return;
+  wrap.style.display = sel.value === 'house' ? '' : 'none';
+}
+async function saveShipping(patientId, orderId, rowId) {
+  const shippingTo = document.getElementById(rowId + '-shipto').value;
+  const shippingAddress = document.getElementById(rowId + '-shipaddr') ? document.getElementById(rowId + '-shipaddr').value.trim() : '';
+  try {
+    const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ updateShipping: { orderId, shippingTo, shippingAddress } }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allPeptides.findIndex(p => p.id === patientId);
+    if (idx !== -1) allPeptides[idx] = updated;
+    renderPeptideDetail(patientId);
+    renderPeptideBoard();
+    showToast('Shipping info saved');
+  } catch (err) {
+    showToast('Could not save: ' + err.message);
+  }
+}
+// Gathers every editable field for one order (consult, order meta, tracking,
+// shipping) and saves them in a single PATCH — used by the "Save & Close"
+// button so the whole tile is captured with one press instead of clicking
+// each section's own Save button.
+async function saveOrderFields(patientId, orderId, rowId) {
+  const body = {};
+  const consultAtEl = document.getElementById(rowId + '-consultat');
+  if (consultAtEl) {
+    const atLocal = consultAtEl.value;
+    const consultDocEl = document.getElementById(rowId + '-consultdoc');
+    body.updateConsult = {
+      orderId,
+      consultDate: atLocal ? new Date(atLocal).toISOString() : '',
+      consultDoctor: consultDocEl ? consultDocEl.value : '',
+    };
+  }
+  const numEl = document.getElementById(rowId + '-num');
+  if (numEl) {
+    const dateEl = document.getElementById(rowId + '-date');
+    body.updateOrderMeta = { orderId, orderNumber: numEl.value.trim(), orderDate: dateEl ? dateEl.value : '' };
+  }
+  const trackPepEl = document.getElementById(rowId + '-trackpep');
+  if (trackPepEl) {
+    const trackReconEl = document.getElementById(rowId + '-tracktrecon');
+    body.updateTracking = { orderId, trackingPeptides: trackPepEl.value.trim(), trackingRecon: trackReconEl ? trackReconEl.value.trim() : '' };
+  }
+  const shipToEl = document.getElementById(rowId + '-shipto');
+  if (shipToEl) {
+    const shipAddrEl = document.getElementById(rowId + '-shipaddr');
+    body.updateShipping = { orderId, shippingTo: shipToEl.value, shippingAddress: shipAddrEl ? shipAddrEl.value.trim() : '' };
+  }
+  if (Object.keys(body).length === 0) return;
+  const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error('Server error ' + res.status);
+  const updated = await res.json();
+  const idx = allPeptides.findIndex(p => p.id === patientId);
+  if (idx !== -1) allPeptides[idx] = updated;
+}
+// The OK / "Save & Close" button on the peptide tile: saves the patient
+// name (if edited) plus every order's fields, then closes the modal and
+// drops the (now up to date) tile back onto the board.
+async function saveAndClosePeptideDetail(patientId) {
+  const btn = document.getElementById('pep-detail-ok-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving\u2026'; }
+  try {
+    const nameInput = document.getElementById('pep-detail-name');
+    if (nameInput) {
+      const name = nameInput.value.trim();
+      const current = allPeptides.find(p => p.id === patientId);
+      if (name && current && name !== current.name) {
+        await savePeptideName(patientId);
+      }
+    }
+    const patient = allPeptides.find(p => p.id === patientId);
+    const orders = (patient && patient.orders) || [];
+    for (const order of orders) {
+      await saveOrderFields(patientId, order.id, 'pep-ordermeta-' + order.id);
+    }
+    showToast('Saved');
+    closePeptideDetail();
+    renderPeptideBoard();
+  } catch (err) {
+    showToast('Could not save: ' + err.message);
+    if (btn) { btn.disabled = false; btn.textContent = '\u2713 Save & Close'; }
   }
 }
 // Finish Order builds a checklist of everything the pipeline expects for an
