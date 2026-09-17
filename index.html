@@ -773,7 +773,7 @@
   }
   #toast.show { transform: translateX(-50%) translateY(0); }
   /* ===== TASKS VIEW ===== */
-  #tasks-view, #peptides-view {
+  #tasks-view, #peptides-view, #tpp-view {
     flex-direction: column;
     height: calc(100vh - 68px);
     overflow: hidden;
@@ -1949,6 +1949,34 @@
     background: var(--alert-bg); color: var(--alert-text); border: 1px solid var(--alert-border); white-space: nowrap;
   }
   .pep-stuck-summary.none { background: var(--surface2); color: var(--text-muted); border-color: var(--border); }
+
+  /* -- Treatment Plan Pipeline ---------------------------------------------- */
+  #tpp-view { flex-direction: column; overflow-y: auto; overflow-x: hidden; }
+  .tpp-board { display: flex; flex-direction: column; overflow: hidden; }
+  .tpp-board-discovery { flex: 3 1 0; min-height: 340px; }
+  .tpp-board-followup { flex: 2 1 0; min-height: 260px; border-top: 1px solid var(--border); }
+  .tpp-board .kanban-scroll { overflow-y: hidden; }
+  .tpp-board .kanban-col { min-width: 190px; }
+  .tpp-declined-col { border-color: var(--danger) !important; }
+  .tpp-declined-col .kanban-col-header { background: var(--alert-bg); }
+  .tpp-decision-row { display: flex; gap: 6px; margin-top: 8px; }
+  .tpp-decision-btn {
+    flex: 1; font-size: 0.72rem; font-weight: 700; padding: 6px 8px;
+    border-radius: 7px; cursor: pointer; border: 1px solid var(--border);
+  }
+  .tpp-accept-btn { background: var(--accent); color: white; border-color: var(--accent); }
+  .tpp-decline-btn { background: var(--surface); color: var(--danger); border-color: var(--danger); }
+  .tpp-handoff-btn {
+    width: 100%; margin-top: 10px; font-size: 0.78rem; font-weight: 700;
+    padding: 8px 10px; border-radius: 8px; border: 1px solid var(--accent);
+    background: var(--warn-bg); color: var(--accent-dark); cursor: pointer;
+  }
+  .tpp-decision-tag {
+    display: inline-block; font-size: 0.62rem; font-weight: 700; padding: 2px 7px;
+    border-radius: 10px; margin-left: 4px;
+  }
+  .tpp-decision-tag.accepted { background: var(--warn-bg); color: var(--accent-dark); border: 1px solid var(--accent); }
+  .tpp-decision-tag.declined { background: var(--alert-bg); color: var(--alert-text); border: 1px solid var(--alert-border); }
 </style>
 </head>
 <body>
@@ -1962,6 +1990,7 @@
       <button class="toggle-btn" onclick="setView('sec', this)">Care Team</button>
       <button class="toggle-btn" onclick="setView('tasks', this)">Tasks</button>
       <button class="toggle-btn" onclick="setView('peptides', this)">Peptides</button>
+      <button class="toggle-btn" onclick="setView('tpp', this)">Pipeline</button>
     </div>
     <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle light / dark mode">
       <svg id="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 1020.354 15.354z"/></svg>
@@ -2001,6 +2030,13 @@
       <span class="home-menu-text">
         <span class="home-menu-label">Peptides</span>
         <span class="home-menu-desc">Track patients through the peptide pipeline</span>
+      </span>
+    </div>
+    <div class="home-menu-item" onclick="setView(&#39;tpp&#39;, document.querySelectorAll(&#39;.toggle-btn&#39;)[4])">
+      <span class="home-menu-index">05</span>
+      <span class="home-menu-text">
+        <span class="home-menu-label">Treatment Plan Pipeline</span>
+        <span class="home-menu-desc">Track patients from discovery through treatment plan, then follow-up</span>
       </span>
     </div>
   </div>
@@ -2196,6 +2232,55 @@
   </div>
 </div>
 
+<!-- TREATMENT PLAN PIPELINE VIEW -->
+<div id="tpp-view" class="view">
+  <div class="tpp-board tpp-board-discovery">
+    <div class="tasks-topbar">
+      <div>
+        <h2 class="tasks-heading">Discovery &rarr; Treatment Plan</h2>
+        <p class="tasks-sub">Drag a tile between stages, or use its dropdown</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="refresh-btn" onclick="loadTpp()" title="Refresh" style="color:var(--text-muted);padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--surface)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+        </button>
+        <button class="task-add-btn" onclick="openAddTppModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Add Patient
+        </button>
+      </div>
+    </div>
+    <div class="tasks-filterbar">
+      <span class="filter-label">Filter</span>
+      <div class="filter-search-wrap">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" class="filter-search-input" id="tpp-search" placeholder="Search patient name&hellip;" oninput="renderTppBoard()" autocomplete="off">
+      </div>
+    </div>
+    <div class="kanban-scroll">
+      <div class="kanban-cols" id="tpp-discovery-cols"></div>
+    </div>
+  </div>
+  <div class="tpp-board tpp-board-followup">
+    <div class="tasks-topbar">
+      <div>
+        <h2 class="tasks-heading">Follow-Up</h2>
+        <p class="tasks-sub">Repeatable labs / plan-review cycle after acceptance</p>
+      </div>
+      <button class="task-add-btn" onclick="openAddTppFollowupModal()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        Add Patient
+      </button>
+    </div>
+    <div class="kanban-scroll">
+      <div class="kanban-cols" id="tpp-fu-cols"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ADD TASK MODAL -->
 <div id="task-modal" class="modal-overlay" onclick="closeTaskModalOutside(event)">
   <div class="modal-box">
@@ -2334,6 +2419,64 @@
       </button>
     </div>
     <div class="modal-body" id="pep-detail-body"></div>
+  </div>
+</div>
+
+<!-- TPP ADD PATIENT MODAL (Discovery board) -->
+<div id="tpp-add-modal" class="modal-overlay" onclick="if(event.target===this) closeAddTppModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">New Patient &mdash; Discovery</span>
+      <button class="modal-close" onclick="closeAddTppModal()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field">
+        <label class="modal-label">Patient name</label>
+        <input type="text" id="tpp-new-name" class="modal-input" placeholder="Full name" onkeydown="if(event.key==='Enter') submitAddTpp()">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeAddTppModal()">Cancel</button>
+      <button class="modal-submit" id="tpp-add-submit-btn" onclick="submitAddTpp()">Add Patient</button>
+    </div>
+  </div>
+</div>
+
+<!-- TPP ADD PATIENT MODAL (Follow-Up board, for patients entering follow-up
+     directly rather than via the Discovery hand-off) -->
+<div id="tpp-fu-add-modal" class="modal-overlay" onclick="if(event.target===this) closeAddTppFollowupModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">New Patient &mdash; Follow-Up</span>
+      <button class="modal-close" onclick="closeAddTppFollowupModal()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field">
+        <label class="modal-label">Patient name</label>
+        <input type="text" id="tpp-fu-new-name" class="modal-input" placeholder="Full name" onkeydown="if(event.key==='Enter') submitAddTppFollowup()">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeAddTppFollowupModal()">Cancel</button>
+      <button class="modal-submit" id="tpp-fu-add-submit-btn" onclick="submitAddTppFollowup()">Add Patient</button>
+    </div>
+  </div>
+</div>
+
+<!-- TPP DETAIL MODAL -->
+<div id="tpp-detail-modal" class="modal-overlay" onclick="if(event.target===this) closeTppDetail()">
+  <div class="modal-box pep-detail-box">
+    <div class="modal-header">
+      <span class="modal-title" id="tpp-detail-title">Patient</span>
+      <button class="modal-close" onclick="closeTppDetail()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="tpp-detail-body"></div>
   </div>
 </div>
 
@@ -2514,6 +2657,12 @@ function setView(view, btn) {
     startPeptidePolling();
   } else {
     stopPeptidePolling();
+  }
+  if (view === 'tpp') {
+    loadTpp();
+    startTppPolling();
+  } else {
+    stopTppPolling();
   }
 }
 // ── Doctor selection ──────────────────────────────────────────────────────────
@@ -2955,6 +3104,32 @@ let allPeptides = [];
 let peptidePollInterval = null;
 let pepDragData = null;
 let pepDetailPatientId = null;
+
+// -- Treatment Plan Pipeline state ------------------------------------------
+const TPP_DISCOVERY_STAGES = [
+  { key: 'scheduled_for_discovery', label: 'Scheduled for Discovery' },
+  { key: 'labs_ordered', label: 'Labs Ordered' },
+  { key: 'labs_in_labcorp', label: 'Labs in LabCorp' },
+  { key: 'deep_dive_scheduled', label: 'Deep Dive Scheduled' },
+  { key: 'deep_dive_completed', label: 'Deep Dive Completed' },
+  { key: 'treatment_plan_sent', label: 'Treatment Plan Sent' },
+  { key: 'pending_acceptance', label: 'Awaiting Acceptance' },
+  { key: 'treatment_plan_scheduled', label: 'Treatment Plan Scheduled' },
+  { key: 'followup_labs_ordered', label: 'Follow-Up Labs Ordered' },
+];
+const TPP_DECLINED_STAGE = { key: 'declined_on_hold', label: 'Declined / On Hold' };
+const TPP_ALL_DISCOVERY_STAGES = TPP_DISCOVERY_STAGES.concat([TPP_DECLINED_STAGE]);
+const TPP_FOLLOWUP_STAGES = [
+  { key: 'labs_sent', label: 'Labs Sent' },
+  { key: 'labs_in_labcorp', label: 'Labs in LabCorp' },
+  { key: 'treatment_plan_followup_scheduled', label: 'Plan Review Scheduled' },
+  { key: 'treatment_plan_review', label: 'Treatment Plan Review' },
+  { key: 'adjustments', label: 'Adjustments to Plan' },
+];
+let allTpp = [];
+let tppPollInterval = null;
+let tppDragData = null;
+let tppDetailPatientId = null;
 
 // Comments are collapsed by default (opposite of threads) — the whole point
 // is to keep the card compact until someone actually wants to read/add one.
@@ -4835,6 +5010,827 @@ async function removePeptideFile(patientId, orderId, fileId) {
     }
     renderPeptideBoard();
     renderPeptideDetail(patientId);
+    showToast('File removed');
+  } catch (err) {
+    showToast('Could not remove file: ' + err.message);
+  }
+}
+
+// ============================================================================
+// -- Treatment Plan Pipeline -------------------------------------------------
+// Two boards sharing one patient record: `discoveryStage`/`discoveryHistory`/
+// `discoveryFiles` for the once-through intake pipeline, and `followupOrders`
+// (repeatable, same shape as peptide orders) for the follow-up cycle.
+// ============================================================================
+function tppStageLabel(key) {
+  const s = TPP_ALL_DISCOVERY_STAGES.find(s => s.key === key);
+  return s ? s.label : key;
+}
+function tppFollowupStageLabel(key) {
+  const s = TPP_FOLLOWUP_STAGES.find(s => s.key === key);
+  return s ? s.label : key;
+}
+async function loadTpp() {
+  try {
+    const res = await fetch(WORKER_URL + '/tpp');
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    allTpp = await res.json();
+    renderTppBoard();
+  } catch (err) {
+    const el = document.getElementById('tpp-discovery-cols');
+    if (el) el.innerHTML = '<p style="color:var(--danger);padding:20px">Could not load pipeline: ' + escapeHtml(err.message) + '</p>';
+  }
+}
+function startTppPolling() {
+  if (tppPollInterval) return;
+  let lastKey = null;
+  tppPollInterval = setInterval(async () => {
+    try {
+      const metaRes = await fetch(WORKER_URL + '/tpp/meta');
+      if (!metaRes.ok) return;
+      const meta = await metaRes.json();
+      const metaKey = meta.count + ':' + (meta.savedAt || '');
+      if (metaKey === lastKey) return;
+      const isFirst = lastKey === null;
+      lastKey = metaKey;
+      if (isFirst) return;
+      await loadTpp();
+    } catch (e) {}
+  }, 20000);
+}
+function stopTppPolling() {
+  clearInterval(tppPollInterval);
+  tppPollInterval = null;
+}
+// -- Discovery board rendering ----------------------------------------------
+function renderTppBoard() {
+  renderTppDiscoveryBoard();
+  renderTppFollowupBoard();
+}
+function renderTppDiscoveryBoard() {
+  const container = document.getElementById('tpp-discovery-cols');
+  if (!container) return;
+  const searchEl = document.getElementById('tpp-search');
+  const query = (searchEl && searchEl.value || '').trim().toLowerCase();
+  container.innerHTML = TPP_ALL_DISCOVERY_STAGES.map(stage => {
+    let cards = allTpp.filter(p => p.discoveryStage === stage.key);
+    if (query) cards = cards.filter(p => p.name.toLowerCase().includes(query));
+    cards.sort((a, b) => {
+      const aHist = a.discoveryHistory || [];
+      const bHist = b.discoveryHistory || [];
+      const at = aHist.length ? aHist[aHist.length - 1].at : a.createdAt;
+      const bt = bHist.length ? bHist[bHist.length - 1].at : b.createdAt;
+      return new Date(at) - new Date(bt);
+    });
+    const isDeclined = stage.key === TPP_DECLINED_STAGE.key;
+    const cardsHtml = cards.map(patient => {
+      const hist = patient.discoveryHistory || [];
+      const lastEntry = hist.length ? hist[hist.length - 1] : null;
+      const filesCount = (patient.discoveryFiles || []).length;
+      const isPending = patient.discoveryStage === 'pending_acceptance';
+      const canHandOff = patient.discoveryStage === 'followup_labs_ordered' &&
+        !(patient.followupOrders || []).some(o => !o.completedAt);
+      const options = TPP_ALL_DISCOVERY_STAGES.filter(s => s.key !== stage.key)
+        .map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('');
+      let ageHtml = '';
+      if (lastEntry && !isDeclined) {
+        const days = daysSince(lastEntry.at);
+        let cls = 'age-ok';
+        if (days >= PEP_AGE_ALERT_DAYS) cls = 'age-alert';
+        else if (days >= PEP_AGE_WARN_DAYS) cls = 'age-warn';
+        ageHtml = '<span class="pep-card-age ' + cls + '">' + days + (days === 1 ? ' day' : ' days') + ' in stage</span>';
+      }
+      let actionHtml = '';
+      if (isPending) {
+        actionHtml = '<div class="tpp-decision-row" onclick="event.stopPropagation()">' +
+          '<button class="tpp-decision-btn tpp-accept-btn" onclick="acceptTppTreatmentPlan(\'' + patient.id + '\')">&#10003; Accepted</button>' +
+          '<button class="tpp-decision-btn tpp-decline-btn" onclick="declineTppTreatmentPlan(\'' + patient.id + '\')">&#10007; Declined</button>' +
+        '</div>';
+      } else if (canHandOff) {
+        actionHtml = '<button class="tpp-handoff-btn" onclick="event.stopPropagation();sendTppToFollowUp(\'' + patient.id + '\')">Send to Follow-Up &rarr;</button>';
+      }
+      return '' +
+        '<div class="pep-card" draggable="true" ' +
+          'ondragstart="tppCardDragStart(event,\'' + patient.id + '\')" ' +
+          'onclick="openTppDetail(\'' + patient.id + '\')">' +
+          '<div class="pep-card-name">' + escapeHtml(patient.name) +
+            (patient.decision === 'declined' ? '<span class="tpp-decision-tag declined">Declined</span>' : '') +
+            (patient.decision === 'accepted' && stage.key !== 'followup_labs_ordered' ? '<span class="tpp-decision-tag accepted">Accepted</span>' : '') +
+          '</div>' +
+          '<div class="pep-card-meta">' + (lastEntry ? formatTime(lastEntry.at) : '') + (lastEntry && lastEntry.comment ? ' &mdash; ' + escapeHtml(lastEntry.comment) : '') + '</div>' +
+          (filesCount ? '<div class="pep-card-files">' + filesCount + ' file' + (filesCount === 1 ? '' : 's') + ' attached</div>' : '') +
+          ageHtml +
+          actionHtml +
+          (isDeclined ? '' : '<select class="pep-move-select" onclick="event.stopPropagation()" onchange="moveTppDiscoveryStage(\'' + patient.id + '\', this.value); this.selectedIndex = 0;">' +
+            '<option value="">Move to&hellip;</option>' + options +
+          '</select>') +
+        '</div>';
+    }).join('');
+    return '' +
+      '<div class="kanban-col pep-col' + (cards.length === 0 ? ' pep-col-empty' : '') + (isDeclined ? ' tpp-declined-col' : '') + '" title="' + escapeHtml(stage.label) + '" ' +
+        'ondragover="tppColDragOver(event)" ondragleave="tppColDragLeave(event)" ondrop="tppColDrop(event,\'' + stage.key + '\')">' +
+        '<div class="kanban-col-header">' +
+          '<span class="kanban-col-name">' + stage.label + '</span>' +
+          '<span class="kanban-col-count">' + cards.length + '</span>' +
+        '</div>' +
+        '<div class="kanban-cards">' + cardsHtml + '</div>' +
+      '</div>';
+  }).join('');
+}
+function tppCardDragStart(e, patientId) {
+  tppDragData = { kind: 'discovery', patientId };
+  e.dataTransfer.effectAllowed = 'move';
+}
+function tppColDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function tppColDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+async function tppColDrop(e, stageKey) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!tppDragData || tppDragData.kind !== 'discovery') return;
+  const { patientId } = tppDragData;
+  tppDragData = null;
+  const patient = allTpp.find(p => p.id === patientId);
+  if (!patient || patient.discoveryStage === stageKey) return;
+  await moveTppDiscoveryStage(patientId, stageKey);
+}
+async function moveTppDiscoveryStage(patientId, stageKey, comment) {
+  if (!stageKey) return;
+  try {
+    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ setDiscoveryStage: { stage: stageKey, comment: comment || '' } }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allTpp.findIndex(p => p.id === patientId);
+    if (idx !== -1) allTpp[idx] = updated;
+    renderTppBoard();
+    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    showToast('Moved to ' + tppStageLabel(stageKey));
+  } catch (err) {
+    showToast('Could not move: ' + err.message);
+  }
+}
+async function acceptTppTreatmentPlan(patientId) {
+  try {
+    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acceptTreatmentPlan: true }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allTpp.findIndex(p => p.id === patientId);
+    if (idx !== -1) allTpp[idx] = updated;
+    renderTppBoard();
+    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    showToast('Treatment plan accepted');
+  } catch (err) {
+    showToast('Could not save: ' + err.message);
+  }
+}
+async function declineTppTreatmentPlan(patientId) {
+  const comment = prompt('Optional note about the decline (e.g. reason, next steps):', '') || '';
+  try {
+    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ declineTreatmentPlan: { comment } }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allTpp.findIndex(p => p.id === patientId);
+    if (idx !== -1) allTpp[idx] = updated;
+    renderTppBoard();
+    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    showToast('Marked declined');
+  } catch (err) {
+    showToast('Could not save: ' + err.message);
+  }
+}
+async function sendTppToFollowUp(patientId) {
+  try {
+    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sendToFollowUp: true }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allTpp.findIndex(p => p.id === patientId);
+    if (idx !== -1) allTpp[idx] = updated;
+    renderTppBoard();
+    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    showToast('Sent to Follow-Up');
+  } catch (err) {
+    showToast('Could not send to follow-up: ' + err.message);
+  }
+}
+// -- Follow-Up board rendering ------------------------------------------------
+function renderTppFollowupBoard() {
+  const container = document.getElementById('tpp-fu-cols');
+  if (!container) return;
+  const searchEl = document.getElementById('tpp-search');
+  const query = (searchEl && searchEl.value || '').trim().toLowerCase();
+  container.innerHTML = TPP_FOLLOWUP_STAGES.map(stage => {
+    const cards = [];
+    allTpp.forEach(patient => {
+      if (query && !patient.name.toLowerCase().includes(query)) return;
+      (patient.followupOrders || []).forEach((order, idx) => {
+        if (order.stage === stage.key) cards.push({ patient, order, orderIndex: idx });
+      });
+    });
+    cards.sort((a, b) => {
+      const aHist = a.order.history || [];
+      const bHist = b.order.history || [];
+      const at = aHist.length ? aHist[aHist.length - 1].at : a.order.startedAt;
+      const bt = bHist.length ? bHist[bHist.length - 1].at : b.order.startedAt;
+      return new Date(at) - new Date(bt);
+    });
+    const cardsHtml = cards.map(({ patient, order, orderIndex }) => {
+      const hist = order.history || [];
+      const lastEntry = hist.length ? hist[hist.length - 1] : null;
+      const filesCount = (order.files || []).length;
+      const multiOrder = (patient.followupOrders || []).length > 1;
+      const options = TPP_FOLLOWUP_STAGES.filter(s => s.key !== order.stage)
+        .map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('');
+      let ageHtml = '';
+      if (lastEntry && !order.completedAt) {
+        const days = daysSince(lastEntry.at);
+        let cls = 'age-ok';
+        if (days >= PEP_AGE_ALERT_DAYS) cls = 'age-alert';
+        else if (days >= PEP_AGE_WARN_DAYS) cls = 'age-warn';
+        ageHtml = '<span class="pep-card-age ' + cls + '">' + days + (days === 1 ? ' day' : ' days') + ' in stage</span>';
+      }
+      return '' +
+        '<div class="pep-card' + (order.completedAt ? ' completed' : '') + '" draggable="true" ' +
+          'ondragstart="tppFuCardDragStart(event,\'' + patient.id + '\',\'' + order.id + '\')" ' +
+          'onclick="openTppDetail(\'' + patient.id + '\')">' +
+          '<div class="pep-card-name">' + escapeHtml(patient.name) + (multiOrder ? ' <span class="pep-order-badge">Round ' + (orderIndex + 1) + '</span>' : '') + '</div>' +
+          '<div class="pep-card-meta">' + (lastEntry ? formatTime(lastEntry.at) : '') + (lastEntry && lastEntry.comment ? ' &mdash; ' + escapeHtml(lastEntry.comment) : '') + '</div>' +
+          (filesCount ? '<div class="pep-card-files">' + filesCount + ' file' + (filesCount === 1 ? '' : 's') + ' attached</div>' : '') +
+          ageHtml +
+          (order.completedAt ? '' : '<select class="pep-move-select" onclick="event.stopPropagation()" onchange="moveTppFollowupStage(\'' + patient.id + '\',\'' + order.id + '\', this.value); this.selectedIndex = 0;">' +
+            '<option value="">Move to&hellip;</option>' + options +
+          '</select>') +
+        '</div>';
+    }).join('');
+    return '' +
+      '<div class="kanban-col pep-col' + (cards.length === 0 ? ' pep-col-empty' : '') + '" title="' + escapeHtml(stage.label) + '" ' +
+        'ondragover="tppColDragOver(event)" ondragleave="tppColDragLeave(event)" ondrop="tppFuColDrop(event,\'' + stage.key + '\')">' +
+        '<div class="kanban-col-header">' +
+          '<span class="kanban-col-name">' + stage.label + '</span>' +
+          '<span class="kanban-col-count">' + cards.length + '</span>' +
+        '</div>' +
+        '<div class="kanban-cards">' + cardsHtml + '</div>' +
+      '</div>';
+  }).join('');
+}
+function tppFuCardDragStart(e, patientId, orderId) {
+  tppDragData = { kind: 'followup', patientId, orderId };
+  e.dataTransfer.effectAllowed = 'move';
+}
+async function tppFuColDrop(e, stageKey) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!tppDragData || tppDragData.kind !== 'followup') return;
+  const { patientId, orderId } = tppDragData;
+  tppDragData = null;
+  const patient = allTpp.find(p => p.id === patientId);
+  const order = patient && (patient.followupOrders || []).find(o => o.id === orderId);
+  if (!order || order.stage === stageKey) return;
+  await moveTppFollowupStage(patientId, orderId, stageKey);
+}
+async function moveTppFollowupStage(patientId, orderId, stageKey, comment) {
+  if (!stageKey) return;
+  try {
+    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ setFollowupStage: { orderId, stage: stageKey, comment: comment || '' } }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allTpp.findIndex(p => p.id === patientId);
+    if (idx !== -1) allTpp[idx] = updated;
+    renderTppBoard();
+    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    showToast('Moved to ' + tppFollowupStageLabel(stageKey));
+  } catch (err) {
+    showToast('Could not move: ' + err.message);
+  }
+}
+async function startNewTppFollowupOrder(patientId) {
+  try {
+    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newFollowupOrder: true }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allTpp.findIndex(p => p.id === patientId);
+    if (idx !== -1) allTpp[idx] = updated;
+    renderTppBoard();
+    renderTppDetail(patientId);
+    showToast('New follow-up round started');
+  } catch (err) {
+    showToast('Could not start new round: ' + err.message);
+  }
+}
+function finishTppFollowupOrder(patientId, orderId) {
+  if (!confirm('Mark this follow-up round as finished?')) return;
+  moveTppFollowupStage(patientId, orderId, 'adjustments').then(async () => {
+    try {
+      const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ finishFollowupOrder: { orderId } }),
+      });
+      if (!res.ok) throw new Error('Server error ' + res.status);
+      const updated = await res.json();
+      const idx = allTpp.findIndex(p => p.id === patientId);
+      if (idx !== -1) allTpp[idx] = updated;
+      renderTppBoard();
+      renderTppDetail(patientId);
+      showToast('Round finished');
+    } catch (err) {
+      showToast('Could not finish round: ' + err.message);
+    }
+  });
+}
+// -- Add patient --------------------------------------------------------------
+function openAddTppModal() {
+  document.getElementById('tpp-new-name').value = '';
+  document.getElementById('tpp-add-modal').classList.add('open');
+  setTimeout(() => document.getElementById('tpp-new-name').focus(), 50);
+}
+function closeAddTppModal() {
+  document.getElementById('tpp-add-modal').classList.remove('open');
+}
+async function submitAddTpp() {
+  const name = document.getElementById('tpp-new-name').value.trim();
+  if (!name) { document.getElementById('tpp-new-name').focus(); return; }
+  const btn = document.getElementById('tpp-add-submit-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const res = await fetch(WORKER_URL + '/tpp', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const patient = await res.json();
+    allTpp.unshift(patient);
+    renderTppBoard();
+    closeAddTppModal();
+    showToast('Patient added');
+  } catch (err) {
+    showToast('Could not add patient: ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Add Patient';
+  }
+}
+function openAddTppFollowupModal() {
+  document.getElementById('tpp-fu-new-name').value = '';
+  document.getElementById('tpp-fu-add-modal').classList.add('open');
+  setTimeout(() => document.getElementById('tpp-fu-new-name').focus(), 50);
+}
+function closeAddTppFollowupModal() {
+  document.getElementById('tpp-fu-add-modal').classList.remove('open');
+}
+async function submitAddTppFollowup() {
+  const name = document.getElementById('tpp-fu-new-name').value.trim();
+  if (!name) { document.getElementById('tpp-fu-new-name').focus(); return; }
+  const btn = document.getElementById('tpp-fu-add-submit-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const res = await fetch(WORKER_URL + '/tpp', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, startInFollowUp: true }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const patient = await res.json();
+    allTpp.unshift(patient);
+    renderTppBoard();
+    closeAddTppFollowupModal();
+    showToast('Patient added to Follow-Up');
+  } catch (err) {
+    showToast('Could not add patient: ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Add Patient';
+  }
+}
+// -- Patient detail modal -----------------------------------------------------
+function openTppDetail(patientId) {
+  tppDetailPatientId = patientId;
+  renderTppDetail(patientId);
+  document.getElementById('tpp-detail-modal').classList.add('open');
+}
+function closeTppDetail() {
+  document.getElementById('tpp-detail-modal').classList.remove('open');
+  tppDetailPatientId = null;
+}
+function tppHistoryRowsHtml(patient, orderId, hist, stagesAll, kind) {
+  // kind: 'discovery' or 'followup' -- selects which PATCH ops / id prefixes to use
+  const prefix = kind === 'discovery' ? 'tpp-hist' : 'tppfu-hist';
+  const editFn = kind === 'discovery' ? 'saveTppHistoryEdit' : 'saveTppFollowupHistoryEdit';
+  const delFn = kind === 'discovery' ? 'deleteTppHistoryEntry' : 'deleteTppFollowupHistoryEntry';
+  const stageLabelFn = kind === 'discovery' ? tppStageLabel : tppFollowupStageLabel;
+  const orderArg = kind === 'discovery' ? '' : "'" + orderId + "',";
+  return hist.slice().reverse().map(h => {
+    const rowId = prefix + '-' + h.id;
+    const stageOptions = stagesAll.map(s => '<option value="' + s.key + '"' + (s.key === h.stage ? ' selected' : '') + '>' + s.label + '</option>').join('');
+    return '' +
+      '<div class="pep-history-row">' +
+        '<div class="pep-history-summary" onclick="toggleHistoryRow(\'' + rowId + '\')">' +
+          '<span><strong>' + escapeHtml(stageLabelFn(h.stage)) + '</strong> &mdash; ' + formatTime(h.at) + (h.editedAt ? ' <em style="color:var(--text-muted);font-style:italic">(edited)</em>' : '') + '</span>' +
+          '<span style="color:var(--text-muted)">' + (h.comment ? '💬 ' : '') + '▾</span>' +
+        '</div>' +
+        '<div class="pep-history-detail" id="' + rowId + '">' +
+          '<div class="modal-field"><label class="modal-label">Stage</label><select class="modal-select" id="' + rowId + '-stage">' + stageOptions + '</select></div>' +
+          '<div class="modal-field"><label class="modal-label">Timestamp</label><input type="datetime-local" class="modal-input" id="' + rowId + '-at" value="' + toLocalInputValue(h.at) + '"></div>' +
+          '<div class="modal-field"><label class="modal-label">Comment / note</label><textarea class="modal-textarea" id="' + rowId + '-comment" style="min-height:50px">' + escapeHtml(h.comment || '') + '</textarea></div>' +
+          '<div style="display:flex;justify-content:space-between;gap:8px">' +
+            '<button class="modal-cancel" style="border-color:var(--danger);color:var(--danger);padding:6px 14px;font-size:0.78rem" onclick="' + delFn + '(\'' + patient.id + '\',' + orderArg + '\'' + h.id + '\')">Delete entry</button>' +
+            '<button class="modal-submit" style="padding:6px 16px;font-size:0.78rem" onclick="' + editFn + '(\'' + patient.id + '\',' + orderArg + '\'' + h.id + '\',\'' + rowId + '\')">Save</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  }).join('');
+}
+function renderTppDiscoverySection(patient) {
+  const hist = patient.discoveryHistory || [];
+  const historyHtml = tppHistoryRowsHtml(patient, null, hist, TPP_ALL_DISCOVERY_STAGES, 'discovery');
+  const addRowId = 'tpp-addhist-' + patient.id;
+  const stageOptionsAll = TPP_ALL_DISCOVERY_STAGES.map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('');
+  const addHistoryHtml = '' +
+    '<div class="pep-history-row">' +
+      '<div class="pep-history-summary" onclick="toggleHistoryRow(\'' + addRowId + '\')">' +
+        '<span style="color:var(--accent-dark)">+ Add a step that was missed or happened out of order</span>' +
+        '<span style="color:var(--text-muted)">▾</span>' +
+      '</div>' +
+      '<div class="pep-history-detail" id="' + addRowId + '">' +
+        '<div class="modal-field"><label class="modal-label">Stage</label><select class="modal-select" id="' + addRowId + '-stage">' + stageOptionsAll + '</select></div>' +
+        '<div class="modal-field"><label class="modal-label">Timestamp</label><input type="datetime-local" class="modal-input" id="' + addRowId + '-at" value="' + toLocalInputValue(new Date().toISOString()) + '"></div>' +
+        '<div class="modal-field"><label class="modal-label">Comment / note</label><textarea class="modal-textarea" id="' + addRowId + '-comment" style="min-height:50px" placeholder="Optional note"></textarea></div>' +
+        '<button class="modal-submit" style="align-self:flex-end;padding:6px 16px;font-size:0.78rem" onclick="addTppHistoryEntry(\'' + patient.id + '\',\'' + addRowId + '\')">Add to timeline</button>' +
+      '</div>' +
+    '</div>';
+  const files = patient.discoveryFiles || [];
+  const filesHtml = files.length ? files.map(f => '' +
+    '<div class="pep-file-row">' +
+      '<a href="' + WORKER_URL + '/tpp/files/' + f.id + '" target="_blank" rel="noopener">' + escapeHtml(f.name) + ' <span style="color:var(--text-muted);font-weight:400">(' + escapeHtml(f.category || 'other') + ')</span></a>' +
+      '<button class="modal-close" onclick="removeTppFile(\'' + patient.id + '\',null,\'' + f.id + '\')" title="Remove file">' +
+        '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
+      '</button>' +
+    '</div>').join('') : '<p style="color:var(--text-muted);font-size:0.8rem">No files yet.</p>';
+  const isPending = patient.discoveryStage === 'pending_acceptance';
+  const canHandOff = patient.discoveryStage === 'followup_labs_ordered' &&
+    !(patient.followupOrders || []).some(o => !o.completedAt);
+  const moveOptions = TPP_ALL_DISCOVERY_STAGES.filter(s => s.key !== patient.discoveryStage)
+    .map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('');
+  return '' +
+    '<div class="pep-order-block" style="border-top:none;padding-top:0;margin-top:0">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
+        '<span class="pep-section-title">Discovery &rarr; Treatment Plan</span>' +
+        '<select class="modal-select" style="width:auto;font-size:0.78rem;padding:6px 10px" onchange="moveTppDiscoveryStage(\'' + patient.id + '\', this.value); this.selectedIndex=0;">' +
+          '<option value="">Move to&hellip;</option>' + moveOptions + '</select>' +
+      '</div>' +
+      '<p style="font-size:0.78rem;color:var(--text-muted);margin:8px 0">Current stage: <strong style="color:var(--text)">' + escapeHtml(tppStageLabel(patient.discoveryStage)) + '</strong>' +
+        (patient.decision === 'declined' ? ' <span class="tpp-decision-tag declined">Declined</span>' : '') +
+        (patient.decision === 'accepted' ? ' <span class="tpp-decision-tag accepted">Accepted</span>' : '') +
+      '</p>' +
+      (isPending ? '<div class="tpp-decision-row"><button class="tpp-decision-btn tpp-accept-btn" onclick="acceptTppTreatmentPlan(\'' + patient.id + '\')">&#10003; Accepted</button><button class="tpp-decision-btn tpp-decline-btn" onclick="declineTppTreatmentPlan(\'' + patient.id + '\')">&#10007; Declined</button></div>' : '') +
+      (canHandOff ? '<button class="tpp-handoff-btn" onclick="sendTppToFollowUp(\'' + patient.id + '\')">Send to Follow-Up &rarr;</button>' : '') +
+      '<div class="pep-section-title" style="margin-top:12px">History</div>' +
+      historyHtml + addHistoryHtml +
+      '<div class="pep-section-title" style="margin-top:12px">Files</div>' +
+      filesHtml +
+      '<div class="pep-file-drop" ondragover="pepFileDragOver(event)" ondragleave="pepFileDragLeave(event)" ondrop="tppDiscoveryFileDrop(event,\'' + patient.id + '\')">' +
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+          '<select class="modal-select" id="tpp-file-cat-' + patient.id + '" style="width:auto;font-size:0.78rem;padding:6px 10px">' +
+            '<option value="labs">Labs</option><option value="deep_dive_notes">Deep Dive Notes</option><option value="treatment_plan">Treatment Plan</option><option value="other">Other</option>' +
+          '</select>' +
+          '<label class="modal-cancel" style="padding:6px 14px;font-size:0.78rem;cursor:pointer">Choose File<input type="file" multiple style="display:none" onchange="uploadTppDiscoveryFile(\'' + patient.id + '\', this)"></label>' +
+          '<span style="font-size:0.72rem;color:var(--text-muted)">or drop file(s) here</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+}
+function renderTppFollowupOrderBlock(patient, order, orderIndex, isActive) {
+  const hist = order.history || [];
+  const historyHtml = tppHistoryRowsHtml(patient, order.id, hist, TPP_FOLLOWUP_STAGES, 'followup');
+  const addRowId = 'tppfu-addhist-' + order.id;
+  const stageOptionsAll = TPP_FOLLOWUP_STAGES.map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('');
+  const addHistoryHtml = '' +
+    '<div class="pep-history-row">' +
+      '<div class="pep-history-summary" onclick="toggleHistoryRow(\'' + addRowId + '\')">' +
+        '<span style="color:var(--accent-dark)">+ Add a step that was missed or happened out of order</span>' +
+        '<span style="color:var(--text-muted)">▾</span>' +
+      '</div>' +
+      '<div class="pep-history-detail" id="' + addRowId + '">' +
+        '<div class="modal-field"><label class="modal-label">Stage</label><select class="modal-select" id="' + addRowId + '-stage">' + stageOptionsAll + '</select></div>' +
+        '<div class="modal-field"><label class="modal-label">Timestamp</label><input type="datetime-local" class="modal-input" id="' + addRowId + '-at" value="' + toLocalInputValue(new Date().toISOString()) + '"></div>' +
+        '<div class="modal-field"><label class="modal-label">Comment / note</label><textarea class="modal-textarea" id="' + addRowId + '-comment" style="min-height:50px" placeholder="Optional note"></textarea></div>' +
+        '<button class="modal-submit" style="align-self:flex-end;padding:6px 16px;font-size:0.78rem" onclick="addTppFollowupHistoryEntry(\'' + patient.id + '\',\'' + order.id + '\',\'' + addRowId + '\')">Add to timeline</button>' +
+      '</div>' +
+    '</div>';
+  const files = order.files || [];
+  const filesHtml = files.length ? files.map(f => '' +
+    '<div class="pep-file-row">' +
+      '<a href="' + WORKER_URL + '/tpp/files/' + f.id + '" target="_blank" rel="noopener">' + escapeHtml(f.name) + ' <span style="color:var(--text-muted);font-weight:400">(' + escapeHtml(f.category || 'other') + ')</span></a>' +
+      '<button class="modal-close" onclick="removeTppFile(\'' + patient.id + '\',\'' + order.id + '\',\'' + f.id + '\')" title="Remove file">' +
+        '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
+      '</button>' +
+    '</div>').join('') : '<p style="color:var(--text-muted);font-size:0.8rem">No files yet.</p>';
+  const moveOptions = isActive ? TPP_FOLLOWUP_STAGES.filter(s => s.key !== order.stage)
+    .map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('') : '';
+  return '' +
+    '<div class="pep-order-block">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
+        '<span class="pep-section-title">Round ' + (orderIndex + 1) + (order.completedAt ? ' &mdash; Finished' : ' &mdash; In Progress') + '</span>' +
+        (isActive ? '<select class="modal-select" style="width:auto;font-size:0.78rem;padding:6px 10px" onchange="moveTppFollowupStage(\'' + patient.id + '\',\'' + order.id + '\', this.value); this.selectedIndex=0;">' +
+          '<option value="">Move to&hellip;</option>' + moveOptions + '</select>' : '') +
+      '</div>' +
+      '<p style="font-size:0.78rem;color:var(--text-muted);margin:8px 0">Current stage: <strong style="color:var(--text)">' + escapeHtml(tppFollowupStageLabel(order.stage)) + '</strong></p>' +
+      '<div class="pep-section-title">History</div>' +
+      historyHtml + addHistoryHtml +
+      '<div class="pep-section-title" style="margin-top:12px">Files</div>' +
+      filesHtml +
+      '<div class="pep-file-drop" ondragover="pepFileDragOver(event)" ondragleave="pepFileDragLeave(event)" ondrop="tppFollowupFileDrop(event,\'' + patient.id + '\',\'' + order.id + '\')">' +
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+          '<select class="modal-select" id="tppfu-file-cat-' + order.id + '" style="width:auto;font-size:0.78rem;padding:6px 10px">' +
+            '<option value="labs">Labs</option><option value="treatment_plan">Treatment Plan</option><option value="other">Other</option>' +
+          '</select>' +
+          '<label class="modal-cancel" style="padding:6px 14px;font-size:0.78rem;cursor:pointer">Choose File<input type="file" multiple style="display:none" onchange="uploadTppFollowupFile(\'' + patient.id + '\',\'' + order.id + '\', this)"></label>' +
+          '<span style="font-size:0.72rem;color:var(--text-muted)">or drop file(s) here</span>' +
+        '</div>' +
+      '</div>' +
+      (isActive && !order.completedAt ? '<button class="modal-submit" style="width:100%;margin-top:14px" onclick="finishTppFollowupOrder(\'' + patient.id + '\',\'' + order.id + '\')">✓ Finish Round</button>' : '') +
+    '</div>';
+}
+function renderTppDetail(patientId) {
+  const patient = allTpp.find(p => p.id === patientId);
+  const body = document.getElementById('tpp-detail-body');
+  if (!patient) { body.innerHTML = '<p>Patient not found.</p>'; return; }
+  document.getElementById('tpp-detail-title').textContent = patient.name;
+  const orders = patient.followupOrders || [];
+  let activeOrder = null;
+  for (let i = orders.length - 1; i >= 0; i--) { if (!orders[i].completedAt) { activeOrder = orders[i]; break; } }
+  if (!activeOrder && orders.length) activeOrder = orders[orders.length - 1];
+  const canStartNew = orders.length > 0 && !!orders[orders.length - 1].completedAt;
+  const followupHtml = orders.length ? orders.slice().reverse()
+    .map(o => renderTppFollowupOrderBlock(patient, o, orders.indexOf(o), activeOrder && o.id === activeOrder.id))
+    .join('') : '<p style="color:var(--text-muted);font-size:0.8rem">Not in the Follow-Up pipeline yet.</p>';
+  const hasDiscovery = !!patient.discoveryStage;
+  body.innerHTML = '' +
+    '<div class="modal-field">' +
+      '<label class="modal-label">Patient name</label>' +
+      '<div style="display:flex;gap:8px">' +
+        '<input type="text" class="modal-input" id="tpp-detail-name" value="' + escapeHtml(patient.name) + '">' +
+        '<button class="modal-submit" style="padding:8px 16px;font-size:0.78rem" onclick="saveTppName(\'' + patient.id + '\')">Save</button>' +
+      '</div>' +
+    '</div>' +
+    (hasDiscovery ? renderTppDiscoverySection(patient) : '') +
+    (canStartNew ? '<button class="modal-submit" style="width:100%;margin-top:14px" onclick="startNewTppFollowupOrder(\'' + patient.id + '\')">+ Start New Follow-Up Round</button>' : '') +
+    '<div class="pep-order-block">' + followupHtml + '</div>' +
+    '<button class="modal-cancel" style="border-color:var(--danger);color:var(--danger);width:100%;margin-top:14px" onclick="deleteTppPatient(\'' + patient.id + '\')">Delete Patient</button>';
+}
+async function saveTppName(patientId) {
+  const name = document.getElementById('tpp-detail-name').value.trim();
+  if (!name) return;
+  try {
+    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allTpp.findIndex(p => p.id === patientId);
+    if (idx !== -1) allTpp[idx] = updated;
+    renderTppBoard();
+    document.getElementById('tpp-detail-title').textContent = updated.name;
+    showToast('Name updated');
+  } catch (err) {
+    showToast('Could not save: ' + err.message);
+  }
+}
+async function deleteTppPatient(patientId) {
+  if (!confirm('Delete this patient and all their pipeline history? This cannot be undone.')) return;
+  try {
+    await fetch(WORKER_URL + '/tpp/' + patientId, { method: 'DELETE' });
+    allTpp = allTpp.filter(p => p.id !== patientId);
+    renderTppBoard();
+    closeTppDetail();
+    showToast('Patient deleted');
+  } catch (err) {
+    showToast('Could not delete: ' + err.message);
+  }
+}
+// -- Discovery history edit/add/delete ---------------------------------------
+async function saveTppHistoryEdit(patientId, historyId, rowId) {
+  const atLocal = document.getElementById(rowId + '-at').value;
+  const comment = document.getElementById(rowId + '-comment').value;
+  const stageEl = document.getElementById(rowId + '-stage');
+  const stage = stageEl ? stageEl.value : undefined;
+  if (!atLocal) return;
+  try {
+    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ editDiscoveryHistory: { historyId, at: new Date(atLocal).toISOString(), comment, stage } }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allTpp.findIndex(p => p.id === patientId);
+    if (idx !== -1) allTpp[idx] = updated;
+    renderTppDetail(patientId);
+    renderTppBoard();
+    showToast('History updated');
+  } catch (err) {
+    showToast('Could not save: ' + err.message);
+  }
+}
+async function deleteTppHistoryEntry(patientId, historyId) {
+  if (!confirm('Delete this timeline entry? This cannot be undone.')) return;
+  try {
+    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deleteDiscoveryHistory: { historyId } }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allTpp.findIndex(p => p.id === patientId);
+    if (idx !== -1) allTpp[idx] = updated;
+    renderTppDetail(patientId);
+    renderTppBoard();
+    showToast('Entry deleted');
+  } catch (err) {
+    showToast('Could not delete: ' + err.message);
+  }
+}
+async function addTppHistoryEntry(patientId, rowId) {
+  const stage = document.getElementById(rowId + '-stage').value;
+  const atLocal = document.getElementById(rowId + '-at').value;
+  const comment = document.getElementById(rowId + '-comment').value;
+  if (!atLocal) return;
+  try {
+    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ addDiscoveryHistory: { stage, at: new Date(atLocal).toISOString(), comment } }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allTpp.findIndex(p => p.id === patientId);
+    if (idx !== -1) allTpp[idx] = updated;
+    renderTppDetail(patientId);
+    renderTppBoard();
+    showToast('Entry added');
+  } catch (err) {
+    showToast('Could not add entry: ' + err.message);
+  }
+}
+// -- Follow-up history edit/add/delete ---------------------------------------
+async function saveTppFollowupHistoryEdit(patientId, orderId, historyId, rowId) {
+  const atLocal = document.getElementById(rowId + '-at').value;
+  const comment = document.getElementById(rowId + '-comment').value;
+  const stageEl = document.getElementById(rowId + '-stage');
+  const stage = stageEl ? stageEl.value : undefined;
+  if (!atLocal) return;
+  try {
+    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ editFollowupHistory: { orderId, historyId, at: new Date(atLocal).toISOString(), comment, stage } }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allTpp.findIndex(p => p.id === patientId);
+    if (idx !== -1) allTpp[idx] = updated;
+    renderTppDetail(patientId);
+    renderTppBoard();
+    showToast('History updated');
+  } catch (err) {
+    showToast('Could not save: ' + err.message);
+  }
+}
+async function deleteTppFollowupHistoryEntry(patientId, orderId, historyId) {
+  if (!confirm('Delete this timeline entry? This cannot be undone.')) return;
+  try {
+    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deleteFollowupHistory: { orderId, historyId } }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allTpp.findIndex(p => p.id === patientId);
+    if (idx !== -1) allTpp[idx] = updated;
+    renderTppDetail(patientId);
+    renderTppBoard();
+    showToast('Entry deleted');
+  } catch (err) {
+    showToast('Could not delete: ' + err.message);
+  }
+}
+async function addTppFollowupHistoryEntry(patientId, orderId, rowId) {
+  const stage = document.getElementById(rowId + '-stage').value;
+  const atLocal = document.getElementById(rowId + '-at').value;
+  const comment = document.getElementById(rowId + '-comment').value;
+  if (!atLocal) return;
+  try {
+    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ addFollowupHistory: { orderId, stage, at: new Date(atLocal).toISOString(), comment } }),
+    });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    const idx = allTpp.findIndex(p => p.id === patientId);
+    if (idx !== -1) allTpp[idx] = updated;
+    renderTppDetail(patientId);
+    renderTppBoard();
+    showToast('Entry added');
+  } catch (err) {
+    showToast('Could not add entry: ' + err.message);
+  }
+}
+// -- Files ---------------------------------------------------------------------
+function uploadTppFileObject(patientId, orderId, category, file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result;
+      const base64 = dataUrl.split(',')[1];
+      try {
+        const res = await fetch(WORKER_URL + '/tpp/' + patientId + '/files', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: orderId || undefined, name: file.name, mimeType: file.type, category, dataBase64: base64 }),
+        });
+        if (!res.ok) throw new Error('Server error ' + res.status);
+        const updated = await res.json();
+        const idx = allTpp.findIndex(p => p.id === patientId);
+        if (idx !== -1) allTpp[idx] = updated;
+      } catch (err) {
+        showToast('Could not upload ' + file.name + ': ' + err.message);
+      }
+      resolve();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+async function uploadTppDiscoveryFile(patientId, input) {
+  const files = Array.from(input.files || []);
+  input.value = '';
+  if (!files.length) return;
+  const catEl = document.getElementById('tpp-file-cat-' + patientId);
+  const category = catEl ? catEl.value : 'other';
+  for (const file of files) await uploadTppFileObject(patientId, null, category, file);
+  renderTppBoard();
+  renderTppDetail(patientId);
+  showToast(files.length === 1 ? 'File attached' : files.length + ' files attached');
+}
+async function tppDiscoveryFileDrop(e, patientId) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const files = Array.from(e.dataTransfer.files || []);
+  if (!files.length) return;
+  const catEl = document.getElementById('tpp-file-cat-' + patientId);
+  const category = catEl ? catEl.value : 'other';
+  for (const file of files) await uploadTppFileObject(patientId, null, category, file);
+  renderTppBoard();
+  renderTppDetail(patientId);
+  showToast(files.length === 1 ? 'File attached' : files.length + ' files attached');
+}
+async function uploadTppFollowupFile(patientId, orderId, input) {
+  const files = Array.from(input.files || []);
+  input.value = '';
+  if (!files.length) return;
+  const catEl = document.getElementById('tppfu-file-cat-' + orderId);
+  const category = catEl ? catEl.value : 'other';
+  for (const file of files) await uploadTppFileObject(patientId, orderId, category, file);
+  renderTppBoard();
+  renderTppDetail(patientId);
+  showToast(files.length === 1 ? 'File attached' : files.length + ' files attached');
+}
+async function tppFollowupFileDrop(e, patientId, orderId) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const files = Array.from(e.dataTransfer.files || []);
+  if (!files.length) return;
+  const catEl = document.getElementById('tppfu-file-cat-' + orderId);
+  const category = catEl ? catEl.value : 'other';
+  for (const file of files) await uploadTppFileObject(patientId, orderId, category, file);
+  renderTppBoard();
+  renderTppDetail(patientId);
+  showToast(files.length === 1 ? 'File attached' : files.length + ' files attached');
+}
+async function removeTppFile(patientId, orderId, fileId) {
+  if (!confirm('Remove this file?')) return;
+  try {
+    const res = await fetch(WORKER_URL + '/tpp/files/' + fileId, {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ patientId, orderId: orderId || undefined }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      if (updated && updated.id) {
+        const idx = allTpp.findIndex(p => p.id === patientId);
+        if (idx !== -1) allTpp[idx] = updated;
+      }
+    }
+    renderTppBoard();
+    renderTppDetail(patientId);
     showToast('File removed');
   } catch (err) {
     showToast('Could not remove file: ' + err.message);
