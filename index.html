@@ -152,6 +152,10 @@
     background: var(--bg);
   }
   .home-hero-logo { height: 76px; width: auto; margin-bottom: 4px; opacity: 0.94; }
+  /* The logo artwork is solid white on a transparent background, which
+     disappears against the light theme's near-white home background —
+     invert it there so it renders as dark ink instead. */
+  :root[data-theme="light"] .home-hero-logo { filter: invert(1) opacity(0.88); }
   .home-title {
     font-family: 'Bebas Neue', sans-serif;
     font-size: 2.4rem;
