@@ -1914,13 +1914,20 @@
     font-size: 0.76rem;
     gap: 4px;
   }
-  .tpp-board .pep-col.pep-col-compact .pep-card-meta,
   .tpp-board .pep-col.pep-col-compact .pep-card-files,
-  .tpp-board .pep-col.pep-col-compact .pep-card-age,
   .tpp-board .pep-col.pep-col-compact .pep-move-select,
   .tpp-board .pep-col.pep-col-compact .tpp-decision-row,
   .tpp-board .pep-col.pep-col-compact .tpp-handoff-btn {
     display: none;
+  }
+  .tpp-board .pep-col.pep-col-compact .pep-card-meta {
+    font-size: 0.66rem;
+    margin-top: 2px;
+  }
+  .tpp-board .pep-col.pep-col-compact .pep-card-age {
+    font-size: 0.62rem;
+    padding: 1px 6px;
+    margin-top: 3px;
   }
   .pep-col.drag-over { background: rgba(207,178,92,0.12); border-radius: 12px; }
   .pep-detail-box { max-width: 620px; max-height: 85vh; display: flex; flex-direction: column; }
@@ -3198,7 +3205,7 @@ const TPP_DISCOVERY_STAGES = [
 const TPP_DECLINED_STAGE = { key: 'declined_on_hold', label: 'Declined / On Hold' };
 const TPP_ALL_DISCOVERY_STAGES = TPP_DISCOVERY_STAGES.concat([TPP_DECLINED_STAGE]);
 // Above this many patients in one column, cards shrink to name-only.
-const TPP_COMPACT_THRESHOLD = 6;
+const TPP_COMPACT_THRESHOLD = 4;
 const TPP_FOLLOWUP_STAGES = [
   { key: 'labs_sent', label: 'Labs Sent' },
   { key: 'labs_in_labcorp', label: 'Labs in LabCorp' },
