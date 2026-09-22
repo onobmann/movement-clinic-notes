@@ -1904,6 +1904,24 @@
     border: 1px solid var(--border); border-radius: 7px; background: var(--surface2);
     color: var(--text-muted); cursor: pointer;
   }
+  /* When a TPP column is crowded, shrink cards to just the patient name
+     and drop the "Move to..." control so more names fit without scrolling. */
+  .tpp-board .pep-col.pep-col-compact .pep-card {
+    padding: 5px 10px;
+    margin-bottom: 3px;
+  }
+  .tpp-board .pep-col.pep-col-compact .pep-card-name {
+    font-size: 0.76rem;
+    gap: 4px;
+  }
+  .tpp-board .pep-col.pep-col-compact .pep-card-meta,
+  .tpp-board .pep-col.pep-col-compact .pep-card-files,
+  .tpp-board .pep-col.pep-col-compact .pep-card-age,
+  .tpp-board .pep-col.pep-col-compact .pep-move-select,
+  .tpp-board .pep-col.pep-col-compact .tpp-decision-row,
+  .tpp-board .pep-col.pep-col-compact .tpp-handoff-btn {
+    display: none;
+  }
   .pep-col.drag-over { background: rgba(207,178,92,0.12); border-radius: 12px; }
   .pep-detail-box { max-width: 620px; max-height: 85vh; display: flex; flex-direction: column; }
   .pep-detail-box .modal-body { overflow-y: auto; }
@@ -3179,6 +3197,8 @@ const TPP_DISCOVERY_STAGES = [
 ];
 const TPP_DECLINED_STAGE = { key: 'declined_on_hold', label: 'Declined / On Hold' };
 const TPP_ALL_DISCOVERY_STAGES = TPP_DISCOVERY_STAGES.concat([TPP_DECLINED_STAGE]);
+// Above this many patients in one column, cards shrink to name-only.
+const TPP_COMPACT_THRESHOLD = 6;
 const TPP_FOLLOWUP_STAGES = [
   { key: 'labs_sent', label: 'Labs Sent' },
   { key: 'labs_in_labcorp', label: 'Labs in LabCorp' },
@@ -5187,7 +5207,7 @@ function renderTppDiscoveryBoard() {
         '</div>';
     }).join('');
     return '' +
-      '<div class="kanban-col pep-col' + (cards.length === 0 ? ' pep-col-empty' : '') + (isDeclined ? ' tpp-declined-col' : '') + '" title="' + escapeHtml(stage.label) + '" ' +
+      '<div class="kanban-col pep-col' + (cards.length === 0 ? ' pep-col-empty' : '') + (cards.length > TPP_COMPACT_THRESHOLD ? ' pep-col-compact' : '') + (isDeclined ? ' tpp-declined-col' : '') + '" title="' + escapeHtml(stage.label) + '" ' +
         'ondragover="tppColDragOver(event)" ondragleave="tppColDragLeave(event)" ondrop="tppColDrop(event,\'' + stage.key + '\')">' +
         '<div class="kanban-col-header">' +
           '<span class="kanban-col-name">' + stage.label + '</span>' +
@@ -5333,7 +5353,7 @@ function renderTppFollowupBoard() {
         '</div>';
     }).join('');
     return '' +
-      '<div class="kanban-col pep-col' + (cards.length === 0 ? ' pep-col-empty' : '') + '" title="' + escapeHtml(stage.label) + '" ' +
+      '<div class="kanban-col pep-col' + (cards.length === 0 ? ' pep-col-empty' : '') + (cards.length > TPP_COMPACT_THRESHOLD ? ' pep-col-compact' : '') + '" title="' + escapeHtml(stage.label) + '" ' +
         'ondragover="tppColDragOver(event)" ondragleave="tppColDragLeave(event)" ondrop="tppFuColDrop(event,\'' + stage.key + '\')">' +
         '<div class="kanban-col-header">' +
           '<span class="kanban-col-name">' + stage.label + '</span>' +
