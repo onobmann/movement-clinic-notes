@@ -1929,6 +1929,24 @@
     padding: 1px 6px;
     margin-top: 3px;
   }
+  .pep-tray {
+    position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+    z-index: 900; max-width: min(92vw, 900px);
+    display: flex; flex-direction: column; gap: 6px;
+    padding: 10px 12px; border-radius: 14px;
+    background: var(--surface); border: 1px solid var(--accent);
+    box-shadow: 0 10px 32px rgba(0,0,0,0.22);
+  }
+  .pep-tray-title {
+    font-size: 0.66rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .pep-tray-cards { display: flex; gap: 8px; overflow-x: auto; padding: 2px; }
+  .pep-tray .pep-card {
+    flex: 0 0 200px; margin-bottom: 0;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.16); border-color: var(--accent);
+  }
+  .pep-tray .pep-card:hover { transform: translateY(-2px); }
   .pep-col.drag-over { background: rgba(207,178,92,0.12); border-radius: 12px; }
   .pep-detail-box { max-width: 620px; max-height: 85vh; display: flex; flex-direction: column; }
   .pep-detail-box .modal-body { overflow-y: auto; }
@@ -2263,7 +2281,7 @@
     <div class="tasks-topbar">
       <div>
         <h2 class="tasks-heading">Peptide Tracker</h2>
-        <p class="tasks-sub">Drag a tile between stages, or use its dropdown</p>
+        <p class="tasks-sub">New patients appear as a floating tile - drag it to the stage you want</p>
       </div>
       <span class="pep-stuck-summary" id="pep-stuck-summary" style="display:none"></span>
       <div style="display:flex;align-items:center;gap:10px">
@@ -2290,6 +2308,7 @@
       <div class="kanban-cols" id="pep-cols"></div>
     </div>
   </div>
+  <div id="pep-tray" class="pep-tray" style="display:none"></div>
 </div>
 
 <!-- TREATMENT PLAN PIPELINE VIEW -->
@@ -3181,8 +3200,8 @@ const PEPTIDE_STAGES = [
   { key: 'purchased', label: 'Purchased' },
   { key: 'ordered_shipped', label: 'Ordered & Shipped' },
   { key: 'recon_shipped', label: 'Recon Kit Shipped' },
-  { key: 'dosing_sent', label: 'Dosing Guide Sent' },
   { key: 'tracking_sent', label: 'Tracking Sent' },
+  { key: 'dosing_sent', label: 'Dosing Guide Sent' },
   { key: 'received', label: 'Peptides Received' },
 ];
 let allPeptides = [];
@@ -4343,6 +4362,7 @@ async function submitTask() {
 }
 // -- Peptide tracker ----------------------------------------------------------
 function stageLabel(key) {
+  if (key === 'unplaced') return 'Unplaced';
   const s = PEPTIDE_STAGES.find(s => s.key === key);
   return s ? s.label : key;
 }
@@ -4393,7 +4413,8 @@ function renderPeptideBoard() {
   const searchEl = document.getElementById('pep-search');
   const query = (searchEl && searchEl.value || '').trim().toLowerCase();
   let stuckCount = 0;
-  container.innerHTML = PEPTIDE_STAGES.map(stage => {
+  let trayHtml = '';
+  container.innerHTML = [{ key: 'unplaced', label: 'Unplaced' }].concat(PEPTIDE_STAGES).map(stage => {
     const cards = [];
     allPeptides.forEach(patient => {
       if (query && !patient.name.toLowerCase().includes(query)) return;
@@ -4442,6 +4463,13 @@ function renderPeptideBoard() {
           '</select>' +
         '</div>';
     }).join('');
+    if (stage.key === 'unplaced') {
+      if (cards.length) {
+        trayHtml = '<div class="pep-tray-title">New - drag to a stage (' + cards.length + ')</div>' +
+          '<div class="pep-tray-cards">' + cardsHtml + '</div>';
+      }
+      return '';
+    }
     return '' +
       '<div class="kanban-col pep-col' + (cards.length === 0 ? ' pep-col-empty' : '') + '" title="' + escapeHtml(stage.label) + '" ondragover="pepColDragOver(event)" ondragleave="pepColDragLeave(event)" ondrop="pepColDrop(event,\'' + stage.key + '\')">' +
         '<div class="kanban-col-header">' +
@@ -4451,6 +4479,8 @@ function renderPeptideBoard() {
         '<div class="kanban-cards">' + cardsHtml + '</div>' +
       '</div>';
   }).join('');
+  const trayEl = document.getElementById('pep-tray');
+  if (trayEl) { trayEl.innerHTML = trayHtml; trayEl.style.display = trayHtml ? 'flex' : 'none'; }
   const summaryEl = document.getElementById('pep-stuck-summary');
   if (summaryEl) {
     if (stuckCount > 0) {
