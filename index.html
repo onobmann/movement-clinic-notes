@@ -1233,16 +1233,25 @@
   .kanban-col.minimized .kanban-col-alert-row {
     display: none;
   }
+  /* Everything is pinned to the TOP of the strip: count badge, then the
+     expand chevron, then the name reading top-to-bottom, so labels are
+     always visible no matter how tall the column is. */
   .kanban-col.minimized .kanban-col-name {
     writing-mode: vertical-rl;
-    transform: rotate(180deg);
+    transform: none;
     white-space: nowrap;
+    flex: 0 0 auto;
+    order: 3;
+    overflow: visible;
+    text-overflow: clip;
   }
   .kanban-col.minimized .kanban-col-count {
     margin-left: 0;
+    order: 1;
   }
   .kanban-col.minimized .kanban-col-minimize-btn {
-    margin-top: auto;
+    margin-top: 0;
+    order: 2;
   }
   .kanban-cards {
     flex: 1;
@@ -3227,6 +3236,8 @@ const TPP_DISCOVERY_STAGES = [
   { key: 'deep_dive_completed', label: 'Deep Dive Completed' },
   { key: 'treatment_plan_sent', label: 'Treatment Plan Sent' },
   { key: 'pending_acceptance', label: 'Awaiting Acceptance' },
+  { key: 'accepted_plan', label: 'Accepted Plan' },
+  { key: 'needs_to_pay', label: 'Needs to Pay' },
   { key: 'treatment_plan_scheduled', label: 'Treatment Plan Scheduled' },
   { key: 'followup_labs_ordered', label: 'Follow-Up Labs Ordered' },
 ];
