@@ -2057,7 +2057,19 @@
     white-space: normal; overflow: visible; text-overflow: clip;
     overflow-wrap: anywhere; line-height: 1.2;
   }
-  .tpp-board .kanban-col.pep-col-empty { flex: 0 0 64px; min-width: 64px; max-width: 64px; }
+  /* Empty stages collapse to a thin strip like minimized Tasks columns:
+     count badge on top, stage name running vertically underneath. */
+  .tpp-board .kanban-col.pep-col-empty { flex: 0 0 46px; width: 46px; min-width: 46px; max-width: 46px; }
+  .tpp-board .kanban-col.pep-col-empty .kanban-col-header {
+    padding: 12px 4px; height: 100%; border-bottom: none;
+    flex-direction: column; align-items: center; justify-content: flex-start; gap: 10px;
+  }
+  .tpp-board .kanban-col.pep-col-empty .kanban-col-count { order: 1; margin-left: 0; }
+  .tpp-board .kanban-col.pep-col-empty .kanban-col-name {
+    order: 2; flex: 0 0 auto; writing-mode: vertical-rl; transform: none;
+    white-space: nowrap; overflow: visible; text-overflow: clip;
+    font-size: 0.82rem; line-height: 1.2; text-align: left;
+  }
   .tpp-declined-col { border-color: var(--danger) !important; }
   .tpp-declined-col .kanban-col-header { background: var(--alert-bg); }
   .tpp-decision-row { display: flex; gap: 6px; margin-top: 8px; }
