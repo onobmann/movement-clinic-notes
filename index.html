@@ -1904,31 +1904,19 @@
     border: 1px solid var(--border); border-radius: 7px; background: var(--surface2);
     color: var(--text-muted); cursor: pointer;
   }
-  /* When a TPP column is crowded, shrink cards to just the patient name
-     and drop the "Move to..." control so more names fit without scrolling. */
-  .tpp-board .pep-col.pep-col-compact .pep-card {
-    padding: 5px 10px;
-    margin-bottom: 3px;
-  }
-  .tpp-board .pep-col.pep-col-compact .pep-card-name {
-    font-size: 0.76rem;
-    gap: 4px;
-  }
-  .tpp-board .pep-col.pep-col-compact .pep-card-files,
-  .tpp-board .pep-col.pep-col-compact .pep-move-select,
-  .tpp-board .pep-col.pep-col-compact .tpp-decision-row,
-  .tpp-board .pep-col.pep-col-compact .tpp-handoff-btn {
-    display: none;
-  }
-  .tpp-board .pep-col.pep-col-compact .pep-card-meta {
-    font-size: 0.66rem;
-    margin-top: 2px;
-  }
-  .tpp-board .pep-col.pep-col-compact .pep-card-age {
-    font-size: 0.62rem;
-    padding: 1px 6px;
-    margin-top: 3px;
-  }
+  /* TPP board: no per-column scrolling. Every card keeps all its info
+     (name, date/comment, files, days-in-stage, actions, Move to...) but is
+     rendered small; the board grows taller and scrolls as one page. */
+  .tpp-board .pep-card { padding: 6px 9px; margin-bottom: 4px; border-radius: 8px; }
+  .tpp-board .pep-card-name { font-size: 0.74rem; gap: 4px; line-height: 1.2; }
+  .tpp-board .pep-card-meta { font-size: 0.62rem; margin-top: 1px; line-height: 1.25; }
+  .tpp-board .pep-card-files { font-size: 0.62rem; margin-top: 1px; }
+  .tpp-board .pep-card-age { font-size: 0.58rem; padding: 0 6px; margin-top: 3px; }
+  .tpp-board .pep-move-select { margin-top: 4px; font-size: 0.64rem; padding: 2px 6px; border-radius: 6px; }
+  .tpp-board .tpp-decision-row { margin-top: 4px; gap: 4px; }
+  .tpp-board .tpp-decision-btn { font-size: 0.62rem; padding: 3px 6px; }
+  .tpp-board .tpp-handoff-btn { margin-top: 5px; font-size: 0.66rem; padding: 4px 8px; }
+  .tpp-board .tpp-decision-tag { font-size: 0.56rem; padding: 0 5px; }
   .pep-tray {
     position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
     z-index: 900; max-width: min(92vw, 900px);
@@ -2032,7 +2020,10 @@
   }
   .tpp-board { display: none; flex-direction: column; overflow: hidden; flex: 1 1 0; min-height: 0; }
   .tpp-board.tpp-board-active { display: flex; }
-  .tpp-board .kanban-scroll { overflow-y: hidden; }
+  .tpp-board .kanban-scroll { overflow-y: auto; padding: 14px 16px 20px; }
+  .tpp-board .kanban-cols { height: auto; min-height: 100%; align-items: flex-start; gap: 10px; }
+  .tpp-board .kanban-col { min-width: 170px; }
+  .tpp-board .kanban-cards { flex: none; overflow: visible; gap: 0; padding: 8px 8px 4px; }
   .tpp-board .kanban-col { min-width: 190px; }
   .tpp-board .kanban-col.pep-col-empty { flex: 0 0 64px; min-width: 64px; max-width: 64px; }
   .tpp-declined-col { border-color: var(--danger) !important; }
