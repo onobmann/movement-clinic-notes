@@ -2052,6 +2052,11 @@
   .tpp-board .tasks-filterbar { padding: 5px 28px; }
   .tpp-board .filter-search-input { padding: 3px 10px 3px 28px; }
   .tpp-board .kanban-col { min-width: 190px; }
+  /* Let long stage names (e.g. "Awaiting Acceptance") wrap instead of being clipped */
+  .tpp-board .kanban-col:not(.pep-col-empty) .kanban-col-name {
+    white-space: normal; overflow: visible; text-overflow: clip;
+    overflow-wrap: anywhere; line-height: 1.2;
+  }
   .tpp-board .kanban-col.pep-col-empty { flex: 0 0 64px; min-width: 64px; max-width: 64px; }
   .tpp-declined-col { border-color: var(--danger) !important; }
   .tpp-declined-col .kanban-col-header { background: var(--alert-bg); }
