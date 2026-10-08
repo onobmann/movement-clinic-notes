@@ -1923,12 +1923,17 @@
     font-size: 0.76rem;
     gap: 4px;
   }
+  /* Crowded columns drop the file count and the "Move to..." dropdown
+     (drag still works, and the detail modal has it), but the Accept/Decline,
+     hand-off and start-round buttons stay: crowded columns are exactly where
+     those actions pile up. They just shrink. */
   .tpp-board .pep-col.pep-col-compact .pep-card-files,
-  .tpp-board .pep-col.pep-col-compact .pep-move-select,
-  .tpp-board .pep-col.pep-col-compact .tpp-decision-row,
-  .tpp-board .pep-col.pep-col-compact .tpp-handoff-btn {
+  .tpp-board .pep-col.pep-col-compact .pep-move-select {
     display: none;
   }
+  .tpp-board .pep-col.pep-col-compact .tpp-decision-row { margin-top: 4px; gap: 4px; }
+  .tpp-board .pep-col.pep-col-compact .tpp-decision-btn { padding: 3px 6px; font-size: 0.66rem; }
+  .tpp-board .pep-col.pep-col-compact .tpp-handoff-btn { margin-top: 4px; padding: 3px 8px; font-size: 0.68rem; }
   .tpp-board .pep-col.pep-col-compact .pep-card-meta {
     font-size: 0.66rem;
     margin-top: 2px;
@@ -2090,6 +2095,41 @@
   }
   .tpp-decision-tag.accepted { background: var(--warn-bg); color: var(--accent-dark); border: 1px solid var(--accent); }
   .tpp-decision-tag.declined { background: var(--alert-bg); color: var(--alert-text); border: 1px solid var(--alert-border); }
+  .tpp-decision-tag.handed { background: var(--info-bg); color: var(--info-text); border: 1px solid var(--info-border); }
+  /* Owner chip on pipeline cards */
+  .tpp-owner-chip {
+    display: inline-block; font-size: 0.62rem; font-weight: 700; padding: 1px 7px;
+    border-radius: 10px; margin-top: 4px; letter-spacing: 0.02em;
+  }
+  .tpp-owner-chip.unassigned { background: var(--surface2); color: var(--text-muted); border: 1px dashed var(--border); font-weight: 600; }
+  /* Follow-up due badge */
+  .tpp-due-badge {
+    display: inline-block; font-size: 0.66rem; font-weight: 700; padding: 2px 8px;
+    border-radius: 10px; margin-top: 6px; margin-right: 4px;
+  }
+  .tpp-due-badge.due-ok { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+  .tpp-due-badge.due-soon { background: var(--warn-bg); color: var(--warn-text); border: 1px solid var(--warn-border); }
+  .tpp-due-badge.due-over { background: var(--alert-bg); color: var(--alert-text); border: 1px solid var(--alert-border); }
+  .tpp-due-badge.due-none { background: var(--surface2); color: var(--text-muted); border: 1px dashed var(--border); font-weight: 600; }
+  .pep-card.tpp-card-overdue { border-color: var(--alert-border); box-shadow: inset 3px 0 0 var(--danger); }
+  /* "Next Round Due" holding column on the Follow-Up board */
+  .tpp-board .kanban-col.tpp-nextdue-col { border-style: dashed; }
+  .tpp-board .kanban-col.tpp-nextdue-col .kanban-col-header { background: var(--info-bg); }
+  .tpp-col-hint { font-size: 0.64rem; color: var(--text-muted); font-weight: 600; width: 100%; }
+  /* While a card is being dragged, collapsed empty stages widen so they're
+     easy to hit as drop targets instead of 46px slivers. */
+  .tpp-board.tpp-dragging .kanban-col.pep-col-empty {
+    flex: 0 0 120px; width: 120px; min-width: 120px; max-width: 120px;
+    outline: 2px dashed var(--border); outline-offset: -4px;
+  }
+  .tpp-board.tpp-dragging .kanban-col.pep-col-empty .kanban-col-name { writing-mode: horizontal-tb; white-space: normal; text-align: center; }
+  .tpp-board.tpp-dragging .kanban-col.drag-over { outline-color: var(--accent); background: var(--warn-bg); }
+  /* Toast with an inline action (e.g. "Add note") */
+  #toast .toast-action {
+    margin-left: 12px; background: none; border: 1px solid rgba(255,255,255,0.5); color: var(--accent);
+    border-radius: 6px; padding: 3px 10px; font-family: 'Inter', sans-serif; font-size: 0.78rem; font-weight: 700; cursor: pointer;
+  }
+  #toast .toast-action:hover { background: rgba(255,255,255,0.1); }
 </style>
 </head>
 <body>
@@ -2360,8 +2400,9 @@
         <h2 class="tasks-heading">Discovery &rarr; Treatment Plan</h2>
         <p class="tasks-sub">Drag a tile between stages, or use its dropdown</p>
       </div>
+      <span class="pep-stuck-summary" id="tpp-disc-summary" style="display:none"></span>
       <div style="display:flex;align-items:center;gap:10px">
-        <button class="refresh-btn" onclick="loadTpp()" title="Refresh" style="color:var(--text-muted);padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--surface)">
+        <button class="refresh-btn" onclick="reloadTpp(this)" title="Refresh" style="color:var(--text-muted);padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--surface)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 4 23 10 17 10"></polyline>
             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
@@ -2379,6 +2420,10 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         <input type="text" class="filter-search-input" id="tpp-search" placeholder="Search patient name&hellip;" oninput="renderTppBoard()" autocomplete="off">
       </div>
+      <select class="filter-select tpp-owner-filter" id="tpp-disc-owner" onchange="setTppFilter('discOwner', this.value)"></select>
+      <label class="filter-sort-toggle"><input type="checkbox" id="tpp-disc-stuck" onchange="setTppFilter('discStuck', this.checked)"> Stuck 7+ days</label>
+      <label class="filter-sort-toggle"><input type="checkbox" id="tpp-disc-hide-empty" onchange="setTppFilter('discHideEmpty', this.checked)"> Hide empty stages</label>
+      <label class="filter-sort-toggle"><input type="checkbox" id="tpp-disc-show-handed" onchange="setTppFilter('discShowHanded', this.checked)"> Show handed-off</label>
     </div>
     <div class="kanban-scroll">
       <div class="kanban-cols" id="tpp-discovery-cols"></div>
@@ -2390,10 +2435,29 @@
         <h2 class="tasks-heading">Follow-Up</h2>
         <p class="tasks-sub">Repeatable labs / plan-review cycle after acceptance</p>
       </div>
-      <button class="task-add-btn" onclick="openAddTppFollowupModal()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-        Add Patient
-      </button>
+      <span class="pep-stuck-summary" id="tpp-fu-summary" style="display:none"></span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="refresh-btn" onclick="reloadTpp(this)" title="Refresh" style="color:var(--text-muted);padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--surface)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+        </button>
+        <button class="task-add-btn" onclick="openAddTppFollowupModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Add Patient
+        </button>
+      </div>
+    </div>
+    <div class="tasks-filterbar">
+      <span class="filter-label">Filter</span>
+      <div class="filter-search-wrap">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" class="filter-search-input" id="tpp-fu-search" placeholder="Search patient name&hellip;" oninput="renderTppBoard()" autocomplete="off">
+      </div>
+      <select class="filter-select tpp-owner-filter" id="tpp-fu-owner" onchange="setTppFilter('fuOwner', this.value)"></select>
+      <label class="filter-sort-toggle"><input type="checkbox" id="tpp-fu-overdue" onchange="setTppFilter('fuOverdue', this.checked)"> Overdue / due soon only</label>
+      <label class="filter-sort-toggle"><input type="checkbox" id="tpp-fu-show-finished" onchange="setTppFilter('fuShowFinished', this.checked)"> Show finished rounds</label>
     </div>
     <div class="kanban-scroll">
       <div class="kanban-cols" id="tpp-fu-cols"></div>
@@ -2597,6 +2661,63 @@
       </button>
     </div>
     <div class="modal-body" id="tpp-detail-body"></div>
+  </div>
+</div>
+
+<!-- TPP NOTE MODAL: attach a note to the stage move that just happened -->
+<div id="tpp-note-modal" class="modal-overlay" onclick="if(event.target===this) closeTppNoteModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title" id="tpp-note-title">Add a note</span>
+      <button class="modal-close" onclick="closeTppNoteModal()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p id="tpp-note-sub" style="font-size:0.8rem;color:var(--text-muted);margin-top:-8px"></p>
+      <div class="modal-field">
+        <label class="modal-label">Note</label>
+        <textarea id="tpp-note-text" class="modal-textarea" placeholder="e.g. Labs drawn 10/8, waiting on results" onkeydown="if(event.key==='Enter' &amp;&amp; (event.ctrlKey || event.metaKey)) submitTppNote()"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeTppNoteModal()">Skip</button>
+      <button class="modal-submit" id="tpp-note-submit-btn" onclick="submitTppNote()">Save Note</button>
+    </div>
+  </div>
+</div>
+
+<!-- TPP FINISH ROUND MODAL: closing a follow-up round sets when the next one is due -->
+<div id="tpp-finish-modal" class="modal-overlay" onclick="if(event.target===this) closeTppFinishModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">Finish Follow-Up Round</span>
+      <button class="modal-close" onclick="closeTppFinishModal()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p id="tpp-finish-sub" style="font-size:0.8rem;color:var(--text-muted);margin-top:-8px"></p>
+      <div class="modal-field">
+        <label class="modal-label">Next round due</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+          <button type="button" class="modal-cancel" style="padding:5px 12px;font-size:0.75rem" onclick="setTppFinishDue(28)">4 wks</button>
+          <button type="button" class="modal-cancel" style="padding:5px 12px;font-size:0.75rem" onclick="setTppFinishDue(56)">8 wks</button>
+          <button type="button" class="modal-cancel" style="padding:5px 12px;font-size:0.75rem" onclick="setTppFinishDue(84)">12 wks</button>
+          <button type="button" class="modal-cancel" style="padding:5px 12px;font-size:0.75rem" onclick="setTppFinishDue(null)">No more rounds</button>
+        </div>
+        <input type="date" id="tpp-finish-due" class="modal-input">
+        <span style="font-size:0.72rem;color:var(--text-muted)">The patient moves to &ldquo;Next Round Due&rdquo; and turns red if this date passes without a new round.</span>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Note (optional)</label>
+        <textarea id="tpp-finish-note" class="modal-textarea" style="min-height:60px" placeholder="e.g. Plan adjusted, recheck labs in 8 weeks"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeTppFinishModal()">Cancel</button>
+      <button class="modal-submit" id="tpp-finish-submit-btn" onclick="submitTppFinish()">Finish Round</button>
+    </div>
   </div>
 </div>
 
@@ -3181,11 +3302,27 @@ function formatTime(iso) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' · ' +
     d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
+let toastTimer = null;
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3500);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+// Toast with one clickable action. Stays up a little longer so there's time
+// to click it.
+function showToastAction(msg, actionLabel, onAction) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  const btn = document.createElement('button');
+  btn.className = 'toast-action';
+  btn.textContent = actionLabel;
+  btn.onclick = () => { t.classList.remove('show'); clearTimeout(toastTimer); onAction(); };
+  t.appendChild(btn);
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 7000);
 }
 
 // ── Tasks ─────────────────────────────────────────────────────────────────────
@@ -5191,8 +5328,10 @@ async function loadTpp() {
     allTpp = await res.json();
     renderTppBoard();
   } catch (err) {
-    const el = document.getElementById('tpp-discovery-cols');
-    if (el) el.innerHTML = '<p style="color:var(--danger);padding:20px">Could not load pipeline: ' + escapeHtml(err.message) + '</p>';
+    ['tpp-discovery-cols', 'tpp-fu-cols'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = '<p style="color:var(--danger);padding:20px">Could not load pipeline: ' + escapeHtml(err.message) + '</p>';
+    });
   }
 }
 function startTppPolling() {
@@ -5216,19 +5355,170 @@ function stopTppPolling() {
   clearInterval(tppPollInterval);
   tppPollInterval = null;
 }
+// -- Pipeline filters (per browser, persisted) --------------------------------
+// One small state object for both boards so each person's view (owner, toggles)
+// survives reloads. Search boxes are intentionally NOT persisted.
+const TPP_FILTER_DEFAULTS = {
+  discOwner: 'all', discStuck: false, discHideEmpty: false, discShowHanded: false,
+  fuOwner: 'all', fuOverdue: false, fuShowFinished: false,
+};
+let tppFilters = (function() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('mc-tpp-filters') || '{}');
+    return Object.assign({}, TPP_FILTER_DEFAULTS, saved);
+  } catch (e) { return Object.assign({}, TPP_FILTER_DEFAULTS); }
+})();
+function setTppFilter(key, val) {
+  tppFilters[key] = val;
+  try { localStorage.setItem('mc-tpp-filters', JSON.stringify(tppFilters)); } catch (e) {}
+  renderTppBoard();
+}
+function tppPeople() { return STAFF.filter(s => s.isPerson); }
+function tppSyncFilterUI() {
+  const ownerOpts = sel => '<option value="all"' + (sel === 'all' ? ' selected' : '') + '>All owners</option>' +
+    '<option value="__none"' + (sel === '__none' ? ' selected' : '') + '>Unassigned</option>' +
+    tppPeople().map(s => '<option value="' + escapeHtml(s.name) + '"' + (sel === s.name ? ' selected' : '') + '>' + escapeHtml(s.name) + '</option>').join('');
+  const d = document.getElementById('tpp-disc-owner');
+  if (d && !d.dataset.built) { d.innerHTML = ownerOpts(tppFilters.discOwner); d.dataset.built = '1'; }
+  const f = document.getElementById('tpp-fu-owner');
+  if (f && !f.dataset.built) { f.innerHTML = ownerOpts(tppFilters.fuOwner); f.dataset.built = '1'; }
+  const setChk = (id, v) => { const el = document.getElementById(id); if (el) el.checked = !!v; };
+  setChk('tpp-disc-stuck', tppFilters.discStuck);
+  setChk('tpp-disc-hide-empty', tppFilters.discHideEmpty);
+  setChk('tpp-disc-show-handed', tppFilters.discShowHanded);
+  setChk('tpp-fu-overdue', tppFilters.fuOverdue);
+  setChk('tpp-fu-show-finished', tppFilters.fuShowFinished);
+}
+function tppMatchesOwner(patient, ownerFilter) {
+  if (ownerFilter === 'all') return true;
+  if (ownerFilter === '__none') return !patient.owner;
+  return patient.owner === ownerFilter;
+}
+function tppSearchQuery(id) {
+  const el = document.getElementById(id);
+  return (el && el.value || '').trim();
+}
+function tppMatchesSearch(patient, q) {
+  if (!q) return true;
+  // Reuses the Tasks board's forgiving matcher: partial words, any order,
+  // initials ("J.S." vs "js") all match.
+  const nq = normalizeForSearch(q);
+  const target = normalizeForSearch(patient.name);
+  if (nq.split(' ').filter(Boolean).every(tok => target.includes(tok))) return true;
+  return target.replace(/\s+/g, '').includes(nq.replace(/\s+/g, ''));
+}
+function tppOwnerChip(patient) {
+  if (!patient.owner) return ''; // unassigned is the default; a chip on every card would just be noise
+  const s = STAFF.find(x => x.name === patient.owner);
+  const style = s ? 'background:' + staffBg(s) + ';color:' + staffColor(s) : 'background:var(--surface2);color:var(--text)';
+  return '<span class="tpp-owner-chip" style="' + style + '">' + escapeHtml(patient.owner) + '</span>';
+}
+function tppAgeInfo(iso) {
+  const days = daysSince(iso);
+  let cls = 'age-ok';
+  if (days >= PEP_AGE_ALERT_DAYS) cls = 'age-alert';
+  else if (days >= PEP_AGE_WARN_DAYS) cls = 'age-warn';
+  return { days, cls, html: '<span class="pep-card-age ' + cls + '">' + days + (days === 1 ? ' day' : ' days') + ' in stage</span>' };
+}
+// Due-date status for the next follow-up round. followupDue is either a
+// YYYY-MM-DD date, 'done' (no more rounds planned), or empty (never set).
+const TPP_DUE_SOON_DAYS = 7;
+function tppDueInfo(patient) {
+  const due = patient.followupDue;
+  if (due === 'done') return { cls: 'due-ok', status: 'done', label: 'No more rounds' };
+  if (!due) return { cls: 'due-none', status: 'none', label: 'No next date set' };
+  const d = new Date(due + 'T00:00:00');
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const diff = Math.round((d - today) / 86400000);
+  const dateLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  if (diff < 0) return { cls: 'due-over', status: 'over', diff, label: 'Overdue ' + (-diff) + 'd (' + dateLabel + ')' };
+  if (diff === 0) return { cls: 'due-soon', status: 'soon', diff, label: 'Due today' };
+  if (diff <= TPP_DUE_SOON_DAYS) return { cls: 'due-soon', status: 'soon', diff, label: 'Due in ' + diff + 'd (' + dateLabel + ')' };
+  return { cls: 'due-ok', status: 'ok', diff, label: 'Due ' + dateLabel };
+}
+function tppActiveRound(patient) {
+  const orders = patient.followupOrders || [];
+  for (let i = orders.length - 1; i >= 0; i--) if (!orders[i].completedAt) return orders[i];
+  return null;
+}
+// A Discovery patient who's already been handed to Follow-Up. They sit in the
+// last Discovery column forever otherwise, burying the ones still waiting.
+function tppIsHandedOff(patient) {
+  return patient.discoveryStage === 'followup_labs_ordered' && (patient.followupOrders || []).length > 0;
+}
+function tppReplacePatient(updated) {
+  const idx = allTpp.findIndex(p => p.id === updated.id);
+  if (idx !== -1) allTpp[idx] = updated;
+}
+async function tppPatch(patientId, body) {
+  const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error('Server error ' + res.status);
+  const updated = await res.json();
+  tppReplacePatient(updated);
+  return updated;
+}
+async function reloadTpp(btn) {
+  if (btn) btn.classList.add('spinning');
+  await loadTpp();
+  if (btn) btn.classList.remove('spinning');
+}
+// -- Drag helpers (shared) ----------------------------------------------------
+function tppMarkDragging(e) {
+  const board = e.target.closest && e.target.closest('.tpp-board');
+  if (board) board.classList.add('tpp-dragging');
+}
+function tppDragEnd() {
+  document.querySelectorAll('.tpp-board.tpp-dragging').forEach(b => b.classList.remove('tpp-dragging'));
+  document.querySelectorAll('.tpp-board .kanban-col.drag-over').forEach(c => c.classList.remove('drag-over'));
+}
+
 // -- Discovery board rendering ----------------------------------------------
 function renderTppBoard() {
+  tppSyncFilterUI();
   renderTppDiscoveryBoard();
   renderTppFollowupBoard();
 }
 function renderTppDiscoveryBoard() {
   const container = document.getElementById('tpp-discovery-cols');
   if (!container) return;
-  const searchEl = document.getElementById('tpp-search');
-  const query = (searchEl && searchEl.value || '').trim().toLowerCase();
+  const query = tppSearchQuery('tpp-search');
+  // Summary counts ignore filters so the chip always tells the truth.
+  let stuckTotal = 0;
+  allTpp.forEach(p => {
+    if (!p.discoveryStage || p.discoveryStage === TPP_DECLINED_STAGE.key || tppIsHandedOff(p)) return;
+    const hist = p.discoveryHistory || [];
+    const last = hist.length ? hist[hist.length - 1].at : p.createdAt;
+    if (daysSince(last) >= PEP_AGE_WARN_DAYS) stuckTotal++;
+  });
+  const summaryEl = document.getElementById('tpp-disc-summary');
+  if (summaryEl) {
+    summaryEl.style.display = stuckTotal ? 'inline-block' : 'none';
+    summaryEl.style.cursor = 'pointer';
+    summaryEl.title = 'Click to show only these';
+    summaryEl.textContent = '⚠ ' + stuckTotal + ' stuck ' + PEP_AGE_WARN_DAYS + '+ days';
+    summaryEl.onclick = () => { setTppFilter('discStuck', !tppFilters.discStuck); };
+  }
+  const filtersActive = !!query || tppFilters.discOwner !== 'all' || tppFilters.discStuck;
   container.innerHTML = TPP_ALL_DISCOVERY_STAGES.map(stage => {
-    let cards = allTpp.filter(p => p.discoveryStage === stage.key);
-    if (query) cards = cards.filter(p => p.name.toLowerCase().includes(query));
+    const isDeclined = stage.key === TPP_DECLINED_STAGE.key;
+    let inStage = allTpp.filter(p => p.discoveryStage === stage.key);
+    let hiddenHanded = 0;
+    if (!tppFilters.discShowHanded) {
+      hiddenHanded = inStage.filter(tppIsHandedOff).length;
+      inStage = inStage.filter(p => !tppIsHandedOff(p));
+    }
+    let cards = inStage.filter(p => tppMatchesSearch(p, query) && tppMatchesOwner(p, tppFilters.discOwner));
+    if (tppFilters.discStuck) {
+      cards = cards.filter(p => {
+        if (isDeclined) return false;
+        const hist = p.discoveryHistory || [];
+        return daysSince(hist.length ? hist[hist.length - 1].at : p.createdAt) >= PEP_AGE_WARN_DAYS;
+      });
+    }
+    if (tppFilters.discHideEmpty && cards.length === 0) return '';
     cards.sort((a, b) => {
       const aHist = a.discoveryHistory || [];
       const bHist = b.discoveryHistory || [];
@@ -5236,70 +5526,71 @@ function renderTppDiscoveryBoard() {
       const bt = bHist.length ? bHist[bHist.length - 1].at : b.createdAt;
       return new Date(at) - new Date(bt);
     });
-    const isDeclined = stage.key === TPP_DECLINED_STAGE.key;
+    const options = TPP_ALL_DISCOVERY_STAGES.filter(s => s.key !== stage.key)
+      .map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('');
     const cardsHtml = cards.map(patient => {
       const hist = patient.discoveryHistory || [];
       const lastEntry = hist.length ? hist[hist.length - 1] : null;
       const filesCount = (patient.discoveryFiles || []).length;
       const isPending = patient.discoveryStage === 'pending_acceptance';
+      const handed = tppIsHandedOff(patient);
       const canHandOff = patient.discoveryStage === 'followup_labs_ordered' &&
         !(patient.followupOrders || []).some(o => !o.completedAt);
-      const options = TPP_ALL_DISCOVERY_STAGES.filter(s => s.key !== stage.key)
-        .map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('');
-      let ageHtml = '';
-      if (lastEntry && !isDeclined) {
-        const days = daysSince(lastEntry.at);
-        let cls = 'age-ok';
-        if (days >= PEP_AGE_ALERT_DAYS) cls = 'age-alert';
-        else if (days >= PEP_AGE_WARN_DAYS) cls = 'age-warn';
-        ageHtml = '<span class="pep-card-age ' + cls + '">' + days + (days === 1 ? ' day' : ' days') + ' in stage</span>';
-      }
+      const ageHtml = (lastEntry && !isDeclined && !handed) ? tppAgeInfo(lastEntry.at).html : '';
       let actionHtml = '';
       if (isPending) {
         actionHtml = '<div class="tpp-decision-row" onclick="event.stopPropagation()">' +
           '<button class="tpp-decision-btn tpp-accept-btn" onclick="acceptTppTreatmentPlan(\'' + patient.id + '\')">&#10003; Accepted</button>' +
           '<button class="tpp-decision-btn tpp-decline-btn" onclick="declineTppTreatmentPlan(\'' + patient.id + '\')">&#10007; Declined</button>' +
         '</div>';
-      } else if (canHandOff) {
+      } else if (canHandOff && !handed) {
         actionHtml = '<button class="tpp-handoff-btn" onclick="event.stopPropagation();sendTppToFollowUp(\'' + patient.id + '\')">Send to Follow-Up &rarr;</button>';
       }
       return '' +
         '<div class="pep-card" draggable="true" ' +
-          'ondragstart="tppCardDragStart(event,\'' + patient.id + '\')" ' +
+          'ondragstart="tppCardDragStart(event,\'' + patient.id + '\')" ondragend="tppDragEnd()" ' +
           'onclick="openTppDetail(\'' + patient.id + '\')">' +
           '<div class="pep-card-name">' + escapeHtml(patient.name) +
             (patient.decision === 'declined' ? '<span class="tpp-decision-tag declined">Declined</span>' : '') +
             (patient.decision === 'accepted' && stage.key !== 'followup_labs_ordered' ? '<span class="tpp-decision-tag accepted">Accepted</span>' : '') +
+            (handed ? '<span class="tpp-decision-tag handed">In Follow-Up</span>' : '') +
           '</div>' +
           '<div class="pep-card-meta">' + (lastEntry ? formatTime(lastEntry.at) : '') + (lastEntry && lastEntry.comment ? ' &mdash; ' + escapeHtml(lastEntry.comment) : '') + '</div>' +
+          tppOwnerChip(patient) +
           (filesCount ? '<div class="pep-card-files">' + filesCount + ' file' + (filesCount === 1 ? '' : 's') + ' attached</div>' : '') +
-          ageHtml +
+          (ageHtml ? '<div>' + ageHtml + '</div>' : '') +
           actionHtml +
           (isDeclined ? '' : '<select class="pep-move-select" onclick="event.stopPropagation()" onchange="moveTppDiscoveryStage(\'' + patient.id + '\', this.value); this.selectedIndex = 0;">' +
             '<option value="">Move to&hellip;</option>' + options +
           '</select>') +
         '</div>';
     }).join('');
+    const hint = hiddenHanded ? '<span class="tpp-col-hint">+' + hiddenHanded + ' in Follow-Up (hidden)</span>' : '';
+    // An empty column only collapses when it's genuinely empty — not when
+    // filters happen to hide its cards, or it's holding hidden hand-offs.
+    const collapse = cards.length === 0 && !hint;
     return '' +
-      '<div class="kanban-col pep-col' + (cards.length === 0 ? ' pep-col-empty' : '') + (cards.length > TPP_COMPACT_THRESHOLD ? ' pep-col-compact' : '') + (isDeclined ? ' tpp-declined-col' : '') + '" title="' + escapeHtml(stage.label) + '" ' +
+      '<div class="kanban-col pep-col' + (collapse ? ' pep-col-empty' : '') + (cards.length > TPP_COMPACT_THRESHOLD ? ' pep-col-compact' : '') + (isDeclined ? ' tpp-declined-col' : '') + '" title="' + escapeHtml(stage.label) + '" ' +
         'ondragover="tppColDragOver(event)" ondragleave="tppColDragLeave(event)" ondrop="tppColDrop(event,\'' + stage.key + '\')">' +
-        '<div class="kanban-col-header">' +
+        '<div class="kanban-col-header" style="flex-wrap:wrap">' +
           '<span class="kanban-col-name">' + stage.label + '</span>' +
           '<span class="kanban-col-count">' + cards.length + '</span>' +
+          hint +
         '</div>' +
-        '<div class="kanban-cards">' + cardsHtml + '</div>' +
+        '<div class="kanban-cards">' + (cardsHtml || (filtersActive && !collapse ? '<div style="text-align:center;padding:14px 8px;color:var(--text-muted);font-size:0.72rem">No matches</div>' : '')) + '</div>' +
       '</div>';
-  }).join('');
+  }).join('') || '<div style="padding:40px 20px;color:var(--text-muted);font-size:0.85rem">No patients match these filters.</div>';
 }
 function tppCardDragStart(e, patientId) {
   tppDragData = { kind: 'discovery', patientId };
   e.dataTransfer.effectAllowed = 'move';
+  tppMarkDragging(e);
 }
 function tppColDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
 function tppColDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
 async function tppColDrop(e, stageKey) {
   e.preventDefault();
-  e.currentTarget.classList.remove('drag-over');
+  tppDragEnd();
   if (!tppDragData || tppDragData.kind !== 'discovery') return;
   const { patientId } = tppDragData;
   tppDragData = null;
@@ -5310,31 +5601,25 @@ async function tppColDrop(e, stageKey) {
 async function moveTppDiscoveryStage(patientId, stageKey, comment) {
   if (!stageKey) return;
   try {
-    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ setDiscoveryStage: { stage: stageKey, comment: comment || '' } }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allTpp.findIndex(p => p.id === patientId);
-    if (idx !== -1) allTpp[idx] = updated;
+    const updated = await tppPatch(patientId, { setDiscoveryStage: { stage: stageKey, comment: comment || '' } });
     renderTppBoard();
     if (tppDetailPatientId === patientId) renderTppDetail(patientId);
-    showToast('Moved to ' + tppStageLabel(stageKey));
+    // Moves stay one-click; the note is offered, never forced.
+    const hist = updated.discoveryHistory || [];
+    const entry = hist.slice().reverse().find(h => h.stage === stageKey);
+    if (!comment && entry) {
+      showToastAction('Moved to ' + tppStageLabel(stageKey), 'Add note', () =>
+        openTppNoteModal({ kind: 'discovery', patientId, historyId: entry.id, stageLabel: tppStageLabel(stageKey), name: updated.name }));
+    } else {
+      showToast('Moved to ' + tppStageLabel(stageKey));
+    }
   } catch (err) {
     showToast('Could not move: ' + err.message);
   }
 }
 async function acceptTppTreatmentPlan(patientId) {
   try {
-    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ acceptTreatmentPlan: true }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allTpp.findIndex(p => p.id === patientId);
-    if (idx !== -1) allTpp[idx] = updated;
+    await tppPatch(patientId, { acceptTreatmentPlan: true });
     renderTppBoard();
     if (tppDetailPatientId === patientId) renderTppDetail(patientId);
     showToast('Treatment plan accepted');
@@ -5343,16 +5628,10 @@ async function acceptTppTreatmentPlan(patientId) {
   }
 }
 async function declineTppTreatmentPlan(patientId) {
-  const comment = prompt('Optional note about the decline (e.g. reason, next steps):', '') || '';
+  const comment = prompt('Optional note about the decline (e.g. reason, next steps):', '');
+  if (comment === null) return; // Cancel means cancel, not "decline with no note"
   try {
-    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ declineTreatmentPlan: { comment } }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allTpp.findIndex(p => p.id === patientId);
-    if (idx !== -1) allTpp[idx] = updated;
+    await tppPatch(patientId, { declineTreatmentPlan: { comment } });
     renderTppBoard();
     if (tppDetailPatientId === patientId) renderTppDetail(patientId);
     showToast('Marked declined');
@@ -5362,14 +5641,7 @@ async function declineTppTreatmentPlan(patientId) {
 }
 async function sendTppToFollowUp(patientId) {
   try {
-    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sendToFollowUp: true }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allTpp.findIndex(p => p.id === patientId);
-    if (idx !== -1) allTpp[idx] = updated;
+    await tppPatch(patientId, { sendToFollowUp: true, followupDue: '' });
     renderTppBoard();
     if (tppDetailPatientId === patientId) renderTppDetail(patientId);
     showToast('Sent to Follow-Up');
@@ -5378,20 +5650,92 @@ async function sendTppToFollowUp(patientId) {
   }
 }
 // -- Follow-Up board rendering ------------------------------------------------
+// Columns: a "Next Round Due" holding column (patients between rounds, sorted
+// by due date) followed by the real round stages. Before this, a patient whose
+// round was finished vanished from the board entirely — nothing reminded
+// anyone to start the next one.
 function renderTppFollowupBoard() {
   const container = document.getElementById('tpp-fu-cols');
   if (!container) return;
-  const searchEl = document.getElementById('tpp-search');
-  const query = (searchEl && searchEl.value || '').trim().toLowerCase();
-  container.innerHTML = TPP_FOLLOWUP_STAGES.map(stage => {
+  const query = tppSearchQuery('tpp-fu-search');
+  const ownerOk = p => tppMatchesOwner(p, tppFilters.fuOwner);
+
+  // Unfiltered counts for the header chip.
+  let overdueTotal = 0, soonTotal = 0, stalledTotal = 0;
+  allTpp.forEach(p => {
+    const orders = p.followupOrders || [];
+    if (!orders.length) return;
+    const active = tppActiveRound(p);
+    if (active) {
+      const hist = active.history || [];
+      if (daysSince(hist.length ? hist[hist.length - 1].at : active.startedAt) >= PEP_AGE_WARN_DAYS) stalledTotal++;
+    } else {
+      const due = tppDueInfo(p);
+      if (due.status === 'over') overdueTotal++;
+      else if (due.status === 'soon') soonTotal++;
+    }
+  });
+  const summaryEl = document.getElementById('tpp-fu-summary');
+  if (summaryEl) {
+    const parts = [];
+    if (overdueTotal) parts.push(overdueTotal + ' overdue');
+    if (soonTotal) parts.push(soonTotal + ' due this week');
+    if (stalledTotal) parts.push(stalledTotal + ' stalled ' + PEP_AGE_WARN_DAYS + '+ days');
+    summaryEl.style.display = parts.length ? 'inline-block' : 'none';
+    summaryEl.style.cursor = 'pointer';
+    summaryEl.title = 'Click to show only these';
+    summaryEl.textContent = '⚠ ' + parts.join(' · ');
+    summaryEl.onclick = () => { setTppFilter('fuOverdue', !tppFilters.fuOverdue); };
+  }
+
+  // -- Next Round Due column
+  let between = allTpp.filter(p => (p.followupOrders || []).length > 0 && !tppActiveRound(p) && p.followupDue !== 'done')
+    .filter(p => tppMatchesSearch(p, query) && ownerOk(p));
+  if (tppFilters.fuOverdue) between = between.filter(p => { const s = tppDueInfo(p).status; return s === 'over' || s === 'soon' || s === 'none'; });
+  between.sort((a, b) => {
+    // Dated ones first (earliest due on top), undated after.
+    const ad = a.followupDue || '9999', bd = b.followupDue || '9999';
+    return ad.localeCompare(bd);
+  });
+  const betweenHtml = between.map(patient => {
+    const due = tppDueInfo(patient);
+    return '' +
+      '<div class="pep-card' + (due.status === 'over' ? ' tpp-card-overdue' : '') + '" onclick="openTppDetail(\'' + patient.id + '\')">' +
+        '<div class="pep-card-name">' + escapeHtml(patient.name) + ' <span class="pep-order-badge">' + (patient.followupOrders || []).length + ' round' + ((patient.followupOrders || []).length === 1 ? '' : 's') + ' done</span></div>' +
+        tppOwnerChip(patient) +
+        '<div><span class="tpp-due-badge ' + due.cls + '">' + due.label + '</span></div>' +
+        '<button class="tpp-handoff-btn" onclick="event.stopPropagation();startNewTppFollowupOrder(\'' + patient.id + '\')">Start next round &rarr;</button>' +
+      '</div>';
+  }).join('');
+  const nextDueCol = '' +
+    '<div class="kanban-col pep-col tpp-nextdue-col' + (between.length > TPP_COMPACT_THRESHOLD ? ' pep-col-compact' : '') + '" title="Patients between rounds">' +
+      '<div class="kanban-col-header" style="flex-wrap:wrap">' +
+        '<span class="kanban-col-name">Next Round Due</span>' +
+        '<span class="kanban-col-count">' + between.length + '</span>' +
+        '<span class="tpp-col-hint">Between rounds</span>' +
+      '</div>' +
+      '<div class="kanban-cards">' + (betweenHtml || '<div style="text-align:center;padding:14px 8px;color:var(--text-muted);font-size:0.72rem">Nobody waiting</div>') + '</div>' +
+    '</div>';
+
+  // -- Round stage columns
+  const stageCols = TPP_FOLLOWUP_STAGES.map(stage => {
     const cards = [];
     allTpp.forEach(patient => {
-      if (query && !patient.name.toLowerCase().includes(query)) return;
+      if (!tppMatchesSearch(patient, query) || !ownerOk(patient)) return;
       (patient.followupOrders || []).forEach((order, idx) => {
-        if (order.stage === stage.key) cards.push({ patient, order, orderIndex: idx });
+        if (order.stage !== stage.key) return;
+        if (order.completedAt && !tppFilters.fuShowFinished) return;
+        if (tppFilters.fuOverdue) {
+          if (order.completedAt) return;
+          const h = order.history || [];
+          if (daysSince(h.length ? h[h.length - 1].at : order.startedAt) < PEP_AGE_WARN_DAYS) return;
+        }
+        cards.push({ patient, order, orderIndex: idx });
       });
     });
     cards.sort((a, b) => {
+      // Active rounds before finished ones, then oldest activity first.
+      if (!!a.order.completedAt !== !!b.order.completedAt) return a.order.completedAt ? 1 : -1;
       const aHist = a.order.history || [];
       const bHist = b.order.history || [];
       const at = aHist.length ? aHist[aHist.length - 1].at : a.order.startedAt;
@@ -5405,25 +5749,22 @@ function renderTppFollowupBoard() {
       const multiOrder = (patient.followupOrders || []).length > 1;
       const options = TPP_FOLLOWUP_STAGES.filter(s => s.key !== order.stage)
         .map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('');
-      let ageHtml = '';
-      if (lastEntry && !order.completedAt) {
-        const days = daysSince(lastEntry.at);
-        let cls = 'age-ok';
-        if (days >= PEP_AGE_ALERT_DAYS) cls = 'age-alert';
-        else if (days >= PEP_AGE_WARN_DAYS) cls = 'age-warn';
-        ageHtml = '<span class="pep-card-age ' + cls + '">' + days + (days === 1 ? ' day' : ' days') + ' in stage</span>';
-      }
+      const ageHtml = (lastEntry && !order.completedAt) ? tppAgeInfo(lastEntry.at).html : '';
       return '' +
-        '<div class="pep-card' + (order.completedAt ? ' completed' : '') + '" draggable="true" ' +
-          'ondragstart="tppFuCardDragStart(event,\'' + patient.id + '\',\'' + order.id + '\')" ' +
+        '<div class="pep-card' + (order.completedAt ? ' completed' : '') + '"' + (order.completedAt ? '' : ' draggable="true" ') +
+          (order.completedAt ? '' : 'ondragstart="tppFuCardDragStart(event,\'' + patient.id + '\',\'' + order.id + '\')" ondragend="tppDragEnd()" ') +
           'onclick="openTppDetail(\'' + patient.id + '\')">' +
-          '<div class="pep-card-name">' + escapeHtml(patient.name) + (multiOrder ? ' <span class="pep-order-badge">Round ' + (orderIndex + 1) + '</span>' : '') + '</div>' +
+          '<div class="pep-card-name">' + escapeHtml(patient.name) + (multiOrder ? ' <span class="pep-order-badge">Round ' + (orderIndex + 1) + '</span>' : '') +
+            (order.completedAt ? '<span class="tpp-decision-tag accepted">Finished</span>' : '') + '</div>' +
           '<div class="pep-card-meta">' + (lastEntry ? formatTime(lastEntry.at) : '') + (lastEntry && lastEntry.comment ? ' &mdash; ' + escapeHtml(lastEntry.comment) : '') + '</div>' +
+          tppOwnerChip(patient) +
           (filesCount ? '<div class="pep-card-files">' + filesCount + ' file' + (filesCount === 1 ? '' : 's') + ' attached</div>' : '') +
-          ageHtml +
+          (ageHtml ? '<div>' + ageHtml + '</div>' : '') +
           (order.completedAt ? '' : '<select class="pep-move-select" onclick="event.stopPropagation()" onchange="moveTppFollowupStage(\'' + patient.id + '\',\'' + order.id + '\', this.value); this.selectedIndex = 0;">' +
             '<option value="">Move to&hellip;</option>' + options +
           '</select>') +
+          (!order.completedAt && order.stage === 'adjustments'
+            ? '<button class="tpp-handoff-btn" onclick="event.stopPropagation();finishTppFollowupOrder(\'' + patient.id + '\',\'' + order.id + '\')">&#10003; Finish round</button>' : '') +
         '</div>';
     }).join('');
     return '' +
@@ -5436,14 +5777,16 @@ function renderTppFollowupBoard() {
         '<div class="kanban-cards">' + cardsHtml + '</div>' +
       '</div>';
   }).join('');
+  container.innerHTML = nextDueCol + stageCols;
 }
 function tppFuCardDragStart(e, patientId, orderId) {
   tppDragData = { kind: 'followup', patientId, orderId };
   e.dataTransfer.effectAllowed = 'move';
+  tppMarkDragging(e);
 }
 async function tppFuColDrop(e, stageKey) {
   e.preventDefault();
-  e.currentTarget.classList.remove('drag-over');
+  tppDragEnd();
   if (!tppDragData || tppDragData.kind !== 'followup') return;
   const { patientId, orderId } = tppDragData;
   tppDragData = null;
@@ -5455,57 +5798,141 @@ async function tppFuColDrop(e, stageKey) {
 async function moveTppFollowupStage(patientId, orderId, stageKey, comment) {
   if (!stageKey) return;
   try {
-    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ setFollowupStage: { orderId, stage: stageKey, comment: comment || '' } }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allTpp.findIndex(p => p.id === patientId);
-    if (idx !== -1) allTpp[idx] = updated;
+    const updated = await tppPatch(patientId, { setFollowupStage: { orderId, stage: stageKey, comment: comment || '' } });
     renderTppBoard();
     if (tppDetailPatientId === patientId) renderTppDetail(patientId);
-    showToast('Moved to ' + tppFollowupStageLabel(stageKey));
+    const order = (updated.followupOrders || []).find(o => o.id === orderId);
+    const entry = order && (order.history || []).slice().reverse().find(h => h.stage === stageKey);
+    if (!comment && entry) {
+      showToastAction('Moved to ' + tppFollowupStageLabel(stageKey), 'Add note', () =>
+        openTppNoteModal({ kind: 'followup', patientId, orderId, historyId: entry.id, stageLabel: tppFollowupStageLabel(stageKey), name: updated.name }));
+    } else {
+      showToast('Moved to ' + tppFollowupStageLabel(stageKey));
+    }
   } catch (err) {
     showToast('Could not move: ' + err.message);
   }
 }
 async function startNewTppFollowupOrder(patientId) {
   try {
-    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ newFollowupOrder: true }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allTpp.findIndex(p => p.id === patientId);
-    if (idx !== -1) allTpp[idx] = updated;
+    // Clearing followupDue: the round it was waiting for has now started.
+    await tppPatch(patientId, { newFollowupOrder: true, followupDue: '' });
     renderTppBoard();
-    renderTppDetail(patientId);
+    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
     showToast('New follow-up round started');
   } catch (err) {
     showToast('Could not start new round: ' + err.message);
   }
 }
+// -- Finish round (asks when the next one is due) ----------------------------
+let tppFinishCtx = null;
+function tppDatePlusDays(days) {
+  const d = new Date(); d.setDate(d.getDate() + days);
+  const pad = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+}
+function setTppFinishDue(days) {
+  const input = document.getElementById('tpp-finish-due');
+  input.value = days === null ? '' : tppDatePlusDays(days);
+  input.dataset.none = days === null ? '1' : '';
+}
 function finishTppFollowupOrder(patientId, orderId) {
-  if (!confirm('Mark this follow-up round as finished?')) return;
-  moveTppFollowupStage(patientId, orderId, 'adjustments').then(async () => {
-    try {
-      const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ finishFollowupOrder: { orderId } }),
-      });
-      if (!res.ok) throw new Error('Server error ' + res.status);
-      const updated = await res.json();
-      const idx = allTpp.findIndex(p => p.id === patientId);
-      if (idx !== -1) allTpp[idx] = updated;
-      renderTppBoard();
-      renderTppDetail(patientId);
-      showToast('Round finished');
-    } catch (err) {
-      showToast('Could not finish round: ' + err.message);
-    }
-  });
+  const patient = allTpp.find(p => p.id === patientId);
+  if (!patient) return;
+  tppFinishCtx = { patientId, orderId };
+  document.getElementById('tpp-finish-sub').textContent = patient.name;
+  document.getElementById('tpp-finish-note').value = '';
+  setTppFinishDue(56);
+  document.getElementById('tpp-finish-due').oninput = function() { this.dataset.none = ''; };
+  const btn = document.getElementById('tpp-finish-submit-btn');
+  btn.disabled = false; btn.textContent = 'Finish Round';
+  document.getElementById('tpp-finish-modal').classList.add('open');
+}
+function closeTppFinishModal() {
+  document.getElementById('tpp-finish-modal').classList.remove('open');
+  tppFinishCtx = null;
+}
+async function submitTppFinish() {
+  if (!tppFinishCtx) return;
+  const { patientId, orderId } = tppFinishCtx;
+  const patient = allTpp.find(p => p.id === patientId);
+  const order = patient && (patient.followupOrders || []).find(o => o.id === orderId);
+  if (!order) { closeTppFinishModal(); return; }
+  const dueInput = document.getElementById('tpp-finish-due');
+  const noMore = dueInput.dataset.none === '1';
+  const due = dueInput.value;
+  if (!due && !noMore) { dueInput.focus(); showToast('Pick a next-round date, or "No more rounds"'); return; }
+  const note = document.getElementById('tpp-finish-note').value.trim();
+  // One PATCH: the worker applies setFollowupStage / addFollowupHistory, then
+  // finishFollowupOrder, then merges followupDue onto the patient.
+  const body = { finishFollowupOrder: { orderId }, followupDue: noMore ? 'done' : due };
+  if (order.stage !== 'adjustments') body.setFollowupStage = { orderId, stage: 'adjustments', comment: note };
+  else if (note) body.addFollowupHistory = { orderId, stage: 'adjustments', comment: note };
+  const btn = document.getElementById('tpp-finish-submit-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    await tppPatch(patientId, body);
+    closeTppFinishModal();
+    renderTppBoard();
+    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    showToast(noMore ? 'Round finished — no more rounds planned' : 'Round finished — next due ' + new Date(due + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+  } catch (err) {
+    btn.disabled = false; btn.textContent = 'Finish Round';
+    showToast('Could not finish round: ' + err.message);
+  }
+}
+// -- Note on a stage move -----------------------------------------------------
+let tppNoteCtx = null;
+function openTppNoteModal(ctx) {
+  tppNoteCtx = ctx;
+  document.getElementById('tpp-note-title').textContent = 'Note for “' + ctx.stageLabel + '”';
+  document.getElementById('tpp-note-sub').textContent = ctx.name;
+  document.getElementById('tpp-note-text').value = '';
+  const btn = document.getElementById('tpp-note-submit-btn');
+  btn.disabled = false; btn.textContent = 'Save Note';
+  document.getElementById('tpp-note-modal').classList.add('open');
+  setTimeout(() => document.getElementById('tpp-note-text').focus(), 50);
+}
+function closeTppNoteModal() {
+  document.getElementById('tpp-note-modal').classList.remove('open');
+  tppNoteCtx = null;
+}
+async function submitTppNote() {
+  if (!tppNoteCtx) return;
+  const comment = document.getElementById('tpp-note-text').value.trim();
+  if (!comment) { closeTppNoteModal(); return; }
+  const ctx = tppNoteCtx;
+  const body = ctx.kind === 'discovery'
+    ? { editDiscoveryHistory: { historyId: ctx.historyId, comment } }
+    : { editFollowupHistory: { orderId: ctx.orderId, historyId: ctx.historyId, comment } };
+  const btn = document.getElementById('tpp-note-submit-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    await tppPatch(ctx.patientId, body);
+    closeTppNoteModal();
+    renderTppBoard();
+    if (tppDetailPatientId === ctx.patientId) renderTppDetail(ctx.patientId);
+    showToast('Note saved');
+  } catch (err) {
+    btn.disabled = false; btn.textContent = 'Save Note';
+    showToast('Could not save note: ' + err.message);
+  }
+}
+// -- Owner / next-due (detail modal) ------------------------------------------
+async function saveTppMeta(patientId) {
+  const ownerEl = document.getElementById('tpp-detail-owner');
+  const dueEl = document.getElementById('tpp-detail-due');
+  const body = {};
+  if (ownerEl) body.owner = ownerEl.value;
+  if (dueEl) body.followupDue = dueEl.value;
+  try {
+    await tppPatch(patientId, body);
+    renderTppBoard();
+    renderTppDetail(patientId);
+    showToast('Saved');
+  } catch (err) {
+    showToast('Could not save: ' + err.message);
+  }
 }
 // -- Add patient --------------------------------------------------------------
 function openAddTppModal() {
@@ -5717,6 +6144,51 @@ function renderTppFollowupOrderBlock(patient, order, orderIndex, isActive) {
       (isActive && !order.completedAt ? '<button class="modal-submit" style="width:100%;margin-top:14px" onclick="finishTppFollowupOrder(\'' + patient.id + '\',\'' + order.id + '\')">✓ Finish Round</button>' : '') +
     '</div>';
 }
+// Owner (who's driving this patient through the pipeline) and, once they're
+// in Follow-Up, when their next round is due.
+function renderTppMetaRow(patient) {
+  const ownerOptions = '<option value="">Unassigned</option>' + tppPeople().map(s =>
+    '<option value="' + escapeHtml(s.name) + '"' + (patient.owner === s.name ? ' selected' : '') + '>' + escapeHtml(s.name) + '</option>').join('');
+  const inFollowup = (patient.followupOrders || []).length > 0;
+  const dueIsDone = patient.followupDue === 'done';
+  const dueVal = dueIsDone ? '' : (patient.followupDue || '');
+  const active = tppActiveRound(patient);
+  let dueHelp = '';
+  if (inFollowup && !active) {
+    const info = tppDueInfo(patient);
+    dueHelp = '<span class="tpp-due-badge ' + info.cls + '" style="margin-top:4px;align-self:flex-start">' + info.label + '</span>';
+  } else if (active) {
+    dueHelp = '<span style="font-size:0.7rem;color:var(--text-muted)">Round in progress — set when you finish it</span>';
+  }
+  return '' +
+    '<div class="modal-row" style="align-items:flex-start;flex-wrap:wrap">' +
+      '<div class="modal-field" style="flex:1;min-width:150px">' +
+        '<label class="modal-label">Owner</label>' +
+        '<select class="modal-select" id="tpp-detail-owner">' + ownerOptions + '</select>' +
+      '</div>' +
+      (inFollowup ? '' +
+      '<div class="modal-field" style="flex:1;min-width:150px">' +
+        '<label class="modal-label">Next round due</label>' +
+        '<input type="date" class="modal-input" id="tpp-detail-due" value="' + escapeHtml(dueVal) + '"' + (dueIsDone ? ' placeholder="No more rounds"' : '') + '>' +
+        (dueIsDone ? '<span style="font-size:0.7rem;color:var(--text-muted)">Marked “no more rounds” — pick a date to bring them back</span>' : dueHelp) +
+      '</div>' : '') +
+      '<button class="modal-submit" style="padding:9px 16px;font-size:0.78rem;margin-top:21px" onclick="saveTppMetaFromDetail(\'' + patient.id + '\')">Save</button>' +
+    '</div>';
+}
+function saveTppMetaFromDetail(patientId) {
+  const patient = allTpp.find(p => p.id === patientId);
+  const dueEl = document.getElementById('tpp-detail-due');
+  // An empty date box on a "no more rounds" patient means "leave it alone",
+  // not "clear it" — otherwise saving the owner would resurrect them.
+  if (dueEl && !dueEl.value && patient && patient.followupDue === 'done') {
+    const ownerEl = document.getElementById('tpp-detail-owner');
+    tppPatch(patientId, { owner: ownerEl ? ownerEl.value : '' })
+      .then(() => { renderTppBoard(); renderTppDetail(patientId); showToast('Saved'); })
+      .catch(err => showToast('Could not save: ' + err.message));
+    return;
+  }
+  saveTppMeta(patientId);
+}
 function renderTppDetail(patientId) {
   const patient = allTpp.find(p => p.id === patientId);
   const body = document.getElementById('tpp-detail-body');
@@ -5739,6 +6211,7 @@ function renderTppDetail(patientId) {
         '<button class="modal-submit" style="padding:8px 16px;font-size:0.78rem" onclick="saveTppName(\'' + patient.id + '\')">Save</button>' +
       '</div>' +
     '</div>' +
+    renderTppMetaRow(patient) +
     (hasDiscovery ? renderTppDiscoverySection(patient) : '') +
     (canStartNew ? '<button class="modal-submit" style="width:100%;margin-top:14px" onclick="startNewTppFollowupOrder(\'' + patient.id + '\')">+ Start New Follow-Up Round</button>' : '') +
     '<div class="pep-order-block">' + followupHtml + '</div>' +
