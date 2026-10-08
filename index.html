@@ -2054,6 +2054,8 @@
   .tpp-board .tasks-sub { font-size: 0.72rem; }
   .tpp-board .task-add-btn { padding: 5px 14px; font-size: 0.78rem; }
   .tpp-board .tasks-topbar .refresh-btn { padding: 4px !important; }
+  .tpp-board .tasks-topbar .refresh-btn:disabled { opacity: 0.35; cursor: default; }
+  .tpp-board .tasks-topbar .refresh-btn:disabled:hover { color: var(--text-muted); }
   .tpp-board .tasks-filterbar { padding: 5px 28px; }
   .tpp-board .filter-search-input { padding: 3px 10px 3px 28px; }
   .tpp-board .kanban-col { min-width: 190px; }
@@ -2414,6 +2416,12 @@
       </div>
       <span class="pep-stuck-summary" id="tpp-disc-summary" style="display:none"></span>
       <div style="display:flex;align-items:center;gap:10px">
+        <button class="refresh-btn tpp-undo-btn" onclick="tppUndo()" title="Nothing to undo" disabled style="color:var(--text-muted);padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--surface)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"></polyline><path d="M20 20v-7a4 4 0 0 0-4-4H4"></path></svg>
+        </button>
+        <button class="refresh-btn tpp-redo-btn" onclick="tppRedo()" title="Nothing to redo" disabled style="color:var(--text-muted);padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--surface)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 14 20 9 15 4"></polyline><path d="M4 20v-7a4 4 0 0 1 4-4h12"></path></svg>
+        </button>
         <button class="refresh-btn" onclick="reloadTpp(this)" title="Refresh" style="color:var(--text-muted);padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--surface)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 4 23 10 17 10"></polyline>
@@ -2448,6 +2456,12 @@
       </div>
       <span class="pep-stuck-summary" id="tpp-fu-summary" style="display:none"></span>
       <div style="display:flex;align-items:center;gap:10px">
+        <button class="refresh-btn tpp-undo-btn" onclick="tppUndo()" title="Nothing to undo" disabled style="color:var(--text-muted);padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--surface)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"></polyline><path d="M20 20v-7a4 4 0 0 0-4-4H4"></path></svg>
+        </button>
+        <button class="refresh-btn tpp-redo-btn" onclick="tppRedo()" title="Nothing to redo" disabled style="color:var(--text-muted);padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--surface)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 14 20 9 15 4"></polyline><path d="M4 20v-7a4 4 0 0 1 4-4h12"></path></svg>
+        </button>
         <button class="refresh-btn" onclick="reloadTpp(this)" title="Refresh" style="color:var(--text-muted);padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--surface)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 4 23 10 17 10"></polyline>
@@ -5428,7 +5442,7 @@ async function tppMigrateStrandedHandoffs() {
   tppMigrating = true;
   try {
     for (const p of stranded) {
-      try { await tppPatch(p.id, { sendToFollowUp: true }); } catch (e) {}
+      try { await tppPatch(p.id, { sendToFollowUp: true }, { noUndo: true }); } catch (e) {}
     }
     renderTppBoard();
   } finally {
@@ -5530,16 +5544,192 @@ function tppReplacePatient(updated) {
   const idx = allTpp.findIndex(p => p.id === updated.id);
   if (idx !== -1) allTpp[idx] = updated;
 }
-async function tppPatch(patientId, body) {
+async function tppRawPatch(patientId, body) {
   const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
     method: 'PATCH', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
+  if (res.status === 409) { const e = new Error('conflict'); e.conflict = true; throw e; }
   if (!res.ok) throw new Error('Server error ' + res.status);
   const updated = await res.json();
   tppReplacePatient(updated);
   return updated;
 }
+// Every pipeline change goes through here so it can be undone. Pass
+// { noUndo: true } for background fixes nobody did by hand.
+async function tppPatch(patientId, body, opts) {
+  opts = opts || {};
+  const beforePatient = allTpp.find(p => p.id === patientId);
+  const before = beforePatient ? tppSnapshot(beforePatient) : null;
+  const deletedComment = body.deleteComment && beforePatient
+    ? (beforePatient.comments || []).find(c => c.id === body.deleteComment.commentId) : null;
+  const updated = await tppRawPatch(patientId, body);
+  if (!opts.noUndo && before) {
+    const label = tppDescribe(body, beforePatient, updated);
+    if (body.addComment) {
+      const c = (updated.comments || [])[(updated.comments || []).length - 1];
+      if (c) tppPushUndo({ type: 'comment-add', patientId, label, comment: c, version: updated.updatedAt });
+    } else if (body.deleteComment) {
+      if (deletedComment) tppPushUndo({ type: 'comment-del', patientId, label, comment: deletedComment, version: updated.updatedAt });
+    } else {
+      tppPushUndo({ type: 'patch', patientId, label, before, after: tppSnapshot(updated), version: updated.updatedAt });
+    }
+  }
+  return updated;
+}
+// -- Undo / redo ----------------------------------------------------------------
+// Each change saves a copy of the patient's pipeline fields from before and
+// after. Undo puts the "before" copy back; redo puts the "after" copy back.
+// The server refuses (409) if the patient was changed by anyone else since,
+// so undo can never wipe out a colleague's work. Files are never touched.
+// The history lives in this browser tab only and resets on page reload.
+const TPP_UNDO_LIMIT = 50;
+const TPP_RESTORE_FIELDS = ['name', 'discoveryStage', 'discoveryHistory', 'decision', 'followupOrders', 'followupDue'];
+let tppUndoStack = [];
+let tppRedoStack = [];
+let tppUndoBusy = false;
+function tppSnapshot(p) {
+  const snap = {};
+  TPP_RESTORE_FIELDS.forEach(k => { snap[k] = p[k] === undefined ? null : JSON.parse(JSON.stringify(p[k])); });
+  return snap;
+}
+function tppDescribe(body, before, updated) {
+  const name = (updated && updated.name) || (before && before.name) || 'patient';
+  if (body.setDiscoveryStage) return 'move ' + name + ' to ' + tppStageLabel(body.setDiscoveryStage.stage);
+  if (body.setFollowupStage && !body.finishFollowupOrder) return 'move ' + name + ' to ' + tppFollowupStageLabel(body.setFollowupStage.stage);
+  if (body.acceptTreatmentPlan) return 'mark ' + name + ' accepted';
+  if (body.declineTreatmentPlan) return 'mark ' + name + ' declined';
+  if (body.holdTreatmentPlan) return 'put ' + name + ' on hold';
+  if (body.finishFollowupOrder) return 'finish ' + name + '\u2019s round';
+  if (body.newFollowupOrder) return 'start a new round for ' + name;
+  if (body.sendToFollowUp) return 'send ' + name + ' to Follow-Up';
+  if (body.addComment) return 'comment on ' + name;
+  if (body.deleteComment) return 'delete a comment on ' + name;
+  if (body.editDiscoveryHistory || body.editFollowupHistory) return 'edit ' + name + '\u2019s timeline';
+  if (body.addDiscoveryHistory || body.addFollowupHistory) return 'add a timeline step for ' + name;
+  if (body.deleteDiscoveryHistory || body.deleteFollowupHistory) return 'delete a timeline step for ' + name;
+  if (body.name !== undefined) return 'rename ' + ((before && before.name) || 'patient') + ' to ' + body.name;
+  if (body.followupDue !== undefined) return 'change ' + name + '\u2019s next-due date';
+  return 'change ' + name;
+}
+function tppPushUndo(entry) {
+  tppUndoStack.push(entry);
+  if (tppUndoStack.length > TPP_UNDO_LIMIT) tppUndoStack.shift();
+  tppRedoStack = [];
+  tppUpdateUndoButtons();
+}
+// After undoing/redoing one step, the next step for the same patient now
+// starts from the server's new version.
+function tppChainVersion(stack, patientId, version) {
+  for (let i = stack.length - 1; i >= 0; i--) {
+    if (stack[i].patientId === patientId) { stack[i].version = version; return; }
+  }
+}
+function tppCap(str) { return str.charAt(0).toUpperCase() + str.slice(1); }
+function tppUpdateUndoButtons() {
+  const u = tppUndoStack[tppUndoStack.length - 1];
+  const r = tppRedoStack[tppRedoStack.length - 1];
+  document.querySelectorAll('.tpp-undo-btn').forEach(b => {
+    b.disabled = !u || tppUndoBusy;
+    b.title = u ? 'Undo: ' + u.label + ' (Ctrl+Z)' : 'Nothing to undo';
+  });
+  document.querySelectorAll('.tpp-redo-btn').forEach(b => {
+    b.disabled = !r || tppUndoBusy;
+    b.title = r ? 'Redo: ' + r.label + ' (Ctrl+Shift+Z)' : 'Nothing to redo';
+  });
+}
+function tppAfterUndoRender(patientId) {
+  renderTppBoard();
+  if (tppDetailPatientId === patientId) {
+    if (allTpp.some(p => p.id === patientId)) renderTppDetail(patientId);
+    else closeTppDetail();
+  }
+}
+// direction: 'undo' or 'redo'. Returns the server's new version of the
+// patient (or null when the patient no longer exists).
+async function tppApplyStep(entry, direction) {
+  const undo = direction === 'undo';
+  const pid = entry.patientId;
+  if (entry.type === 'patch') {
+    const snap = undo ? entry.before : entry.after;
+    const updated = await tppRawPatch(pid, Object.assign({}, snap, { _baseUpdatedAt: entry.version }));
+    return updated.updatedAt;
+  }
+  if (entry.type === 'comment-add' || entry.type === 'comment-del') {
+    const remove = (entry.type === 'comment-add') === undo;
+    if (remove) {
+      const updated = await tppRawPatch(pid, { deleteComment: { commentId: entry.comment.id } });
+      return updated.updatedAt;
+    }
+    const updated = await tppRawPatch(pid, { addComment: { from: entry.comment.from, message: entry.comment.message } });
+    const cs = updated.comments || [];
+    if (cs.length) entry.comment = cs[cs.length - 1]; // re-added comment has a new id
+    return updated.updatedAt;
+  }
+  // Whole-patient add / delete. Deleted patients sit in the server's trash
+  // for 30 days, so bringing one back is a restore from there.
+  const remove = (entry.type === 'add') === undo;
+  if (remove) {
+    const current = allTpp.find(p => p.id === pid);
+    if (current && entry.version && current.updatedAt !== entry.version &&
+        !confirm(entry.name + ' has been changed since. Remove them anyway?')) {
+      const e = new Error('cancelled'); e.cancelled = true; throw e;
+    }
+    const res = await fetch(WORKER_URL + '/tpp/' + pid, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    allTpp = allTpp.filter(p => p.id !== pid);
+    return null;
+  }
+  const res = await fetch(WORKER_URL + '/trash/tpp/' + pid + '/restore', { method: 'POST' });
+  if (res.status === 404) throw new Error('they are no longer in the trash');
+  if (!res.ok) throw new Error('Server error ' + res.status);
+  const data = await res.json();
+  if (data.restored && !allTpp.some(p => p.id === pid)) allTpp.unshift(data.restored);
+  return data.restored ? data.restored.updatedAt : null;
+}
+async function tppStep(direction) {
+  if (tppUndoBusy) return;
+  const from = direction === 'undo' ? tppUndoStack : tppRedoStack;
+  const to = direction === 'undo' ? tppRedoStack : tppUndoStack;
+  const entry = from[from.length - 1];
+  if (!entry) return;
+  tppUndoBusy = true; tppUpdateUndoButtons();
+  try {
+    const version = await tppApplyStep(entry, direction);
+    from.pop();
+    entry.version = version;
+    to.push(entry);
+    if (version) tppChainVersion(from, entry.patientId, version);
+    tppAfterUndoRender(entry.patientId);
+    showToast((direction === 'undo' ? 'Undid: ' : 'Redid: ') + entry.label);
+  } catch (err) {
+    if (err.cancelled) { /* left as is */ }
+    else if (err.conflict) {
+      // Someone else changed this patient since -- drop the step rather
+      // than overwrite their work.
+      from.pop();
+      showToast('Can\u2019t ' + direction + ' \u2014 this patient was changed since (by someone else, or a file was added). Refreshing.');
+      loadTpp();
+    } else {
+      showToast('Could not ' + direction + ': ' + err.message);
+    }
+  } finally {
+    tppUndoBusy = false; tppUpdateUndoButtons();
+  }
+}
+function tppUndo() { return tppStep('undo'); }
+function tppRedo() { return tppStep('redo'); }
+document.addEventListener('keydown', e => {
+  if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+  const view = document.getElementById('tpp-view');
+  if (!view || !view.classList.contains('active')) return;
+  const t = e.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+  if (document.querySelector('.modal-overlay.open')) return;
+  const k = e.key.toLowerCase();
+  if (k === 'z' && !e.shiftKey) { e.preventDefault(); tppUndo(); }
+  else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); tppRedo(); }
+});
 async function reloadTpp(btn) {
   if (btn) btn.classList.add('spinning');
   await loadTpp();
@@ -6115,6 +6305,7 @@ async function submitAddTpp() {
     if (!res.ok) throw new Error('Server error ' + res.status);
     const patient = await res.json();
     allTpp.unshift(patient);
+    tppPushUndo({ type: 'add', patientId: patient.id, name: patient.name, label: 'add ' + patient.name, version: patient.updatedAt });
     renderTppBoard();
     closeAddTppModal();
     showToast('Patient added \u2014 drag them to their starting stage');
@@ -6145,6 +6336,7 @@ async function submitAddTppFollowup() {
     if (!res.ok) throw new Error('Server error ' + res.status);
     const patient = await res.json();
     allTpp.unshift(patient);
+    tppPushUndo({ type: 'add', patientId: patient.id, name: patient.name, label: 'add ' + patient.name, version: patient.updatedAt });
     renderTppBoard();
     closeAddTppFollowupModal();
     showToast('Patient added \u2014 drag them to their starting stage');
@@ -6370,14 +6562,7 @@ async function saveTppName(patientId) {
   const name = document.getElementById('tpp-detail-name').value.trim();
   if (!name) return;
   try {
-    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allTpp.findIndex(p => p.id === patientId);
-    if (idx !== -1) allTpp[idx] = updated;
+    const updated = await tppPatch(patientId, { name });
     renderTppBoard();
     document.getElementById('tpp-detail-title').textContent = updated.name;
     showToast('Name updated');
@@ -6386,10 +6571,13 @@ async function saveTppName(patientId) {
   }
 }
 async function deleteTppPatient(patientId) {
-  if (!confirm('Delete this patient and all their pipeline history? This cannot be undone.')) return;
+  if (!confirm('Delete this patient and all their pipeline history? (You can undo this.)')) return;
+  const patient = allTpp.find(p => p.id === patientId);
   try {
-    await fetch(WORKER_URL + '/tpp/' + patientId, { method: 'DELETE' });
+    const res = await fetch(WORKER_URL + '/tpp/' + patientId, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Server error ' + res.status);
     allTpp = allTpp.filter(p => p.id !== patientId);
+    if (patient) tppPushUndo({ type: 'delete', patientId, name: patient.name, label: 'delete ' + patient.name, version: null });
     renderTppBoard();
     closeTppDetail();
     showToast('Patient deleted');
@@ -6405,14 +6593,7 @@ async function saveTppHistoryEdit(patientId, historyId, rowId) {
   const stage = stageEl ? stageEl.value : undefined;
   if (!atLocal) return;
   try {
-    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ editDiscoveryHistory: { historyId, at: new Date(atLocal).toISOString(), comment, stage } }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allTpp.findIndex(p => p.id === patientId);
-    if (idx !== -1) allTpp[idx] = updated;
+    const updated = await tppPatch(patientId, { editDiscoveryHistory: { historyId, at: new Date(atLocal).toISOString(), comment, stage } });
     renderTppDetail(patientId);
     renderTppBoard();
     showToast('History updated');
@@ -6421,16 +6602,9 @@ async function saveTppHistoryEdit(patientId, historyId, rowId) {
   }
 }
 async function deleteTppHistoryEntry(patientId, historyId) {
-  if (!confirm('Delete this timeline entry? This cannot be undone.')) return;
+  if (!confirm('Delete this timeline entry?')) return;
   try {
-    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ deleteDiscoveryHistory: { historyId } }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allTpp.findIndex(p => p.id === patientId);
-    if (idx !== -1) allTpp[idx] = updated;
+    const updated = await tppPatch(patientId, { deleteDiscoveryHistory: { historyId } });
     renderTppDetail(patientId);
     renderTppBoard();
     showToast('Entry deleted');
@@ -6444,14 +6618,7 @@ async function addTppHistoryEntry(patientId, rowId) {
   const comment = document.getElementById(rowId + '-comment').value;
   if (!atLocal) return;
   try {
-    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ addDiscoveryHistory: { stage, at: new Date(atLocal).toISOString(), comment } }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allTpp.findIndex(p => p.id === patientId);
-    if (idx !== -1) allTpp[idx] = updated;
+    const updated = await tppPatch(patientId, { addDiscoveryHistory: { stage, at: new Date(atLocal).toISOString(), comment } });
     renderTppDetail(patientId);
     renderTppBoard();
     showToast('Entry added');
@@ -6467,14 +6634,7 @@ async function saveTppFollowupHistoryEdit(patientId, orderId, historyId, rowId) 
   const stage = stageEl ? stageEl.value : undefined;
   if (!atLocal) return;
   try {
-    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ editFollowupHistory: { orderId, historyId, at: new Date(atLocal).toISOString(), comment, stage } }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allTpp.findIndex(p => p.id === patientId);
-    if (idx !== -1) allTpp[idx] = updated;
+    const updated = await tppPatch(patientId, { editFollowupHistory: { orderId, historyId, at: new Date(atLocal).toISOString(), comment, stage } });
     renderTppDetail(patientId);
     renderTppBoard();
     showToast('History updated');
@@ -6483,16 +6643,9 @@ async function saveTppFollowupHistoryEdit(patientId, orderId, historyId, rowId) 
   }
 }
 async function deleteTppFollowupHistoryEntry(patientId, orderId, historyId) {
-  if (!confirm('Delete this timeline entry? This cannot be undone.')) return;
+  if (!confirm('Delete this timeline entry?')) return;
   try {
-    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ deleteFollowupHistory: { orderId, historyId } }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allTpp.findIndex(p => p.id === patientId);
-    if (idx !== -1) allTpp[idx] = updated;
+    const updated = await tppPatch(patientId, { deleteFollowupHistory: { orderId, historyId } });
     renderTppDetail(patientId);
     renderTppBoard();
     showToast('Entry deleted');
@@ -6506,14 +6659,7 @@ async function addTppFollowupHistoryEntry(patientId, orderId, rowId) {
   const comment = document.getElementById(rowId + '-comment').value;
   if (!atLocal) return;
   try {
-    const res = await fetch(WORKER_URL + '/tpp/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ addFollowupHistory: { orderId, stage, at: new Date(atLocal).toISOString(), comment } }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allTpp.findIndex(p => p.id === patientId);
-    if (idx !== -1) allTpp[idx] = updated;
+    const updated = await tppPatch(patientId, { addFollowupHistory: { orderId, stage, at: new Date(atLocal).toISOString(), comment } });
     renderTppDetail(patientId);
     renderTppBoard();
     showToast('Entry added');
