@@ -2364,6 +2364,14 @@
   .tpp-ki-link:hover { background: var(--surface2); }
   .tpp-ki-file { text-decoration: none; }
   .tpp-ki-file:hover { text-decoration: underline; text-decoration-color: var(--text-muted); }
+  /* Accept / Decline / On hold are actions, not a state: all three neutral
+     until hovered, so nothing looks already decided. */
+  .tpp-decision-btn.tpp-accept-btn, .tpp-decision-btn.tpp-decline-btn, .tpp-decision-btn.tpp-hold-btn {
+    background: var(--surface) !important; color: var(--text) !important; border: 1px solid var(--border) !important; font-weight: 600;
+  }
+  .tpp-decision-btn.tpp-accept-btn:hover { border-color: var(--tpp-gold) !important; background: var(--surface2) !important; }
+  .tpp-decision-btn.tpp-decline-btn:hover { border-color: var(--danger) !important; color: var(--danger) !important; background: var(--surface2) !important; }
+  .tpp-decision-btn.tpp-hold-btn:hover { border-color: var(--warn-border) !important; color: var(--warn-text) !important; background: var(--surface2) !important; }
 </style>
 </head>
 <body>
@@ -5703,9 +5711,9 @@ function tppDecisionTagHtml(patient) {
   return '';
 }
 function tppDecisionButtonsHtml(patientId) {
-  return '<button class="tpp-decision-btn tpp-accept-btn" onclick="acceptTppTreatmentPlan(\'' + patientId + '\')">Accepted</button>' +
-    '<button class="tpp-decision-btn tpp-decline-btn" onclick="declineTppTreatmentPlan(\'' + patientId + '\')">Declined</button>' +
-    '<button class="tpp-decision-btn tpp-hold-btn" onclick="holdTppTreatmentPlan(\'' + patientId + '\')">On hold</button>';
+  return '<button class="tpp-decision-btn tpp-accept-btn" onclick="acceptTppTreatmentPlan(\'' + patientId + '\')" title="Mark the treatment plan as accepted">Accept</button>' +
+    '<button class="tpp-decision-btn tpp-decline-btn" onclick="declineTppTreatmentPlan(\'' + patientId + '\')" title="Mark the treatment plan as declined">Decline</button>' +
+    '<button class="tpp-decision-btn tpp-hold-btn" onclick="holdTppTreatmentPlan(\'' + patientId + '\')" title="Put the patient on hold">Put on hold</button>';
 }
 // Latest comment + a button to open the full thread. Shown on every tile.
 function tppCommentChipHtml(patient) {
