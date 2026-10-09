@@ -2283,6 +2283,22 @@
   .tpp-ki-file { color: var(--text); text-decoration: underline; text-underline-offset: 2px; font-weight: 600; }
   .tpp-ki-link { font-size: 0.8rem; font-weight: 500; text-underline-offset: 2px; }
   .tpp-ki-good { color: var(--text); font-weight: 600; }
+  /* Gold accents: links, selected states and the current step, in a gold
+     that stays readable on both themes. */
+  :root { --tpp-gold: var(--accent); }
+  :root[data-theme="light"] { --tpp-gold: var(--accent-dark); }
+  .tpp-board .tpp-labs-missing, .tpp-board .tpp-lab-missing, .tpp-board .tpp-plan-add, .tpp-board .tpp-comment-btn { color: var(--tpp-gold); text-decoration-color: var(--tpp-gold); font-weight: 600; }
+  .tpp-board .tpp-labs-missing:hover, .tpp-board .tpp-lab-missing:hover, .tpp-board .tpp-plan-add:hover, .tpp-board .tpp-comment-btn:hover { color: var(--text); }
+  .tpp-board .tpp-plan-chip { text-decoration-color: var(--tpp-gold); }
+  .tpp-board .tpp-labs-bar span { background: var(--tpp-gold); }
+  .tpp-board .tpp-lab-badge:not(.tpp-lab-missing):hover { color: var(--tpp-gold); }
+  .tpp-pay-btn.active { color: var(--tpp-gold) !important; box-shadow: inset 0 -2px 0 var(--tpp-gold); }
+  .tpp-col-sub { box-shadow: inset 3px 0 0 var(--tpp-gold); }
+  .tpp-ki-head { color: var(--tpp-gold); }
+  .tpp-ki-seg-btn.active, .tpp-ki-seg-btn.tpp-ki-pay-plan.active { color: var(--tpp-gold); box-shadow: inset 0 -2px 0 var(--tpp-gold); }
+  .tpp-ki-file, .tpp-ki-link { text-decoration-color: var(--tpp-gold); }
+  .tpp-ki-link { color: var(--tpp-gold); font-weight: 600; }
+  .tpp-ki-row.current .tpp-ki-label { color: var(--tpp-gold); }
   /* Each text link on a tile gets its own line */
   .tpp-board .tpp-lab-badge, .tpp-board .tpp-labs-missing, .tpp-board .tpp-comment-btn, .tpp-board .tpp-plan-chip { display: block; width: fit-content; text-align: left; }
 </style>
