@@ -2114,6 +2114,34 @@
   .tpp-labs-ready .tpp-labs-line { color: var(--accent-dark); }
   .tpp-appt-past { border-color: var(--warn-border); }
   .tpp-appt-past .tpp-labs-sub { color: var(--warn-text); }
+  /* Patient details card in the detail panel */
+  .tpp-ki { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin: 10px 0 14px; background: var(--surface); text-align: left; }
+  .tpp-ki-head { font-size: 0.8rem; font-weight: 800; padding: 10px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); color: var(--text); }
+  .tpp-ki-row { display: grid; grid-template-columns: 140px 1fr; gap: 12px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .tpp-ki-row:last-child { border-bottom: none; }
+  .tpp-ki-row.current { background: var(--warn-bg); box-shadow: inset 3px 0 0 var(--accent); }
+  .tpp-ki-label { font-size: 0.84rem; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .tpp-ki-now { font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; padding: 1px 6px; border-radius: 8px; background: var(--accent); color: white; }
+  .tpp-ki-value { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+  .tpp-ki-status { font-size: 0.74rem; color: var(--text-muted); font-weight: 500; }
+  .tpp-ki-warn { color: var(--warn-text); font-weight: 700; }
+  .tpp-ki-good { color: var(--accent-dark); font-weight: 700; }
+  .tpp-ki-input { font: inherit; font-size: 0.82rem; font-weight: 600; padding: 6px 9px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); max-width: 100%; }
+  .tpp-ki-seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .tpp-ki-seg-btn { font: inherit; font-size: 0.8rem; font-weight: 700; padding: 6px 12px; border: none; background: var(--surface); color: var(--text-muted); cursor: pointer; }
+  .tpp-ki-seg-btn + .tpp-ki-seg-btn { border-left: 1px solid var(--border); }
+  .tpp-ki-seg-btn:hover { color: var(--text); background: var(--surface2); }
+  .tpp-ki-seg-btn.active { background: var(--accent); color: white; }
+  .tpp-ki-seg-btn.tpp-ki-pay-plan.active { background: var(--warn-text); color: white; }
+  .tpp-ki-btn { font-size: 0.8rem; font-weight: 700; padding: 6px 12px; border-radius: 8px; border: 1px dashed var(--accent); color: var(--accent-dark); cursor: pointer; background: var(--surface); }
+  .tpp-ki-btn:hover { background: var(--warn-bg); }
+  .tpp-ki-inline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; max-width: 100%; }
+  .tpp-ki-file { font-size: 0.82rem; font-weight: 700; color: var(--accent-dark); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+  .tpp-ki-file:hover { text-decoration: underline; }
+  .tpp-ki-link { font-size: 0.76rem; font-weight: 600; color: var(--text-muted); cursor: pointer; text-decoration: underline; }
+  @media (max-width: 520px) {
+    .tpp-ki-row { grid-template-columns: 1fr; gap: 6px; }
+  }
   .tpp-lab-badge {
     display: inline-flex; align-items: center; gap: 3px; margin-top: 6px; font-size: 0.66rem; font-weight: 700;
     padding: 2px 8px; border-radius: 10px; cursor: pointer; border: 1px solid var(--border);
@@ -5851,6 +5879,62 @@ async function editTppLab(patientId, value) {
     showToast('Could not save: ' + err.message);
   }
 }
+// Detail panel: one row per milestone, in the order patients go through them.
+// The row for the patient's current stage is highlighted.
+function tppKeyInfoHtml(patient) {
+  const id = patient.id;
+  const st = tppDiscStage(patient);
+  const order = TPP_DISCOVERY_STAGES.map(s => s.key);
+  const at = order.indexOf(st);
+  const row = (label, stageKeys, controlHtml, statusHtml) => {
+    const current = stageKeys.includes(st);
+    return '<div class="tpp-ki-row' + (current ? ' current' : '') + '">' +
+      '<div class="tpp-ki-label">' + label + (current ? '<span class="tpp-ki-now">Now</span>' : '') + '</div>' +
+      '<div class="tpp-ki-value">' + controlHtml + (statusHtml ? '<div class="tpp-ki-status">' + statusHtml + '</div>' : '') + '</div>' +
+    '</div>';
+  };
+  const apptRow = (stageKey) => {
+    const cfg = TPP_APPT_FIELDS[stageKey];
+    const v = patient[cfg.field] || '';
+    const info = tppApptInfo(v);
+    const input = '<input type="datetime-local" class="tpp-ki-input" value="' + escapeHtml(v.length === 10 ? v + 'T00:00' : v) + '" ' +
+      'onchange="editTppApptDate(\'' + id + '\',\'' + stageKey + '\', this.value)">';
+    const status = info ? (info.past ? '<span class="tpp-ki-warn">Was ' + info.when + '</span>' : info.when.charAt(0).toUpperCase() + info.when.slice(1)) : 'Not scheduled yet';
+    return row(cfg.label, [stageKey], input, status);
+  };
+  // Lab: two big choices instead of a dropdown
+  const labBtns = '<div class="tpp-ki-seg">' + Object.keys(TPP_LABS).map(k =>
+    '<button class="tpp-ki-seg-btn' + (patient.labProvider === k ? ' active' : '') + '" onclick="editTppLab(\'' + id + '\',\'' + (patient.labProvider === k ? '' : k) + '\')">' + TPP_LABS[k] + '</button>'
+  ).join('') + '</div>';
+  const labStatus = TPP_LABS[patient.labProvider] ? '' : 'Not chosen yet';
+  // Labs drawn
+  const li = tppLabsDrawnInfo(patient);
+  const drawInput = '<input type="date" class="tpp-ki-input" max="' + tppTodayStr() + '" value="' + escapeHtml(patient.labsDrawnAt || '') + '" ' +
+    'onchange="if (this.value) editTppLabsDrawnDate(\'' + id + '\', this.value)">';
+  const drawStatus = li ? (li.ready ? '<span class="tpp-ki-good">&#10003; Results should be back</span>' : 'Day ' + li.days + ' of ' + TPP_LABS_RESULT_DAYS + ' &middot; results ~' + li.backLabel) : 'Not drawn yet';
+  // Treatment plan
+  const plan = tppPlanFile(patient);
+  const fileInput = '<input type="file" accept=".pdf,application/pdf" style="display:none" onchange="uploadTppTreatmentPlan(\'' + id + '\', this)">';
+  const planCtl = plan
+    ? '<div class="tpp-ki-inline"><a class="tpp-ki-file" href="' + WORKER_URL + '/tpp/files/' + plan.id + '" target="_blank" rel="noopener">&#128196; ' + escapeHtml(plan.name) + '</a>' +
+        '<label class="tpp-ki-link">Replace' + fileInput + '</label></div>'
+    : '<label class="tpp-ki-btn">&#43; Attach PDF' + fileInput + '</label>';
+  // Payment
+  const pay = patient.payment === 'paid' || patient.payment === 'plan' ? patient.payment : '';
+  const payBtns = '<div class="tpp-ki-seg">' + ['paid', 'plan'].map(k =>
+    '<button class="tpp-ki-seg-btn tpp-ki-pay-' + k + (pay === k ? ' active' : '') + '" onclick="setTppPayment(\'' + id + '\',\'' + k + '\')">' +
+      (k === 'paid' ? '&#10003; Paid' : 'Payment plan') + '</button>'
+  ).join('') + '</div>';
+  return '<div class="tpp-ki">' +
+    '<div class="tpp-ki-head">Patient details</div>' +
+    apptRow('scheduled_for_discovery') +
+    row('Lab', ['labs_ordered'], labBtns, labStatus) +
+    row('Labs drawn', [TPP_LABS_DRAWN_STAGE], drawInput, drawStatus) +
+    apptRow('deep_dive_scheduled') +
+    row('Treatment plan', ['deep_dive_completed', TPP_DECISION_STAGE], planCtl, plan ? '' : 'No PDF attached') +
+    row('Payment', ['needs_to_pay', 'paid_awaiting_scheduling'], payBtns, pay ? '' : 'Not set') +
+  '</div>';
+}
 // Latest attached treatment plan (category "treatment_plan"), if any.
 function tppPlanFile(patient) {
   const fs = (patient.discoveryFiles || []).filter(f => f.category === 'treatment_plan');
@@ -6838,33 +6922,7 @@ function renderTppDiscoverySection(patient) {
       '</button>' +
     '</div>').join('') : '<p style="color:var(--text-muted);font-size:0.8rem">No files yet.</p>';
   const isPending = tppDiscStage(patient) === TPP_DECISION_STAGE;
-  const labsInfo = tppLabsDrawnInfo(patient);
-  const showLabs = tppDiscStage(patient) === TPP_LABS_DRAWN_STAGE || !!patient.labsDrawnAt;
-  const labsHtml = showLabs ? '' +
-    '<div class="modal-field" style="margin:8px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
-      '<label class="modal-label" style="margin:0">Labs drawn</label>' +
-      '<input type="date" class="modal-input" style="width:auto;padding:5px 8px;font-size:0.78rem" max="' + tppTodayStr() + '" value="' + escapeHtml(patient.labsDrawnAt || '') + '" ' +
-        'onchange="if (this.value) editTppLabsDrawnDate(\'' + patient.id + '\', this.value)">' +
-      (labsInfo ? '<span style="font-size:0.75rem;color:var(--text-muted)">' + (labsInfo.ready ? 'Results should be back' : 'Day ' + labsInfo.days + ' of ' + TPP_LABS_RESULT_DAYS + ' &middot; back ~' + labsInfo.backLabel) + '</span>' : '') +
-    '</div>' : '';
-  const apptHtml = Object.keys(TPP_APPT_FIELDS).map(k => {
-    const cfg = TPP_APPT_FIELDS[k];
-    const v = patient[cfg.field] || '';
-    const info = tppApptInfo(v);
-    return '<div class="modal-field" style="margin:6px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
-      '<label class="modal-label" style="margin:0;min-width:110px">' + cfg.label + '</label>' +
-      '<input type="datetime-local" class="modal-input" style="width:auto;padding:5px 8px;font-size:0.78rem" value="' + escapeHtml(v.length === 10 ? v + 'T00:00' : v) + '" ' +
-        'onchange="editTppApptDate(\'' + patient.id + '\',\'' + k + '\', this.value)">' +
-      (info ? '<span style="font-size:0.75rem;color:var(--text-muted)">' + info.when + '</span>' : '') +
-    '</div>';
-  }).join('');
-  const plan = tppPlanFile(patient);
-  const planHtml = '<div class="modal-field" style="margin:6px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
-      '<label class="modal-label" style="margin:0;min-width:110px">Treatment plan</label>' +
-      (plan ? '<a class="tpp-plan-chip" style="margin:0" href="' + WORKER_URL + '/tpp/files/' + plan.id + '" target="_blank" rel="noopener">&#128196; ' + escapeHtml(plan.name) + '</a>' : '') +
-      '<label class="tpp-plan-chip tpp-plan-add" style="margin:0">' + (plan ? 'Replace' : '&#43; Attach PDF') +
-        '<input type="file" accept=".pdf,application/pdf" style="display:none" onchange="uploadTppTreatmentPlan(\'' + patient.id + '\', this)"></label>' +
-    '</div>';
+  const keyInfoHtml = tppKeyInfoHtml(patient);
   const moveOptions = TPP_ALL_DISCOVERY_STAGES.filter(s => s.key !== tppDiscStage(patient))
     .map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('');
   return '' +
@@ -6877,16 +6935,7 @@ function renderTppDiscoverySection(patient) {
       '<p style="font-size:0.78rem;color:var(--text-muted);margin:8px 0">Current stage: <strong style="color:var(--text)">' + escapeHtml(tppStageLabel(tppDiscStage(patient))) + '</strong>' +
         ' ' + tppDecisionTagHtml(patient) +
       '</p>' +
-      apptHtml +
-      '<div class="modal-field" style="margin:6px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
-        '<label class="modal-label" style="margin:0;min-width:110px">Lab</label>' +
-        '<select class="modal-select" style="width:auto;font-size:0.78rem;padding:5px 8px" onchange="editTppLab(\'' + patient.id + '\', this.value)">' +
-          '<option value=""' + (TPP_LABS[patient.labProvider] ? '' : ' selected') + '>Not set</option>' +
-          Object.keys(TPP_LABS).map(k => '<option value="' + k + '"' + (patient.labProvider === k ? ' selected' : '') + '>' + TPP_LABS[k] + '</option>').join('') +
-        '</select></div>' +
-      labsHtml + planHtml +
-      '<div class="modal-field" style="margin:6px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
-        '<label class="modal-label" style="margin:0;min-width:110px">Payment</label>' + tppPaymentRowHtml(patient) + '</div>' +
+      keyInfoHtml +
       (isPending ? '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">Awaiting acceptance</div><div class="tpp-decision-row">' + tppDecisionButtonsHtml(patient.id) + '</div>' : '') +
       '<div class="pep-section-title" style="margin-top:12px">History</div>' +
       historyHtml + addHistoryHtml +
