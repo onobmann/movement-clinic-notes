@@ -2114,6 +2114,16 @@
   .tpp-labs-ready .tpp-labs-line { color: var(--accent-dark); }
   .tpp-appt-past { border-color: var(--warn-border); }
   .tpp-appt-past .tpp-labs-sub { color: var(--warn-text); }
+  .tpp-pay-row { display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
+  .tpp-pay-btn {
+    font-size: 0.66rem; font-weight: 600; padding: 3px 8px; border-radius: 10px; cursor: pointer;
+    border: 1px dashed var(--border); background: var(--surface); color: var(--text-muted); white-space: nowrap;
+  }
+  .tpp-pay-btn:hover { border-color: var(--accent); color: var(--accent-dark); }
+  .tpp-pay-paid.active { border: 1px solid var(--accent); background: var(--accent); color: white; }
+  .tpp-pay-plan.active { border: 1px solid var(--warn-border); background: var(--warn-bg); color: var(--warn-text); }
+  .tpp-board .pep-col.pep-col-compact .tpp-pay-row { margin-top: 3px; }
+  .tpp-board .pep-col.pep-col-compact .tpp-pay-btn { padding: 1px 6px; font-size: 0.62rem; }
   .tpp-plan-chip {
     display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 0.68rem; font-weight: 700;
     padding: 3px 9px; border-radius: 10px; border: 1px solid var(--accent); color: var(--accent-dark);
@@ -3497,7 +3507,8 @@ const TPP_DISCOVERY_STAGES = [
   { key: 'treatment_plan_sent', label: 'Treatment Plan Sent', sub: 'Awaiting acceptance' },
   { key: 'accepted_plan', label: 'Accepted Plan' },
   { key: 'needs_to_pay', label: 'Needs to Pay' },
-  { key: 'paid_awaiting_scheduling', label: 'Paid & Awaiting Scheduling' },
+  // Key kept from when this was "Paid & Awaiting Scheduling" so nobody moves.
+  { key: 'paid_awaiting_scheduling', label: 'Awaiting Scheduling' },
   { key: 'treatment_plan_scheduled', label: 'Treatment Plan Scheduled' },
   { key: 'followup_labs_ordered', label: 'Follow-Up Labs Ordered' },
 ];
@@ -3524,6 +3535,10 @@ const TPP_APPT_FIELDS = {
 const TPP_PLAN_UPLOAD_STAGES = ['deep_dive_completed', 'treatment_plan_sent'];
 // From here on, an attached plan shows as a link on the tile.
 const TPP_PLAN_LINK_FROM = 'deep_dive_completed';
+// Payment status ("paid" / "plan") is a tag that stays on the tile as the
+// patient moves. The buttons show on every stage after Labs Drawn.
+const TPP_PAYMENT_FROM = 'deep_dive_scheduled';
+const TPP_PAYMENT_LABELS = { paid: 'Paid', plan: 'Working on payment plan' };
 const TPP_FOLLOWUP_STAGES = [
   { key: 'labs_sent', label: 'Labs Sent' },
   { key: 'labs_in_labcorp', label: 'Labs in LabCorp' },
@@ -5707,6 +5722,33 @@ async function editTppApptDate(patientId, stageKey, value) {
     showToast('Could not save: ' + err.message);
   }
 }
+function tppShowsPayment(stageKey) {
+  const order = TPP_DISCOVERY_STAGES.map(s => s.key);
+  const at = order.indexOf(stageKey);
+  return at !== -1 && at >= order.indexOf(TPP_PAYMENT_FROM) && stageKey !== TPP_HANDOFF_STAGE;
+}
+function tppPaymentRowHtml(patient) {
+  const cur = patient.payment === 'paid' || patient.payment === 'plan' ? patient.payment : '';
+  const btn = (key, icon) => '<button class="tpp-pay-btn tpp-pay-' + key + (cur === key ? ' active' : '') + '" ' +
+    'onclick="event.stopPropagation(); setTppPayment(\'' + patient.id + '\',\'' + key + '\')" ' +
+    'title="' + (cur === key ? 'Click to clear' : 'Mark as ' + TPP_PAYMENT_LABELS[key].toLowerCase()) + '">' +
+    icon + ' ' + TPP_PAYMENT_LABELS[key] + '</button>';
+  return '<div class="tpp-pay-row" onclick="event.stopPropagation()">' + btn('paid', '&#10003;') + btn('plan', '&#9719;') + '</div>';
+}
+// Clicking the active status again clears it.
+async function setTppPayment(patientId, key) {
+  const patient = allTpp.find(p => p.id === patientId);
+  if (!patient) return;
+  const next = patient.payment === key ? '' : key;
+  try {
+    await tppPatch(patientId, { payment: next, _baseUpdatedAt: patient.updatedAt });
+    renderTppBoard();
+    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    showToast(next ? patient.name + ': ' + TPP_PAYMENT_LABELS[next] : patient.name + ': payment status cleared');
+  } catch (err) {
+    showToast('Could not save: ' + err.message);
+  }
+}
 // Latest attached treatment plan (category "treatment_plan"), if any.
 function tppPlanFile(patient) {
   const fs = (patient.discoveryFiles || []).filter(f => f.category === 'treatment_plan');
@@ -5814,7 +5856,7 @@ async function tppPatch(patientId, body, opts) {
 // so undo can never wipe out a colleague's work. Files are never touched.
 // The history lives in this browser tab only and resets on page reload.
 const TPP_UNDO_LIMIT = 50;
-const TPP_RESTORE_FIELDS = ['name', 'discoveryStage', 'discoveryHistory', 'decision', 'followupOrders', 'followupDue', 'labsDrawnAt', 'discoveryConsultAt', 'deepDiveAt'];
+const TPP_RESTORE_FIELDS = ['name', 'discoveryStage', 'discoveryHistory', 'decision', 'followupOrders', 'followupDue', 'labsDrawnAt', 'discoveryConsultAt', 'deepDiveAt', 'payment'];
 let tppUndoStack = [];
 let tppRedoStack = [];
 let tppUndoBusy = false;
@@ -5843,6 +5885,7 @@ function tppDescribe(body, before, updated) {
   if (body.labsDrawnAt !== undefined) return 'change ' + name + '\u2019s lab draw date';
   if (body.discoveryConsultAt !== undefined) return 'change ' + name + '\u2019s discovery consult date';
   if (body.deepDiveAt !== undefined) return 'change ' + name + '\u2019s deep dive date';
+  if (body.payment !== undefined) return 'change ' + name + '\u2019s payment status';
   return 'change ' + name;
 }
 function tppPushUndo(entry) {
@@ -6069,6 +6112,7 @@ function renderTppDiscoveryBoard() {
           (isLabs ? tppLabsTickerHtml(patient) : '') +
           (isAppt ? tppApptChipHtml(patient, stage.key) : '') +
           tppPlanChipHtml(patient, stage.key) +
+          (tppShowsPayment(stage.key) ? tppPaymentRowHtml(patient) : '') +
           tppCommentChipHtml(patient) +
           actionHtml +
           '<select class="pep-move-select" onclick="event.stopPropagation()" onchange="moveTppDiscoveryStage(\'' + patient.id + '\', this.value); this.selectedIndex = 0;">' +
@@ -6724,6 +6768,8 @@ function renderTppDiscoverySection(patient) {
         ' ' + tppDecisionTagHtml(patient) +
       '</p>' +
       apptHtml + labsHtml + planHtml +
+      '<div class="modal-field" style="margin:6px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+        '<label class="modal-label" style="margin:0;min-width:110px">Payment</label>' + tppPaymentRowHtml(patient) + '</div>' +
       (isPending ? '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">Awaiting acceptance</div><div class="tpp-decision-row">' + tppDecisionButtonsHtml(patient.id) + '</div>' : '') +
       '<div class="pep-section-title" style="margin-top:12px">History</div>' +
       historyHtml + addHistoryHtml +
