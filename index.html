@@ -11,6 +11,13 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap');
   :root {
+    /* Type scale and corner radii. Use these instead of one-off values. */
+    --fs-xs: 0.7rem;
+    --fs-sm: 0.78rem;
+    --fs-md: 0.875rem;
+    --fs-lg: 1rem;
+    --r-sm: 6px;
+    --r-md: 10px;
     --bg: #18181a;
     --surface: #232326;
     --surface2: #2b2b2f;
@@ -24,9 +31,14 @@
     --danger: #e0574a;
     --shadow: 0 2px 16px rgba(0,0,0,0.5);
     --success: #3ec27a;
-    --warn-bg: rgba(217,189,107,0.14);
-    --warn-border: rgba(217,189,107,0.4);
-    --warn-text: #e3c47e;
+    /* Gold tint: selected / drag-over / brand highlights */
+    --gold-tint: rgba(217,189,107,0.14);
+    --gold-line: rgba(217,189,107,0.4);
+    --gold-text: #e3c47e;
+    /* Warning: late / stalled / on hold. Amber, kept distinct from the brand gold. */
+    --warn-bg: rgba(232,146,76,0.14);
+    --warn-border: rgba(232,146,76,0.42);
+    --warn-text: #efa46a;
     --alert-bg: rgba(224,87,74,0.16);
     --alert-border: rgba(224,87,74,0.42);
     --alert-text: #f0897a;
@@ -48,9 +60,12 @@
     --danger: #c0392b;
     --shadow: 0 2px 16px rgba(0,0,0,0.08);
     --success: #27ae60;
-    --warn-bg: #fdf3e0;
-    --warn-border: #f0dba8;
-    --warn-text: #b09134;
+    --gold-tint: #fdf3e0;
+    --gold-line: #f0dba8;
+    --gold-text: #b09134;
+    --warn-bg: #fdf0e6;
+    --warn-border: #f2cdb0;
+    --warn-text: #b0561c;
     --alert-bg: #fdeee9;
     --alert-border: #f0c4b3;
     --alert-text: #9a4a2c;
@@ -86,7 +101,7 @@
   .brand-logo-img { height: 36px; width: auto; display: block; }
   .logo-text { display: flex; flex-direction: column; line-height: 1; }
   .logo-text .sub {
-    font-size: 0.62rem;
+    font-size: var(--fs-xs);
     font-weight: 500;
     color: var(--accent);
     letter-spacing: 0.18em;
@@ -96,33 +111,34 @@
     border-left: 1px solid rgba(255,255,255,0.22);
   }
   /* TOGGLE */
+  /* Header nav: plain text, active page marked by a gold bar along the
+     bottom edge of the header. No pill, no glow. */
   .toggle-wrap {
     display: flex;
-    align-items: center;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 32px;
-    padding: 4px;
+    align-items: stretch;
+    align-self: stretch;
+    gap: 4px;
   }
   .toggle-btn {
-    padding: 7px 16px;
-    border-radius: 28px;
+    position: relative;
+    padding: 0 12px;
     border: none;
     background: transparent;
     font-family: 'Inter', sans-serif;
-    font-size: 0.78rem;
+    font-size: var(--fs-md);
     font-weight: 500;
     cursor: pointer;
-    color: rgba(255,255,255,0.55);
-    transition: all 0.2s;
-    letter-spacing: 0.02em;
+    color: rgba(255,255,255,0.6);
+    transition: color 0.15s;
+    white-space: nowrap;
   }
-  .toggle-btn.active {
-    background: var(--accent);
-    color: var(--charcoal);
-    font-weight: 700;
-    box-shadow: 0 2px 10px rgba(232,160,32,0.4);
+  .toggle-btn:hover { color: #fff; }
+  .toggle-btn.active { color: #fff; font-weight: 600; }
+  .toggle-btn.active::after {
+    content: ''; position: absolute; left: 12px; right: 12px; bottom: 0;
+    height: 3px; background: var(--accent);
   }
+  .header-right { display: flex; align-items: center; gap: 12px; align-self: stretch; }
   .theme-toggle-btn {
     display: flex;
     align-items: center;
@@ -175,7 +191,7 @@
   .home-menu-item {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--r-md);
     padding: 16px 18px;
     cursor: pointer;
     transition: border-color 0.15s, background 0.15s;
@@ -202,7 +218,7 @@
     letter-spacing: 0.04em;
     color: var(--text);
   }
-  .home-menu-desc { font-size: 0.78rem; color: var(--text-muted); }
+  .home-menu-desc { font-size: var(--fs-sm); color: var(--text-muted); }
   @media (max-width: 480px) {
     .home-title { font-size: 2rem; }
     .home-menu-item { padding: 14px 14px; gap: 12px; }
@@ -225,14 +241,14 @@
   }
   .dr-header p {
     color: var(--text-muted);
-    font-size: 0.88rem;
+    font-size: var(--fs-md);
   }
   /* Checklist */
   .checklist {
     background: var(--surface);
     border: 1px solid var(--border);
     border-top: 3px solid var(--accent);
-    border-radius: 12px;
+    border-radius: var(--r-md);
     padding: 22px 26px;
     width: 100%;
     max-width: 560px;
@@ -250,7 +266,7 @@
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    font-size: 0.875rem;
+    font-size: var(--fs-md);
     color: var(--text-muted);
     line-height: 1.45;
   }
@@ -301,7 +317,7 @@
   }
   #mic-btn svg { width: 38px; height: 38px; }
   .mic-status {
-    font-size: 0.82rem;
+    font-size: var(--fs-md);
     color: var(--text-muted);
     font-weight: 500;
     min-height: 20px;
@@ -318,7 +334,7 @@
     gap: 10px;
   }
   .doctor-selector-label {
-    font-size: 0.7rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -329,10 +345,10 @@
     flex: 1;
     padding: 14px 16px;
     border: 2px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--r-md);
     background: var(--surface);
     font-family: 'Inter', sans-serif;
-    font-size: 0.9rem;
+    font-size: var(--fs-md);
     font-weight: 600;
     color: var(--text-muted);
     cursor: pointer;
@@ -342,12 +358,12 @@
   .doctor-btn:hover { border-color: var(--accent); color: var(--text); }
   .doctor-btn.selected {
     border-color: var(--accent);
-    background: var(--warn-bg);
+    background: var(--gold-tint);
     color: var(--text);
-    box-shadow: 0 2px 8px rgba(232,160,32,0.2);
+    box-shadow: none;
   }
   .doctor-btn .dr-title {
-    font-size: 0.7rem;
+    font-size: var(--fs-xs);
     font-weight: 500;
     color: var(--text-muted);
     display: block;
@@ -364,7 +380,7 @@
     width: 100%;
     max-width: 560px;
     color: var(--text-muted);
-    font-size: 0.78rem;
+    font-size: var(--fs-sm);
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
@@ -382,10 +398,10 @@
   #note-text {
     width: 100%;
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--r-md);
     padding: 14px 16px;
     font-family: 'Inter', sans-serif;
-    font-size: 0.875rem;
+    font-size: var(--fs-md);
     color: var(--text);
     background: var(--surface);
     resize: vertical;
@@ -401,9 +417,9 @@
     background: var(--accent);
     color: var(--charcoal);
     border: none;
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     font-family: 'Inter', sans-serif;
-    font-size: 0.88rem;
+    font-size: var(--fs-md);
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s;
@@ -432,27 +448,28 @@
   .patient-list {
     width: 256px;
     flex-shrink: 0;
-    background: var(--charcoal);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     overflow: hidden;
   }
   .patient-list-header {
     padding: 20px 18px 14px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
   .patient-list-header h3 {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.05rem;
+    font-size: var(--fs-lg);
     letter-spacing: 0.1em;
-    color: white;
+    color: var(--text);
   }
   .patient-list-header p {
-    font-size: 0.72rem;
-    color: rgba(255,255,255,0.4);
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
     margin-top: 2px;
     letter-spacing: 0.03em;
   }
@@ -462,22 +479,23 @@
     color: rgba(255,255,255,0.45);
     cursor: pointer;
     padding: 4px;
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     display: flex;
     align-items: center;
     transition: color 0.18s;
   }
   .refresh-btn:hover { color: var(--accent); }
+  .patient-list .refresh-btn { color: var(--text-muted); }
   .refresh-btn.spinning svg { animation: spin 0.7s linear infinite; }
   .delete-note-btn {
     margin-top: 16px;
     padding: 9px 20px;
     background: none;
     border: 1px solid var(--danger);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     color: var(--danger);
     font-family: 'Inter', sans-serif;
-    font-size: 0.82rem;
+    font-size: var(--fs-md);
     font-weight: 600;
     cursor: pointer;
     transition: all 0.18s;
@@ -500,23 +518,23 @@
     flex-direction: column;
     gap: 3px;
   }
-  .patient-item:hover { background: rgba(255,255,255,0.06); }
-  .patient-item.active { border-left-color: var(--accent); background: rgba(232,160,32,0.1); }
+  .patient-item:hover { background: var(--surface2); }
+  .patient-item.active { border-left-color: var(--accent); background: var(--gold-tint); }
   .patient-item .p-name {
-    font-size: 0.875rem;
+    font-size: var(--fs-md);
     font-weight: 600;
-    color: rgba(255,255,255,0.9);
+    color: var(--text);
   }
   .patient-item .p-time {
-    font-size: 0.72rem;
-    color: rgba(255,255,255,0.38);
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
   }
   .unread-badge {
     display: inline-block;
-    font-size: 0.62rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     padding: 2px 7px;
-    border-radius: 20px;
+    border-radius: var(--r-sm);
     background: var(--accent);
     color: var(--charcoal);
     width: fit-content;
@@ -528,10 +546,10 @@
   .unread-badge:hover { background: var(--accent-dark); opacity: 0.85; }
   .completed-badge {
     display: inline-block;
-    font-size: 0.62rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     padding: 2px 7px;
-    border-radius: 20px;
+    border-radius: var(--r-sm);
     background: var(--success);
     color: white;
     width: fit-content;
@@ -548,10 +566,10 @@
     padding: 9px 20px;
     background: none;
     border: 1px solid var(--success);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     color: var(--success);
     font-family: 'Inter', sans-serif;
-    font-size: 0.82rem;
+    font-size: var(--fs-md);
     font-weight: 600;
     cursor: pointer;
     transition: all 0.18s;
@@ -566,10 +584,10 @@
     padding: 9px 20px;
     background: none;
     border: 1px solid var(--accent);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     color: var(--accent-dark);
     font-family: 'Inter', sans-serif;
-    font-size: 0.82rem;
+    font-size: var(--fs-md);
     font-weight: 600;
     cursor: pointer;
     transition: all 0.18s;
@@ -581,14 +599,15 @@
   /* Search */
   .search-wrap {
     padding: 10px 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    border-bottom: 1px solid var(--border);
   }
   .search-input-row {
     display: flex;
     align-items: center;
-    background: rgba(255,255,255,0.07);
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: var(--r-sm);
     padding: 0 10px;
     gap: 7px;
   }
@@ -599,35 +618,35 @@
     border: none;
     outline: none;
     font-family: 'Inter', sans-serif;
-    font-size: 0.82rem;
-    color: rgba(255,255,255,0.85);
+    font-size: var(--fs-md);
+    color: var(--text);
     padding: 9px 0;
     min-width: 0;
   }
-  #sec-search::placeholder { color: rgba(255,255,255,0.3); }
+  #sec-search::placeholder { color: var(--text-muted); }
   .search-clear {
     background: none;
     border: none;
-    color: rgba(255,255,255,0.35);
+    color: var(--text-muted);
     cursor: pointer;
     padding: 0;
     display: none;
     line-height: 1;
-    font-size: 1rem;
+    font-size: var(--fs-lg);
   }
   .search-clear.visible { display: block; }
-  .search-clear:hover { color: rgba(255,255,255,0.7); }
+  .search-clear:hover { color: var(--text); }
   .search-input-row:focus-within {
     border-color: var(--accent);
   }
   .match-highlight {
-    background: rgba(232,160,32,0.35);
-    border-radius: 2px;
+    background: rgba(217,189,107,0.35);
+    border-radius: var(--r-sm);
     padding: 0 1px;
   }
   .p-snippet {
-    font-size: 0.7rem;
-    color: rgba(255,255,255,0.35);
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
     margin-top: 2px;
     white-space: nowrap;
     overflow: hidden;
@@ -637,8 +656,8 @@
   .empty-list {
     padding: 32px 18px;
     text-align: center;
-    color: rgba(255,255,255,0.3);
-    font-size: 0.82rem;
+    color: var(--text-muted);
+    font-size: var(--fs-md);
     line-height: 1.7;
   }
   /* Main panel */
@@ -667,13 +686,13 @@
     letter-spacing: 0.06em;
     color: var(--text-muted);
   }
-  .empty-state p { font-size: 0.84rem; max-width: 260px; line-height: 1.65; }
+  .empty-state p { font-size: var(--fs-md); max-width: 260px; line-height: 1.65; }
   /* Appointment card */
   .appt-card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-top: 3px solid var(--accent);
-    border-radius: 12px;
+    border-radius: var(--r-md);
     padding: 28px;
     box-shadow: var(--shadow);
   }
@@ -692,16 +711,16 @@
     color: var(--text);
   }
   .appt-time {
-    font-size: 0.75rem;
+    font-size: var(--fs-sm);
     color: var(--text-muted);
     background: var(--surface2);
     padding: 5px 13px;
-    border-radius: 20px;
+    border-radius: var(--r-sm);
     border: 1px solid var(--border);
     font-weight: 500;
   }
   .section-label {
-    font-size: 0.68rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -717,11 +736,11 @@
   .summary-field {
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-radius: 9px;
+    border-radius: var(--r-md);
     padding: 14px 16px;
   }
   .summary-field .field-label {
-    font-size: 0.68rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -729,7 +748,7 @@
     margin-bottom: 6px;
   }
   .summary-field .field-value {
-    font-size: 0.875rem;
+    font-size: var(--fs-md);
     color: var(--text);
     line-height: 1.55;
   }
@@ -739,17 +758,17 @@
     padding-top: 20px;
   }
   .transcript-text {
-    font-size: 0.86rem;
+    font-size: var(--fs-md);
     color: var(--text-muted);
     line-height: 1.8;
     background: var(--surface2);
-    border-radius: 9px;
+    border-radius: var(--r-md);
     padding: 16px;
     border: 1px solid var(--border);
     white-space: pre-wrap;
   }
   .no-doctor-warning {
-    font-size: 0.78rem;
+    font-size: var(--fs-sm);
     color: var(--danger);
     display: none;
     margin-top: -4px;
@@ -763,8 +782,8 @@
     background: var(--charcoal);
     color: white;
     padding: 12px 22px;
-    border-radius: 10px;
-    font-size: 0.875rem;
+    border-radius: var(--r-md);
+    font-size: var(--fs-md);
     font-weight: 500;
     box-shadow: 0 4px 24px rgba(0,0,0,0.25);
     transition: transform 0.3s ease;
@@ -802,7 +821,7 @@
     margin-bottom: 2px;
   }
   .tasks-sub {
-    font-size: 0.78rem;
+    font-size: var(--fs-sm);
     color: var(--text-muted);
   }
   .task-add-btn {
@@ -813,9 +832,9 @@
     background: var(--accent);
     color: var(--charcoal);
     border: none;
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     font-family: 'Inter', sans-serif;
-    font-size: 0.88rem;
+    font-size: var(--fs-md);
     font-weight: 700;
     cursor: pointer;
     transition: background 0.2s;
@@ -833,7 +852,7 @@
     flex-wrap: wrap;
   }
   .filter-label {
-    font-size: 0.68rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     color: var(--text-muted);
     text-transform: uppercase;
@@ -843,10 +862,10 @@
   .filter-select {
     padding: 6px 28px 6px 10px;
     border: 1px solid var(--border);
-    border-radius: 7px;
+    border-radius: var(--r-sm);
     background: var(--surface);
     font-family: 'Inter', sans-serif;
-    font-size: 0.78rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     color: var(--text);
     cursor: pointer;
@@ -871,10 +890,10 @@
   .filter-search-input {
     padding: 6px 10px 6px 28px;
     border: 1px solid var(--border);
-    border-radius: 7px;
+    border-radius: var(--r-sm);
     background: var(--surface);
     font-family: 'Inter', sans-serif;
-    font-size: 0.78rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     color: var(--text);
     outline: none;
@@ -899,20 +918,20 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.78rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     color: var(--text);
     cursor: pointer;
     padding: 6px 10px;
     border: 1px solid var(--border);
-    border-radius: 7px;
+    border-radius: var(--r-sm);
     background: var(--surface);
     user-select: none;
   }
   .filter-sort-toggle:hover { border-color: var(--accent); }
   .filter-sort-toggle input { cursor: pointer; }
   .filter-clear-btn {
-    font-size: 0.75rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     color: var(--accent-dark);
     background: none;
@@ -923,11 +942,11 @@
   }
   .filter-clear-btn:hover { color: var(--text); }
   .filter-active-count {
-    font-size: 0.68rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     background: var(--accent);
     color: var(--charcoal);
-    border-radius: 20px;
+    border-radius: var(--r-sm);
     padding: 1px 7px;
     margin-left: -2px;
   }
@@ -941,7 +960,7 @@
     z-index: 9999;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--r-md);
     box-shadow: 0 12px 32px rgba(0,0,0,0.2);
     padding: 12px;
     width: min(680px, 94vw);
@@ -955,12 +974,12 @@
   }
   .col-filter-panel-actions button {
     flex: 1;
-    font-size: 0.72rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     color: var(--accent-dark);
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     padding: 5px 6px;
     cursor: pointer;
   }
@@ -971,11 +990,11 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.8rem;
+    font-size: var(--fs-sm);
     font-weight: 600;
     color: var(--text);
     padding: 5px 4px;
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     cursor: pointer;
     user-select: none;
   }
@@ -1016,7 +1035,7 @@
     container-name: kcol;
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: var(--r-md);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -1051,20 +1070,20 @@
     .kanban-col .kanban-col-avatar {
       width: 38px;
       height: 38px;
-      font-size: 0.85rem;
+      font-size: var(--fs-md);
     }
     .kanban-col .kanban-col-name {
       font-size: 1.15rem;
     }
     .kanban-col .kanban-col-count {
-      font-size: 0.78rem;
+      font-size: var(--fs-sm);
       padding: 3px 10px;
     }
     .kanban-col .kanban-add-row {
       padding: 12px 24px;
     }
     .kanban-col .kanban-add-inline {
-      font-size: 0.9rem;
+      font-size: var(--fs-md);
       padding: 8px 4px;
     }
     .kanban-col .kanban-cards {
@@ -1077,12 +1096,12 @@
       gap: 16px;
     }
     .kanban-col .task-section-banner {
-      font-size: 0.72rem;
+      font-size: var(--fs-xs);
       padding: 8px 12px;
     }
     .kanban-col .task-card {
       padding: 20px 22px 16px;
-      border-radius: 14px;
+      border-radius: var(--r-md);
     }
     .kanban-col .task-check {
       width: 22px;
@@ -1097,13 +1116,13 @@
     .kanban-col .task-assigned-by,
     .kanban-col .task-created-at,
     .kanban-col .co-assignee-chip {
-      font-size: 0.82rem;
+      font-size: var(--fs-md);
     }
     .kanban-col .task-edit-btn,
     .kanban-col .task-del-btn,
     .kanban-col .task-kickback-btn,
     .kanban-col .task-pin-btn {
-      font-size: 0.82rem;
+      font-size: var(--fs-md);
       padding: 5px 8px;
     }
   }
@@ -1139,12 +1158,12 @@
   .kanban-col.drag-over {
     outline: 2px dashed var(--accent);
     outline-offset: -2px;
-    background: var(--warn-bg);
+    background: var(--gold-tint);
   }
   .kanban-col.dragging { opacity: 0.4; }
   .kanban-cards { cursor: default; }
   .kanban-col-name {
-    font-size: 0.82rem;
+    font-size: var(--fs-md);
     font-weight: 700;
     color: var(--text);
     letter-spacing: 0.02em;
@@ -1164,18 +1183,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.65rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     flex-shrink: 0;
     letter-spacing: 0.03em;
   }
+  /* Column counts are plain numbers, not pills. */
   .kanban-col-count {
-    font-size: 0.68rem;
-    font-weight: 700;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 2px 8px;
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
     color: var(--text-muted);
     margin-left: auto;
     flex-shrink: 0;
@@ -1184,12 +1201,12 @@
     display: flex;
   }
   .kanban-col-alert {
-    font-size: 0.66rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     background: var(--alert-bg);
     border: 1px solid var(--alert-border);
     color: var(--alert-text);
-    border-radius: 20px;
+    border-radius: var(--r-sm);
     padding: 3px 10px;
   }
   .kanban-col-minimize-btn {
@@ -1198,7 +1215,7 @@
     color: var(--text-muted);
     cursor: pointer;
     padding: 3px;
-    border-radius: 5px;
+    border-radius: var(--r-sm);
     display: flex;
     flex-shrink: 0;
   }
@@ -1264,7 +1281,7 @@
   .task-card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 9px;
+    border-radius: var(--r-md);
     padding: 11px 13px;
     cursor: default;
     transition: box-shadow 0.15s;
@@ -1321,7 +1338,7 @@
   .task-card.card-pri-medium { border-left: 4px solid var(--accent); }
   .task-card.card-pri-low { border-left: 4px solid var(--success); }
   .task-desc-text {
-    font-size: 0.82rem;
+    font-size: var(--fs-md);
     color: var(--text);
     line-height: 1.5;
     flex: 1;
@@ -1342,11 +1359,11 @@
     flex-wrap: wrap;
   }
   .task-patient-tag {
-    font-size: 0.68rem;
+    font-size: var(--fs-xs);
     font-weight: 600;
-    background: var(--warn-bg);
+    background: var(--gold-tint);
     color: var(--accent-dark);
-    border-radius: 4px;
+    border-radius: var(--r-sm);
     padding: 2px 7px;
     max-width: 120px;
     overflow: hidden;
@@ -1354,7 +1371,7 @@
     white-space: nowrap;
   }
   .task-due {
-    font-size: 0.68rem;
+    font-size: var(--fs-xs);
     color: var(--text-muted);
     display: flex;
     align-items: center;
@@ -1362,7 +1379,7 @@
     flex-shrink: 0;
   }
   .task-assigned-by {
-    font-size: 0.7rem;
+    font-size: var(--fs-xs);
     color: var(--text-muted);
     font-style: italic;
     margin-bottom: 8px;
@@ -1388,8 +1405,8 @@
     cursor: pointer;
     color: var(--text-muted);
     padding: 2px 4px;
-    border-radius: 4px;
-    font-size: 0.72rem;
+    border-radius: var(--r-sm);
+    font-size: var(--fs-xs);
     display: flex;
     align-items: center;
     gap: 4px;
@@ -1408,7 +1425,7 @@
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    font-size: 0.72rem;
+    font-size: var(--fs-xs);
     font-weight: 800;
     line-height: 1;
     display: flex;
@@ -1427,23 +1444,23 @@
     display: inline-flex;
     align-items: center;
     gap: 3px;
-    font-size: 0.66rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     letter-spacing: 0.02em;
     color: #fff;
     background: var(--danger);
-    border-radius: 4px;
+    border-radius: var(--r-sm);
     padding: 3px 7px;
     margin-bottom: 8px;
   }
   /* Kick-back banner */
   .duplicate-tag {
-    font-size: 0.66rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     letter-spacing: 0.03em;
     color: var(--accent-dark);
-    background: var(--warn-bg);
-    border-radius: 4px;
+    background: var(--gold-tint);
+    border-radius: var(--r-sm);
     padding: 3px 7px;
     margin-bottom: 8px;
     display: inline-block;
@@ -1453,10 +1470,10 @@
     flex-wrap: wrap;
     align-items: flex-start;
     gap: 6px 8px;
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     padding: 8px 10px;
     margin-bottom: 9px;
-    font-size: 0.76rem;
+    font-size: var(--fs-sm);
     line-height: 1.45;
   }
   .kickback-banner.kb-question { background: var(--alert-bg); border: 1px solid var(--alert-border); color: var(--alert-text); }
@@ -1471,10 +1488,10 @@
     background: rgba(255,255,255,0.75);
     border: 1px solid currentColor;
     color: inherit;
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     padding: 3px 8px;
     font-family: 'Inter', sans-serif;
-    font-size: 0.66rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     cursor: pointer;
     transition: all 0.15s;
@@ -1490,7 +1507,7 @@
     padding: 4px 2px;
     margin-bottom: 4px;
     font-family: 'Inter', sans-serif;
-    font-size: 0.68rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     letter-spacing: 0.03em;
     text-transform: uppercase;
@@ -1510,9 +1527,9 @@
   .thread-entry {
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-radius: 7px;
+    border-radius: var(--r-sm);
     padding: 7px 9px;
-    font-size: 0.74rem;
+    font-size: var(--fs-sm);
   }
   .thread-entry-head {
     display: flex;
@@ -1520,7 +1537,7 @@
     gap: 6px;
     margin-bottom: 2px;
   }
-  .thread-entry-time { font-size: 0.64rem; color: var(--text-muted); margin-left: auto; }
+  .thread-entry-time { font-size: var(--fs-xs); color: var(--text-muted); margin-left: auto; }
   .thread-entry-msg { color: var(--text); line-height: 1.45; }
   /* ── Comments — deliberately minimal footprint: one collapsed toggle row
      unless opened, sharing the thread-entry visual language so it doesn't
@@ -1534,7 +1551,7 @@
     border: none;
     padding: 3px 2px;
     font-family: 'Inter', sans-serif;
-    font-size: 0.68rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     letter-spacing: 0.02em;
     color: var(--text-muted);
@@ -1550,9 +1567,9 @@
   .comment-entry {
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-radius: 7px;
+    border-radius: var(--r-sm);
     padding: 6px 9px;
-    font-size: 0.74rem;
+    font-size: var(--fs-sm);
   }
   .comment-entry-head {
     display: flex;
@@ -1560,7 +1577,7 @@
     gap: 6px;
     margin-bottom: 2px;
   }
-  .comment-entry-time { font-size: 0.62rem; color: var(--text-muted); margin-left: auto; }
+  .comment-entry-time { font-size: var(--fs-xs); color: var(--text-muted); margin-left: auto; }
   .comment-entry-msg { color: var(--text); line-height: 1.4; }
   .comment-add-row {
     display: flex;
@@ -1575,10 +1592,10 @@
     flex: 1;
     min-width: 0;
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     padding: 4px 6px;
     font-family: 'Inter', sans-serif;
-    font-size: 0.7rem;
+    font-size: var(--fs-xs);
     background: var(--surface);
     color: var(--text);
   }
@@ -1591,10 +1608,10 @@
     flex: 1;
     min-width: 0;
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     padding: 5px 8px;
     font-family: 'Inter', sans-serif;
-    font-size: 0.74rem;
+    font-size: var(--fs-sm);
     background: var(--surface);
     color: var(--text);
   }
@@ -1604,16 +1621,16 @@
     background: var(--accent);
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     padding: 0 10px;
     font-family: 'Inter', sans-serif;
-    font-size: 0.72rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     cursor: pointer;
   }
   .comment-send-btn:hover { background: var(--accent-dark); }
   .task-created-at {
-    font-size: 0.62rem;
+    font-size: var(--fs-xs);
     color: var(--text-muted);
     margin-top: 2px;
   }
@@ -1632,7 +1649,7 @@
     background: none;
     border: none;
     font-family: 'Inter', sans-serif;
-    font-size: 0.72rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     color: var(--text-muted);
     cursor: pointer;
@@ -1650,17 +1667,17 @@
     padding-bottom: 4px;
   }
   .task-section-banner {
-    font-size: 0.66rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     padding: 6px 10px;
-    border-radius: 6px;
+    border-radius: var(--r-sm);
   }
   .task-section-banner.patient {
-    background: var(--warn-bg);
+    background: var(--gold-tint);
     color: var(--accent-dark);
-    border: 1px solid var(--warn-border);
+    border: 1px solid var(--gold-line);
   }
   .task-section-banner.admin {
     background: var(--surface2);
@@ -1679,9 +1696,9 @@
     padding: 8px 10px;
     background: none;
     border: 1px dashed var(--border);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     font-family: 'Inter', sans-serif;
-    font-size: 0.78rem;
+    font-size: var(--fs-sm);
     color: var(--text-muted);
     cursor: pointer;
     transition: all 0.15s;
@@ -1705,7 +1722,7 @@
   .modal-overlay.open { display: flex; }
   .modal-box {
     background: var(--surface);
-    border-radius: 14px;
+    border-radius: var(--r-md);
     width: 100%;
     max-width: 460px;
     margin: 0 16px;
@@ -1731,7 +1748,7 @@
     cursor: pointer;
     color: var(--text-muted);
     padding: 4px;
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     display: flex;
     align-items: center;
     transition: color 0.15s;
@@ -1753,7 +1770,7 @@
     gap: 5px;
   }
   .modal-label {
-    font-size: 0.68rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -1762,10 +1779,10 @@
   .modal-input, .modal-select, .modal-textarea {
     width: 100%;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     padding: 10px 12px;
     font-family: 'Inter', sans-serif;
-    font-size: 0.875rem;
+    font-size: var(--fs-md);
     color: var(--text);
     background: var(--surface);
     outline: none;
@@ -1785,9 +1802,9 @@
     padding: 9px 20px;
     background: none;
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
+    font-size: var(--fs-md);
     font-weight: 600;
     color: var(--text-muted);
     cursor: pointer;
@@ -1798,9 +1815,9 @@
     padding: 9px 24px;
     background: var(--accent);
     border: none;
-    border-radius: 8px;
+    border-radius: var(--r-sm);
     font-family: 'Inter', sans-serif;
-    font-size: 0.85rem;
+    font-size: var(--fs-md);
     font-weight: 700;
     color: var(--charcoal);
     cursor: pointer;
@@ -1821,10 +1838,10 @@
     gap: 5px;
     padding: 5px 11px;
     border: 1px solid var(--border);
-    border-radius: 20px;
+    border-radius: var(--r-sm);
     cursor: pointer;
     font-family: 'Inter', sans-serif;
-    font-size: 0.78rem;
+    font-size: var(--fs-sm);
     font-weight: 500;
     color: var(--text-muted);
     transition: all 0.15s;
@@ -1832,7 +1849,7 @@
   }
   .assignee-pill:has(input:checked) {
     border-color: var(--accent);
-    background: var(--warn-bg);
+    background: var(--gold-tint);
     color: var(--text);
     font-weight: 600;
   }
@@ -1846,10 +1863,10 @@
     margin-bottom: 4px;
   }
   .co-assignee-chip {
-    font-size: 0.64rem;
+    font-size: var(--fs-xs);
     font-weight: 600;
     padding: 2px 6px;
-    border-radius: 10px;
+    border-radius: var(--r-md);
     background: var(--info-bg);
     border: 1px solid var(--info-border);
     color: var(--info-text);
@@ -1860,8 +1877,8 @@
     .patient-list { width: 190px; }
     .main-panel { padding: 18px; }
     header { padding: 0 12px; }
-    .toggle-btn { padding: 8px 10px; font-size: 0.75rem; }
-    #doctor-select { font-size: 0.78rem; padding: 8px 28px 8px 10px; }
+    .toggle-btn { padding: 8px 10px; font-size: var(--fs-sm); }
+    #doctor-select { font-size: var(--fs-sm); padding: 8px 28px 8px 10px; }
   }
   /* Below 480px the 190px sidebar next to the main panel gets too cramped to
      read — stack the Care Team view instead of squeezing both columns. */
@@ -1885,14 +1902,14 @@
   .pep-col.pep-col-empty { flex: 0 0 64px; min-width: 64px; max-width: 64px; }
   .pep-col.pep-col-empty .kanban-col-header { padding: 10px 4px; align-items: center; text-align: center; }
   .pep-col.pep-col-empty .kanban-col-name {
-    font-size: 0.62rem; line-height: 1.2; white-space: normal; word-break: break-word;
+    font-size: var(--fs-xs); line-height: 1.2; white-space: normal; word-break: break-word;
     text-align: center;
   }
   .pep-col.pep-col-empty .kanban-cards { display: none; }
   .pep-card {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: var(--r-md);
     padding: 10px 12px;
     margin-bottom: 8px;
     cursor: grab;
@@ -1900,17 +1917,17 @@
   }
   .pep-card:hover { border-color: var(--accent); box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
   .pep-card.completed { opacity: 0.75; }
-  .pep-card-name { font-weight: 700; font-size: 0.86rem; color: var(--text); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .pep-card-name { font-weight: 700; font-size: var(--fs-md); color: var(--text); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
   .pep-order-badge {
-    font-size: 0.62rem; font-weight: 700; padding: 2px 7px; border-radius: 10px;
-    background: var(--warn-bg); border: 1px solid var(--accent); color: var(--warn-text);
+    font-size: var(--fs-xs); font-weight: 700; padding: 2px 7px; border-radius: var(--r-md);
+    background: var(--gold-tint); border: 1px solid var(--accent); color: var(--gold-text);
   }
-  .pep-card-meta { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; }
-  .pep-card-files { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; }
+  .pep-card-meta { font-size: var(--fs-xs); color: var(--text-muted); margin-top: 4px; }
+  .pep-card-files { font-size: var(--fs-xs); color: var(--text-muted); margin-top: 4px; }
   .pep-card-consult { color: var(--accent-dark); font-weight: 600; }
   .pep-move-select {
-    margin-top: 8px; width: 100%; font-size: 0.72rem; padding: 5px 8px;
-    border: 1px solid var(--border); border-radius: 7px; background: var(--surface2);
+    margin-top: 8px; width: 100%; font-size: var(--fs-xs); padding: 5px 8px;
+    border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--surface2);
     color: var(--text-muted); cursor: pointer;
   }
   /* When a TPP column is crowded, shrink cards to just the patient name
@@ -1920,7 +1937,7 @@
     margin-bottom: 3px;
   }
   .tpp-board .pep-col.pep-col-compact .pep-card-name {
-    font-size: 0.76rem;
+    font-size: var(--fs-sm);
     gap: 4px;
   }
   /* Crowded columns drop the file count and the "Move to..." dropdown
@@ -1932,55 +1949,56 @@
     display: none;
   }
   .tpp-board .pep-col.pep-col-compact .tpp-decision-row { margin-top: 4px; gap: 4px; }
-  .tpp-board .pep-col.pep-col-compact .tpp-decision-btn { padding: 3px 6px; font-size: 0.66rem; }
-  .tpp-board .pep-col.pep-col-compact .tpp-handoff-btn { margin-top: 4px; padding: 3px 8px; font-size: 0.68rem; }
+  .tpp-board .pep-col.pep-col-compact .tpp-decision-btn { padding: 3px 6px; font-size: var(--fs-xs); }
+  
   .tpp-board .pep-col.pep-col-compact .pep-card-meta {
-    font-size: 0.66rem;
+    font-size: var(--fs-xs);
     margin-top: 2px;
   }
   .tpp-board .pep-col.pep-col-compact .pep-card-age {
-    font-size: 0.62rem;
+    font-size: var(--fs-xs);
     padding: 1px 6px;
     margin-top: 3px;
   }
+  /* New-patient strip: docked under the filter bar so it never covers the
+     columns you need to drop onto. */
   .pep-tray {
-    position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
-    z-index: 900; max-width: min(92vw, 900px);
-    display: flex; flex-direction: column; gap: 6px;
-    padding: 10px 12px; border-radius: 14px;
-    background: var(--surface); border: 1px solid var(--accent);
-    box-shadow: 0 10px 32px rgba(0,0,0,0.22);
+    flex-shrink: 0;
+    display: flex; flex-direction: row; align-items: center; gap: 14px;
+    padding: 8px 28px;
+    background: var(--gold-tint); border-bottom: 1px solid var(--gold-line);
   }
   .pep-tray-title {
-    font-size: 0.66rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--text-muted);
+    flex-shrink: 0; max-width: 150px;
+    font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--text); line-height: 1.3;
   }
-  .pep-tray-cards { display: flex; gap: 8px; overflow-x: auto; padding: 2px; }
-  .pep-tray .pep-card {
-    flex: 0 0 200px; margin-bottom: 0;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.16); border-color: var(--accent);
+  .pep-tray-cards { display: flex; gap: 8px; overflow-x: auto; padding: 2px; min-width: 0; }
+  .pep-tray .pep-card { flex: 0 0 200px; margin-bottom: 0; }
+  @media (max-width: 600px) {
+    .pep-tray { flex-direction: column; align-items: stretch; gap: 6px; padding: 8px 12px; }
+    .pep-tray-title { max-width: none; }
   }
-  .pep-tray .pep-card:hover { transform: translateY(-2px); }
-  .pep-col.drag-over { background: rgba(207,178,92,0.12); border-radius: 12px; }
+  .pep-col.drag-over { background: rgba(207,178,92,0.12); border-radius: var(--r-md); }
   .pep-detail-box { max-width: 620px; max-height: 85vh; display: flex; flex-direction: column; }
   .pep-detail-box .modal-body { overflow-y: auto; }
   .pep-section-title {
-    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
     color: var(--text-muted); margin: 4px 0 2px;
   }
   .pep-history-row {
-    border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; overflow: hidden;
+    border: 1px solid var(--border); border-radius: var(--r-sm); margin-bottom: 6px; overflow: hidden;
   }
   .pep-history-summary {
     display: flex; justify-content: space-between; align-items: center; gap: 8px;
-    padding: 8px 10px; cursor: pointer; background: var(--surface2); font-size: 0.8rem;
+    padding: 8px 10px; cursor: pointer; background: var(--surface2); font-size: var(--fs-sm);
   }
   .pep-history-summary strong { color: var(--text); }
   .pep-history-detail { display: none; padding: 10px; gap: 8px; flex-direction: column; }
   .pep-history-detail.open { display: flex; }
   .pep-file-row {
     display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; font-size: 0.8rem;
+    padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--r-sm); margin-bottom: 6px; font-size: var(--fs-sm);
   }
   .pep-file-row a {
     color: var(--accent-dark); font-weight: 600; text-decoration: none;
@@ -1990,69 +2008,49 @@
   .pep-file-row .modal-close { flex-shrink: 0; }
   .pep-order-block { border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 10px; }
   .pep-file-drop {
-    border: 2px dashed var(--border); border-radius: 10px; padding: 10px; margin-top: 8px;
+    border: 2px dashed var(--border); border-radius: var(--r-md); padding: 10px; margin-top: 8px;
     transition: border-color 0.15s, background 0.15s;
   }
-  .pep-file-drop.drag-over { border-color: var(--accent); background: var(--warn-bg); }
+  .pep-file-drop.drag-over { border-color: var(--accent); background: var(--gold-tint); }
   .pep-card-age {
-    display: inline-block; font-size: 0.66rem; font-weight: 700; padding: 2px 8px;
-    border-radius: 10px; margin-top: 6px;
+    display: inline-block; font-size: var(--fs-xs); font-weight: 700; padding: 2px 8px;
+    border-radius: var(--r-md); margin-top: 6px;
   }
   .pep-card-age.age-ok { background: var(--surface2); color: var(--text-muted); }
   .pep-card-age.age-warn { background: var(--warn-bg); color: var(--warn-text); border: 1px solid var(--warn-border); }
   .pep-card-age.age-alert { background: var(--alert-bg); color: var(--alert-text); border: 1px solid var(--alert-border); }
   .pep-stuck-summary {
-    font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 20px;
+    font-size: var(--fs-xs); font-weight: 700; padding: 4px 10px; border-radius: var(--r-sm);
     background: var(--alert-bg); color: var(--alert-text); border: 1px solid var(--alert-border); white-space: nowrap;
   }
   .pep-stuck-summary.none { background: var(--surface2); color: var(--text-muted); border-color: var(--border); }
 
   /* -- Treatment Plan Pipeline ---------------------------------------------- */
   #tpp-view { flex-direction: column; overflow: hidden; }
-  .tpp-mode-bar {
-    flex-shrink: 0;
-    display: flex;
-    justify-content: center;
-    padding: 6px 0;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-  }
-  .tpp-mode-toggle {
-    display: flex;
-    align-items: center;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 32px;
-    padding: 2px;
-  }
+  /* Discovery / Follow-Up tabs live in each board's title row. */
+  .tpp-tabs { display: flex; align-items: flex-end; gap: 18px; }
   .tpp-mode-btn {
-    padding: 4px 16px;
-    border-radius: 28px;
-    border: none;
-    background: transparent;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.78rem;
-    font-weight: 600;
-    cursor: pointer;
-    color: var(--text-muted);
-    transition: all 0.2s;
-    letter-spacing: 0.02em;
+    position: relative; padding: 2px 0 6px; border: none; background: none; cursor: pointer;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.35rem; letter-spacing: 0.04em; line-height: 1.1;
+    color: var(--text-muted); transition: color 0.15s;
   }
-  .tpp-mode-btn.active {
-    background: var(--accent);
-    color: var(--charcoal);
-    font-weight: 700;
-    box-shadow: 0 2px 10px rgba(232,160,32,0.4);
-  }
+  .tpp-mode-btn:hover { color: var(--text); }
+  .tpp-mode-btn.active { color: var(--text); }
+  .tpp-mode-btn.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--accent); }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .tpp-board { display: none; flex-direction: column; overflow: hidden; flex: 1 1 0; min-height: 0; }
   .tpp-board.tpp-board-active { display: flex; }
   .tpp-board .kanban-scroll { overflow-y: hidden; }
   /* Slimmer title + filter strips on the pipeline boards */
   .tpp-board .tasks-topbar { padding: 6px 28px; }
-  .tpp-board .tasks-topbar > div:first-child { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .tpp-board .tasks-topbar > div:first-child { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  /* Stage name and count share one line; long names wrap under themselves. */
+  .pep-col:not(.pep-col-empty) .kanban-col-header { flex-direction: row; align-items: flex-start; gap: 8px; }
+  .pep-col:not(.pep-col-empty) .kanban-col-count { margin-top: 1px; }
+  .tpp-board .kanban-col.tpp-nextdue-col .kanban-col-header { flex-wrap: wrap; row-gap: 2px; }
   .tpp-board .tasks-heading { font-size: 1.25rem; margin-bottom: 0; line-height: 1.1; }
-  .tpp-board .tasks-sub { font-size: 0.72rem; }
-  .tpp-board .task-add-btn { padding: 5px 14px; font-size: 0.78rem; }
+  .tpp-board .tasks-sub { font-size: var(--fs-xs); }
+  .tpp-board .task-add-btn { padding: 5px 14px; font-size: var(--fs-sm); }
   .tpp-board .tasks-topbar .refresh-btn { padding: 4px !important; }
   .tpp-board .tasks-topbar .refresh-btn:disabled { opacity: 0.35; cursor: default; }
   .tpp-board .tasks-topbar .refresh-btn:disabled:hover { color: var(--text-muted); }
@@ -2075,7 +2073,7 @@
   .tpp-board .kanban-col.pep-col-empty .kanban-col-name {
     order: 2; flex: 0 0 auto; writing-mode: vertical-rl; transform: none;
     white-space: nowrap; overflow: visible; text-overflow: clip;
-    font-size: 0.82rem; line-height: 1.2; text-align: left;
+    font-size: var(--fs-md); line-height: 1.2; text-align: left;
   }
   .tpp-declined-col { border-color: var(--danger) !important; }
   .tpp-declined-col .kanban-col-header { background: var(--alert-bg); }
@@ -2086,124 +2084,77 @@
   .tpp-decision-tag.onhold { background: var(--warn-bg); color: var(--warn-text); border: 1px solid var(--warn-border); }
   /* Tile comments */
   .tpp-card-comment {
-    font-size: 0.7rem; color: var(--text); margin-top: 6px; padding: 5px 7px;
-    background: var(--surface2); border-radius: 6px; line-height: 1.35;
+    font-size: var(--fs-xs); color: var(--text); margin-top: 6px; padding: 5px 7px;
+    background: var(--surface2); border-radius: var(--r-sm); line-height: 1.35;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
-  .tpp-comment-btn {
-    margin-top: 6px; font-size: 0.66rem; font-weight: 600; padding: 3px 8px;
-    border-radius: 10px; border: 1px solid var(--border); background: var(--surface);
-    color: var(--text-muted); cursor: pointer;
-  }
-  .tpp-comment-btn:hover { border-color: var(--accent); color: var(--accent-dark); }
-  .tpp-comment-del { margin-left: 6px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.8rem; padding: 0 2px; }
+
+  .tpp-comment-del { margin-left: 6px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: var(--fs-sm); padding: 0 2px; }
   .tpp-comment-del:hover { color: var(--danger); }
   .tpp-decision-row { display: flex; gap: 6px; margin-top: 8px; }
-  .tpp-col-sub { font-size: 0.7rem; font-weight: 600; color: var(--warn-text); background: var(--warn-bg); line-height: 1.3; padding: 5px 12px; border-bottom: 1px solid var(--border); }
-  .tpp-labs-ticker {
-    display: block; width: 100%; text-align: left; margin-top: 6px; padding: 5px 8px;
-    border: 1px solid var(--border); border-radius: 7px; background: var(--surface2);
-    cursor: pointer; font: inherit; color: var(--text);
-  }
-  .tpp-labs-ticker:hover { border-color: var(--accent); }
-  .tpp-labs-line { display: block; font-size: 0.72rem; font-weight: 700; }
-  .tpp-labs-sub { display: block; font-size: 0.66rem; color: var(--text-muted); margin-top: 1px; }
-  .tpp-labs-bar { display: block; height: 4px; border-radius: 2px; background: var(--border); margin-top: 4px; overflow: hidden; }
+  .tpp-col-sub { font-size: var(--fs-xs); font-weight: 600; color: var(--warn-text); background: var(--warn-bg); line-height: 1.3; padding: 5px 12px; border-bottom: 1px solid var(--border); }
+
+  .tpp-labs-bar { display: block; height: 4px; border-radius: var(--r-sm); background: var(--border); margin-top: 4px; overflow: hidden; }
   .tpp-labs-bar span { display: block; height: 100%; background: var(--accent); }
-  .tpp-labs-ready { border-color: var(--accent); background: var(--warn-bg); }
-  .tpp-labs-ready .tpp-labs-line { color: var(--accent-dark); }
-  .tpp-appt-past { border-color: var(--warn-border); }
-  .tpp-appt-past .tpp-labs-sub { color: var(--warn-text); }
+
   /* Patient details card in the detail panel */
-  .tpp-ki { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin: 10px 0 14px; background: var(--surface); text-align: left; }
-  .tpp-ki-head { font-size: 0.8rem; font-weight: 800; padding: 10px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); color: var(--text); }
+  .tpp-ki { border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; margin: 10px 0 14px; background: var(--surface); text-align: left; }
+  .tpp-ki-head { font-size: var(--fs-sm); font-weight: 800; padding: 10px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); color: var(--text); }
   .tpp-ki-row { display: grid; grid-template-columns: 140px 1fr; gap: 12px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--border); }
   .tpp-ki-row:last-child { border-bottom: none; }
-  .tpp-ki-row.current { background: var(--warn-bg); box-shadow: inset 3px 0 0 var(--accent); }
-  .tpp-ki-label { font-size: 0.84rem; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .tpp-ki-now { font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; padding: 1px 6px; border-radius: 8px; background: var(--accent); color: white; }
+  .tpp-ki-row.current { background: var(--gold-tint); box-shadow: inset 3px 0 0 var(--accent); }
+  .tpp-ki-label { font-size: var(--fs-md); font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  
   .tpp-ki-value { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
-  .tpp-ki-status { font-size: 0.74rem; color: var(--text-muted); font-weight: 500; }
+  .tpp-ki-status { font-size: var(--fs-sm); color: var(--text-muted); font-weight: 500; }
   .tpp-ki-warn { color: var(--warn-text); font-weight: 700; }
   .tpp-ki-good { color: var(--accent-dark); font-weight: 700; }
-  .tpp-ki-input { font: inherit; font-size: 0.82rem; font-weight: 600; padding: 6px 9px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); max-width: 100%; }
-  .tpp-ki-seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-  .tpp-ki-seg-btn { font: inherit; font-size: 0.8rem; font-weight: 700; padding: 6px 12px; border: none; background: var(--surface); color: var(--text-muted); cursor: pointer; }
+  .tpp-ki-input { font: inherit; font-size: var(--fs-md); font-weight: 600; padding: 6px 9px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text); max-width: 100%; }
+  .tpp-ki-seg { display: inline-flex; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; }
+  .tpp-ki-seg-btn { font: inherit; font-size: var(--fs-sm); font-weight: 700; padding: 6px 12px; border: none; background: var(--surface); color: var(--text-muted); cursor: pointer; }
   .tpp-ki-seg-btn + .tpp-ki-seg-btn { border-left: 1px solid var(--border); }
   .tpp-ki-seg-btn:hover { color: var(--text); background: var(--surface2); }
   .tpp-ki-seg-btn.active { background: var(--accent); color: white; }
   .tpp-ki-seg-btn.tpp-ki-pay-plan.active { background: var(--warn-text); color: white; }
-  .tpp-ki-btn { font-size: 0.8rem; font-weight: 700; padding: 6px 12px; border-radius: 8px; border: 1px dashed var(--accent); color: var(--accent-dark); cursor: pointer; background: var(--surface); }
-  .tpp-ki-btn:hover { background: var(--warn-bg); }
+
   .tpp-ki-inline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; max-width: 100%; }
-  .tpp-ki-file { font-size: 0.82rem; font-weight: 700; color: var(--accent-dark); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+  .tpp-ki-file { font-size: var(--fs-md); font-weight: 700; color: var(--accent-dark); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
   .tpp-ki-file:hover { text-decoration: underline; }
-  .tpp-ki-link { font-size: 0.76rem; font-weight: 600; color: var(--text-muted); cursor: pointer; text-decoration: underline; }
+  .tpp-ki-link { font-size: var(--fs-sm); font-weight: 600; color: var(--text-muted); cursor: pointer; text-decoration: underline; }
   @media (max-width: 520px) {
     .tpp-ki-row { grid-template-columns: 1fr; gap: 6px; }
   }
-  .tpp-lab-badge {
-    display: inline-flex; align-items: center; gap: 3px; margin-top: 6px; font-size: 0.66rem; font-weight: 700;
-    padding: 2px 8px; border-radius: 10px; cursor: pointer; border: 1px solid var(--border);
-    background: var(--surface2); color: var(--text);
-  }
-  .tpp-lab-labcorp { border-color: #4a7fc1; color: #4a7fc1; }
-  .tpp-lab-evexia { border-color: #3d9a74; color: #3d9a74; }
-  .tpp-lab-missing { border-style: dashed; color: var(--warn-text); border-color: var(--warn-border); font-weight: 600; }
+
   .tpp-lab-filter {
-    font-size: 0.78rem; padding: 3px 8px; border-radius: 7px; border: 1px solid var(--border);
+    font-size: var(--fs-sm); padding: 3px 8px; border-radius: var(--r-sm); border: 1px solid var(--border);
     background: var(--surface); color: var(--text); cursor: pointer;
   }
   .tpp-lab-choices { display: flex; flex-direction: column; gap: 8px; }
   .tpp-lab-choice {
-    padding: 10px 12px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface2);
-    color: var(--text); font-weight: 700; font-size: 0.86rem; cursor: pointer; text-align: left;
+    padding: 10px 12px; border-radius: var(--r-md); border: 1px solid var(--border); background: var(--surface2);
+    color: var(--text); font-weight: 700; font-size: var(--fs-md); cursor: pointer; text-align: left;
   }
-  .tpp-lab-choice:hover, .tpp-lab-choice.active { border-color: var(--accent); background: var(--warn-bg); }
-  .tpp-pay-row { display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
-  .tpp-pay-btn {
-    font-size: 0.66rem; font-weight: 600; padding: 3px 8px; border-radius: 10px; cursor: pointer;
-    border: 1px dashed var(--border); background: var(--surface); color: var(--text-muted); white-space: nowrap;
-    max-width: 100%; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; min-width: 0;
-  }
-  .tpp-pay-btn:hover { border-color: var(--accent); color: var(--accent-dark); }
-  .tpp-pay-paid.active { border: 1px solid var(--accent); background: var(--accent); color: white; }
-  .tpp-pay-plan.active { border: 1px solid var(--warn-border); background: var(--warn-bg); color: var(--warn-text); }
-  .tpp-board .pep-col.pep-col-compact .tpp-pay-row { margin-top: 3px; }
-  .tpp-board .pep-col.pep-col-compact .tpp-pay-btn { padding: 1px 6px; font-size: 0.62rem; }
-  .tpp-plan-chip {
-    display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 0.68rem; font-weight: 700;
-    padding: 3px 9px; border-radius: 10px; border: 1px solid var(--accent); color: var(--accent-dark);
-    background: var(--surface); text-decoration: none; cursor: pointer;
-  }
-  .tpp-plan-chip:hover { background: var(--warn-bg); }
-  .tpp-plan-add { border-style: dashed; color: var(--text-muted); border-color: var(--border); font-weight: 600; }
-  .tpp-plan-add:hover { color: var(--accent-dark); border-color: var(--accent); }
-  .tpp-labs-missing { font-size: 0.7rem; font-weight: 600; color: var(--warn-text); border-color: var(--warn-border); }
-  .tpp-board .pep-col.pep-col-compact .tpp-labs-sub,
+  .tpp-lab-choice:hover, .tpp-lab-choice.active { border-color: var(--accent); background: var(--gold-tint); }
+
   .tpp-board .pep-col.pep-col-compact .tpp-labs-bar { display: none; }
-  .tpp-board .pep-col.pep-col-compact .tpp-labs-ticker { padding: 2px 6px; margin-top: 3px; }
+  
   .tpp-decision-btn {
-    flex: 1; font-size: 0.72rem; font-weight: 700; padding: 6px 8px;
-    border-radius: 7px; cursor: pointer; border: 1px solid var(--border);
+    flex: 1; font-size: var(--fs-xs); font-weight: 700; padding: 6px 8px;
+    border-radius: var(--r-sm); cursor: pointer; border: 1px solid var(--border);
   }
   .tpp-accept-btn { background: var(--accent); color: white; border-color: var(--accent); }
   .tpp-decline-btn { background: var(--surface); color: var(--danger); border-color: var(--danger); }
-  .tpp-handoff-btn {
-    width: 100%; margin-top: 10px; font-size: 0.78rem; font-weight: 700;
-    padding: 8px 10px; border-radius: 8px; border: 1px solid var(--accent);
-    background: var(--warn-bg); color: var(--accent-dark); cursor: pointer;
-  }
+  
   .tpp-decision-tag {
-    display: inline-block; font-size: 0.62rem; font-weight: 700; padding: 2px 7px;
-    border-radius: 10px; margin-left: 4px;
+    display: inline-block; font-size: var(--fs-xs); font-weight: 700; padding: 2px 7px;
+    border-radius: var(--r-md); margin-left: 4px;
   }
-  .tpp-decision-tag.accepted { background: var(--warn-bg); color: var(--accent-dark); border: 1px solid var(--accent); }
+  .tpp-decision-tag.accepted { background: var(--gold-tint); color: var(--accent-dark); border: 1px solid var(--accent); }
   .tpp-decision-tag.declined { background: var(--alert-bg); color: var(--alert-text); border: 1px solid var(--alert-border); }
   /* Follow-up due badge */
   .tpp-due-badge {
-    display: inline-block; font-size: 0.66rem; font-weight: 700; padding: 2px 8px;
-    border-radius: 10px; margin-top: 6px; margin-right: 4px;
+    display: inline-block; font-size: var(--fs-xs); font-weight: 700; padding: 2px 8px;
+    border-radius: var(--r-md); margin-top: 6px; margin-right: 4px;
   }
   .tpp-due-badge.due-ok { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
   .tpp-due-badge.due-soon { background: var(--warn-bg); color: var(--warn-text); border: 1px solid var(--warn-border); }
@@ -2213,7 +2164,7 @@
   /* "Next Round Due" holding column on the Follow-Up board */
   .tpp-board .kanban-col.tpp-nextdue-col { border-style: dashed; }
   .tpp-board .kanban-col.tpp-nextdue-col .kanban-col-header { background: none; box-shadow: inset 3px 0 0 var(--tpp-gold); }
-  .tpp-col-hint { font-size: 0.64rem; color: var(--text-muted); font-weight: 600; width: 100%; }
+  .tpp-col-hint { font-size: var(--fs-xs); color: var(--text-muted); font-weight: 600; width: 100%; }
   /* While a card is being dragged, collapsed empty stages widen so they're
      easy to hit as drop targets instead of 46px slivers. */
   .tpp-board.tpp-dragging .kanban-col.pep-col-empty {
@@ -2221,78 +2172,46 @@
     outline: 2px dashed var(--border); outline-offset: -4px;
   }
   .tpp-board.tpp-dragging .kanban-col.pep-col-empty .kanban-col-name { writing-mode: horizontal-tb; white-space: normal; text-align: center; }
-  .tpp-board.tpp-dragging .kanban-col.drag-over { outline-color: var(--accent); background: var(--warn-bg); }
+  .tpp-board.tpp-dragging .kanban-col.drag-over { outline-color: var(--accent); background: var(--gold-tint); }
   /* Toast with an inline action (e.g. "Add note") */
   #toast .toast-action {
     margin-left: 12px; background: none; border: 1px solid rgba(255,255,255,0.5); color: var(--accent);
-    border-radius: 6px; padding: 3px 10px; font-family: 'Inter', sans-serif; font-size: 0.78rem; font-weight: 700; cursor: pointer;
+    border-radius: var(--r-sm); padding: 3px 10px; font-family: 'Inter', sans-serif; font-size: var(--fs-sm); font-weight: 700; cursor: pointer;
   }
   #toast .toast-action:hover { background: rgba(255,255,255,0.1); }
   /* -- Pipeline: plain look --------------------------------------------------
      Fewer boxes and colors: gold marks only the current step, amber only
      something late, everything else is plain text in the site's grays. */
-  .tpp-board .pep-card-age { background: none !important; border: none !important; padding: 0; font-weight: 500; font-size: 0.7rem; color: var(--text-muted); }
+  .tpp-board .pep-card-age { background: none !important; border: none !important; padding: 0; font-weight: 500; font-size: var(--fs-xs); color: var(--text-muted); }
   .tpp-board .pep-card-age.age-warn, .tpp-board .pep-card-age.age-alert { color: var(--warn-text); font-weight: 600; }
   .tpp-col-sub { background: none; color: var(--text-muted); font-weight: 500; font-style: italic; border-bottom: 1px solid var(--border); }
-  .tpp-board .tpp-labs-ticker { border: none; background: none; padding: 0; margin-top: 5px; border-radius: 0; }
-  .tpp-board .tpp-labs-ticker:hover .tpp-labs-line { text-decoration: underline; }
-  .tpp-board .tpp-labs-line { font-size: 0.74rem; font-weight: 600; color: var(--text); }
-  .tpp-board .tpp-labs-sub { font-size: 0.68rem; }
+
   .tpp-board .tpp-labs-bar { height: 3px; background: var(--border); }
   .tpp-board .tpp-labs-bar span { background: var(--text-muted); }
-  .tpp-board .tpp-labs-ready { background: none; border: none; }
-  .tpp-board .tpp-labs-ready .tpp-labs-line { color: var(--text); }
-  .tpp-board .tpp-labs-ready .tpp-labs-bar span { background: var(--accent); }
-  .tpp-board .tpp-appt-past .tpp-labs-line, .tpp-board .tpp-appt-past .tpp-labs-sub { color: var(--warn-text); }
-  .tpp-board .tpp-labs-missing, .tpp-board .tpp-lab-missing {
-    border: none; background: none; padding: 0; margin-top: 5px; font-size: 0.7rem; font-weight: 500;
-    color: var(--text-muted); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; display: inline-block;
-  }
-  .tpp-board .tpp-labs-missing:hover, .tpp-board .tpp-lab-missing:hover { color: var(--text); }
-  .tpp-board .tpp-lab-badge:not(.tpp-lab-missing) {
-    border: none; background: none; padding: 0; margin-top: 5px; border-radius: 0;
-    font-size: 0.7rem; font-weight: 500; color: var(--text-muted);
-  }
-  .tpp-board .tpp-lab-badge:not(.tpp-lab-missing):hover { color: var(--text); text-decoration: underline; }
-  .tpp-board .tpp-plan-chip {
-    border: none; background: none; padding: 0; border-radius: 0; margin-top: 5px; display: inline-block;
-    font-size: 0.7rem; font-weight: 600; color: var(--text); text-decoration: underline; text-underline-offset: 2px;
-  }
-  .tpp-board .tpp-plan-add { font-weight: 500; color: var(--text-muted); }
-  .tpp-board .tpp-plan-chip:hover { color: var(--accent-dark); background: none; }
-  .tpp-pay-row { gap: 0; display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; max-width: 100%; }
-  .tpp-pay-btn { border: none !important; border-radius: 0; background: var(--surface) !important; color: var(--text-muted) !important; font-weight: 500; padding: 3px 8px; }
-  .tpp-pay-btn + .tpp-pay-btn { border-left: 1px solid var(--border) !important; }
-  .tpp-pay-btn:hover { color: var(--text) !important; }
-  .tpp-pay-btn.active { background: var(--surface2) !important; color: var(--text) !important; font-weight: 700; }
-  .tpp-comment-btn { border: none; background: none; padding: 0; margin-top: 6px; border-radius: 0; font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
-  .tpp-comment-btn:hover { background: none; }
-  .tpp-decision-btn { border-radius: 6px; font-weight: 600; }
+
+  .tpp-decision-btn { border-radius: var(--r-sm); font-weight: 600; }
   .tpp-hold-btn { color: var(--text) !important; border-color: var(--border) !important; }
   /* Details card */
-  .tpp-ki { border-radius: 8px; }
-  .tpp-ki-head { background: none; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); padding: 10px 14px 6px; border-bottom: 1px solid var(--border); }
+  .tpp-ki { border-radius: var(--r-sm); }
+  .tpp-ki-head { background: none; font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); padding: 10px 14px 6px; border-bottom: 1px solid var(--border); }
   .tpp-ki-row { padding: 9px 14px; }
   .tpp-ki-row.current { background: none; box-shadow: inset 3px 0 0 var(--accent); }
-  .tpp-ki-label { font-size: 0.82rem; font-weight: 600; }
+  .tpp-ki-label { font-size: var(--fs-md); font-weight: 600; }
   .tpp-ki-row.current .tpp-ki-label { font-weight: 700; }
-  .tpp-ki-input { font-weight: 500; border-radius: 6px; }
-  .tpp-ki-seg { border-radius: 6px; }
+  .tpp-ki-input { font-weight: 500; border-radius: var(--r-sm); }
+  .tpp-ki-seg { border-radius: var(--r-sm); }
   .tpp-ki-seg-btn { font-weight: 500; }
   .tpp-ki-seg-btn.active, .tpp-ki-seg-btn.tpp-ki-pay-plan.active { background: var(--surface2); color: var(--text); font-weight: 700; }
   .tpp-ki-file { color: var(--text); text-decoration: underline; text-underline-offset: 2px; font-weight: 600; }
-  .tpp-ki-link { font-size: 0.8rem; font-weight: 500; text-underline-offset: 2px; }
+  .tpp-ki-link { font-size: var(--fs-sm); font-weight: 500; text-underline-offset: 2px; }
   .tpp-ki-good { color: var(--text); font-weight: 600; }
   /* Gold accents: links, selected states and the current step, in a gold
      that stays readable on both themes. */
   :root { --tpp-gold: var(--accent); }
   :root[data-theme="light"] { --tpp-gold: var(--accent-dark); }
-  .tpp-board .tpp-labs-missing, .tpp-board .tpp-lab-missing, .tpp-board .tpp-plan-add, .tpp-board .tpp-comment-btn { color: var(--tpp-gold); text-decoration-color: var(--tpp-gold); font-weight: 600; }
-  .tpp-board .tpp-labs-missing:hover, .tpp-board .tpp-lab-missing:hover, .tpp-board .tpp-plan-add:hover, .tpp-board .tpp-comment-btn:hover { color: var(--text); }
-  .tpp-board .tpp-plan-chip { text-decoration-color: var(--tpp-gold); }
+
   .tpp-board .tpp-labs-bar span { background: var(--tpp-gold); }
-  .tpp-board .tpp-lab-badge:not(.tpp-lab-missing):hover { color: var(--tpp-gold); }
-  .tpp-pay-btn.active { color: var(--tpp-gold) !important; box-shadow: inset 0 -2px 0 var(--tpp-gold); }
+
   .tpp-col-sub { box-shadow: inset 3px 0 0 var(--tpp-gold); }
   .tpp-ki-head { color: var(--tpp-gold); }
   .tpp-ki-seg-btn.active, .tpp-ki-seg-btn.tpp-ki-pay-plan.active { color: var(--tpp-gold); box-shadow: inset 0 -2px 0 var(--tpp-gold); }
@@ -2300,66 +2219,39 @@
   .tpp-ki-link { color: var(--tpp-gold); font-weight: 600; }
   .tpp-ki-row.current .tpp-ki-label { color: var(--tpp-gold); }
   /* One line for lab + countdown */
-  .tpp-lab-line { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 5px; margin-top: 5px; font-size: 0.72rem; }
-  .tpp-board .tpp-lab-line .tpp-lab-badge, .tpp-board .tpp-lab-line .tpp-labs-missing { display: inline; margin-top: 0; }
-  .tpp-board .tpp-lab-line .tpp-lab-badge:not(.tpp-lab-missing) { font-size: 0.72rem; font-weight: 700; color: var(--text); }
-  .tpp-lab-sep { color: var(--text-muted); }
-  .tpp-labs-day { font: inherit; font-size: 0.72rem; font-weight: 600; color: var(--text); background: none; border: none; padding: 0; cursor: pointer; }
-  .tpp-labs-day:hover { text-decoration: underline; text-decoration-color: var(--tpp-gold); }
-  .tpp-labs-day.ready { color: var(--tpp-gold); }
-  .tpp-board .tpp-labs-sub { display: block; font-size: 0.66rem; color: var(--text-muted); margin-top: 1px; }
-  .tpp-board .tpp-labs-bar { display: block; height: 3px; border-radius: 2px; background: var(--border); margin-top: 4px; overflow: hidden; }
-  .tpp-pay-tag { margin-top: 5px; font-size: 0.7rem; font-weight: 600; color: var(--tpp-gold); }
+
+  .tpp-board .tpp-labs-bar { display: block; height: 3px; border-radius: var(--r-sm); background: var(--border); margin-top: 4px; overflow: hidden; }
+  .tpp-pay-tag { margin-top: 5px; font-size: var(--fs-xs); font-weight: 600; color: var(--tpp-gold); }
   /* Follow-Up board: same plain look */
-  .tpp-board .pep-order-badge { background: none; border: none; padding: 0; color: var(--text-muted); font-weight: 600; font-size: 0.7rem; }
+  .tpp-board .pep-order-badge { background: none; border: none; padding: 0; color: var(--text-muted); font-weight: 600; font-size: var(--fs-xs); }
   .tpp-board .tpp-decision-tag { background: none !important; border: none !important; padding: 0; color: var(--text-muted) !important; font-weight: 600; }
   .tpp-board .tpp-decision-tag.declined { color: var(--danger) !important; }
   .tpp-board .tpp-decision-tag.onhold { color: var(--warn-text) !important; }
-  .tpp-board .tpp-due-badge { background: none !important; border: none !important; padding: 0; font-size: 0.72rem; font-weight: 600; }
+  .tpp-board .tpp-due-badge { background: none !important; border: none !important; padding: 0; font-size: var(--fs-xs); font-weight: 600; }
   .tpp-board .tpp-due-badge.due-ok, .tpp-board .tpp-due-badge.due-none { color: var(--text-muted); }
   .tpp-board .tpp-due-badge.due-soon { color: var(--warn-text); }
   .tpp-board .tpp-due-badge.due-over { color: var(--alert-text); }
-  .tpp-board .tpp-handoff-btn { background: var(--surface); color: var(--tpp-gold); border: 1px solid var(--tpp-gold); font-weight: 600; border-radius: 6px; }
-  .tpp-board .tpp-handoff-btn:hover { background: var(--surface2); }
+
   /* Each text link on a tile gets its own line */
-  .tpp-board .tpp-lab-badge, .tpp-board .tpp-labs-missing, .tpp-board .tpp-comment-btn, .tpp-board .tpp-plan-chip { display: block; width: fit-content; text-align: left; }
+  
   /* -- Pipeline v3: no underlined links, gold only for the current step -----
      Tile actions are small gray buttons; gold is kept for the current-step
      marker, finished lab countdowns and the main buttons (Add Patient, Accepted). */
-  .tpp-board .tpp-labs-missing, .tpp-board .tpp-lab-missing, .tpp-board .tpp-plan-add,
-  .tpp-board .tpp-comment-btn, .tpp-board .tpp-plan-chip {
-    display: inline-flex !important; align-items: center; width: auto; margin: 6px 4px 0 0;
-    padding: 3px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface);
-    color: var(--text-muted); font-size: 0.68rem; font-weight: 600; text-decoration: none; cursor: pointer;
-  }
-  .tpp-board .tpp-labs-missing:hover, .tpp-board .tpp-lab-missing:hover, .tpp-board .tpp-plan-add:hover,
-  .tpp-board .tpp-comment-btn:hover, .tpp-board .tpp-plan-chip:hover {
-    color: var(--text); border-color: var(--text-muted); background: var(--surface2);
-  }
-  .tpp-board .tpp-plan-chip:not(.tpp-plan-add) { color: var(--text); }
-  .tpp-board .tpp-lab-line { gap: 0 4px; }
-  .tpp-board .tpp-lab-line { row-gap: 4px; }
-  .tpp-board .tpp-lab-line .tpp-lab-badge, .tpp-board .tpp-lab-line .tpp-labs-missing { margin: 0; }
-  .tpp-board .tpp-lab-line .tpp-lab-badge:not(.tpp-lab-missing) { text-decoration: none; padding: 1px 3px; margin-left: -3px; border-radius: 4px; }
-  .tpp-board .tpp-lab-line .tpp-lab-badge:not(.tpp-lab-missing):hover { background: var(--surface2); color: var(--text); text-decoration: none; }
-  .tpp-labs-day { padding: 1px 3px; border-radius: 4px; }
-  .tpp-labs-day:hover { text-decoration: none; background: var(--surface2); }
-  .tpp-labs-day.ready { color: var(--text); }
+
   .tpp-board .tpp-labs-bar span { background: var(--text-muted); }
   .tpp-board .tpp-labs-bar.ready span { background: var(--tpp-gold); }
   .tpp-pay-tag { color: var(--text-muted); }
-  .tpp-pay-btn.active { color: var(--text) !important; box-shadow: none; background: var(--surface2) !important; }
+  
   .tpp-col-sub { box-shadow: none; }
   .tpp-board .kanban-col.tpp-nextdue-col .kanban-col-header { box-shadow: none; }
-  .tpp-board .tpp-handoff-btn { color: var(--text); border-color: var(--border); }
-  .tpp-board .tpp-lab-badge:not(.tpp-lab-missing):hover { color: var(--text); }
+
   /* Details card */
   .tpp-ki-head { color: var(--text-muted); }
   .tpp-ki-row.current .tpp-ki-label { color: var(--text); }
   .tpp-ki-seg-btn.active, .tpp-ki-seg-btn.tpp-ki-pay-plan.active { color: var(--text); box-shadow: none; background: var(--surface2); }
   .tpp-ki-link {
-    display: inline-flex; align-items: center; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px;
-    background: var(--surface); color: var(--text); font-size: 0.78rem; font-weight: 600; text-decoration: none; cursor: pointer;
+    display: inline-flex; align-items: center; padding: 4px 10px; border: 1px solid var(--border); border-radius: var(--r-sm);
+    background: var(--surface); color: var(--text); font-size: var(--fs-sm); font-weight: 600; text-decoration: none; cursor: pointer;
   }
   .tpp-ki-link:hover { background: var(--surface2); }
   .tpp-ki-file { text-decoration: none; }
@@ -2372,6 +2264,60 @@
   .tpp-decision-btn.tpp-accept-btn:hover { border-color: var(--tpp-gold) !important; background: var(--surface2) !important; }
   .tpp-decision-btn.tpp-decline-btn:hover { border-color: var(--danger) !important; color: var(--danger) !important; background: var(--surface2) !important; }
   .tpp-decision-btn.tpp-hold-btn:hover { border-color: var(--warn-border) !important; color: var(--warn-text) !important; background: var(--surface2) !important; }
+  /* -- Pipeline tiles: read-only summaries -----------------------------------
+     A tile shows the name, the one fact that matters in its stage, payment
+     and the latest comment. Every action is in the detail panel. */
+  .tpp-tile-fact { margin-top: 5px; font-size: var(--fs-sm); font-weight: 600; color: var(--text); line-height: 1.35; }
+  .tpp-tile-sub { margin-top: 1px; font-size: var(--fs-xs); font-weight: 500; color: var(--text-muted); }
+  .tpp-tile-missing { color: var(--text-muted); font-weight: 500; }
+  .tpp-tile-late { color: var(--warn-text); font-weight: 600; }
+  /* Days in stage: amber once it's been a while, red once it's long overdue.
+     Never gold, which stays reserved for main buttons and the current step. */
+  .tpp-board .pep-card-age.age-warn { color: var(--warn-text); font-weight: 600; }
+  .tpp-board .pep-card-age.age-alert { color: var(--danger); font-weight: 600; }
+  .tpp-board .pep-col.pep-col-compact .pep-card-age { padding: 0; }
+  .tpp-tile-good { color: var(--text); }
+  .tpp-tile-link { color: var(--text); text-decoration: none; }
+  .tpp-tile-link:hover { color: var(--tpp-gold); }
+  .tpp-pay-tag {
+    display: inline-block; margin-top: 6px; padding: 1px 6px; border: 1px solid var(--border);
+    border-radius: var(--r-sm); font-size: var(--fs-xs); font-weight: 600; color: var(--text);
+  }
+  .tpp-board .pep-card { cursor: pointer; }
+  .tpp-board .pep-card:active { cursor: grabbing; }
+  .tpp-board .pep-col.pep-col-compact .tpp-tile-sub,
+  .tpp-board .pep-col.pep-col-compact .tpp-labs-bar,
+  .tpp-board .pep-col.pep-col-compact .tpp-card-comment { display: none; }
+  .tpp-board .pep-col.pep-col-compact .tpp-tile-fact,
+  .tpp-board .pep-col.pep-col-compact .tpp-pay-tag { margin-top: 2px; }
+  /* Decision block at the top of the detail panel (Treatment Plan Sent) */
+  .tpp-decision-block { margin: 4px 0 12px; padding: 12px 14px; border: 1px solid var(--border); border-left: 3px solid var(--tpp-gold); border-radius: var(--r-md); }
+  .tpp-decision-q { font-size: var(--fs-md); font-weight: 600; color: var(--text); }
+  .tpp-decision-block .tpp-decision-btn { padding: 8px 10px; font-size: var(--fs-sm); }
+  /* -- Phones ------------------------------------------------------------------
+     Nav drops to its own scrollable row under the logo, and page title bars
+     wrap instead of pushing buttons off the edge. */
+  @media (max-width: 700px) {
+    header { height: auto; flex-wrap: wrap; padding: 0 12px; row-gap: 0; }
+    .logo-wrap { height: 52px; }
+    .header-right { display: contents; }
+    .theme-toggle-btn { margin-left: auto; }
+    .toggle-wrap {
+      order: 3; flex: 0 0 100%; height: 40px; margin: 0 -12px; padding: 0 4px;
+      overflow-x: auto; scrollbar-width: none; border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .toggle-wrap::-webkit-scrollbar { display: none; }
+    .toggle-btn { padding: 0 10px; font-size: var(--fs-sm); }
+    .toggle-btn.active::after { left: 10px; right: 10px; }
+    .tasks-topbar { flex-wrap: wrap; gap: 10px; padding: 12px 12px 10px; }
+    .tasks-filterbar { padding: 8px 12px; }
+    .tpp-board .tasks-topbar, .tpp-board .tasks-filterbar { padding-left: 12px; padding-right: 12px; }
+    .tpp-board .tasks-sub { display: none; }
+    #sec-view { height: calc(100vh - 92px); }
+    .tpp-tabs { gap: 14px; }
+    .tpp-mode-btn { font-size: 1.15rem; }
+    .kanban-scroll { padding-left: 12px; padding-right: 12px; }
+  }
 </style>
 </head>
 <body>
@@ -2379,7 +2325,7 @@
   <div class="logo-wrap" onclick="goHome()" title="Movement Clinic — Home">
     <img class="brand-logo-img" alt="Movement Clinic — Integrated Health Center" src="data:image/png;base64,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">
     </div>
-  <div style="display:flex;align-items:center;gap:12px">
+  <div class="header-right">
     <div class="toggle-wrap" id="nav-toggle-wrap" style="display:none">
       <button class="toggle-btn" onclick="setView('dr', this)">Doctor</button>
       <button class="toggle-btn" onclick="setView('sec', this)">Care Team</button>
@@ -2440,13 +2386,13 @@
 <div id="dr-view" class="view">
   <div class="dr-header">
     <h2>Post-Appointment Note</h2>
-    <select id="doctor-select" onchange="selectDoctor(this.value)" style="margin-top:10px;padding:10px 36px 10px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface);font-family:'Inter',sans-serif;font-size:0.88rem;font-weight:500;color:var(--text-muted);cursor:pointer;outline:none;appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%237a7670' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 12px center;transition:border-color 0.2s;">
+    <select id="doctor-select" onchange="selectDoctor(this.value)" style="margin-top:10px;padding:10px 36px 10px 14px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--surface);font-family:'Inter',sans-serif;font-size:var(--fs-md);font-weight:500;color:var(--text-muted);cursor:pointer;outline:none;appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%237a7670' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 12px center;transition:border-color 0.2s;">
       <option value="">— Select provider —</option>
       <option value="Dr. Hodson">Dr. Hodson</option>
       <option value="Dr. Meyers">Dr. Meyers</option>
       <option value="Scott">Scott</option>
     </select>
-    <p id="provider-display" style="color:var(--accent-dark);font-weight:600;font-size:0.9rem;min-height:20px;margin-top:6px"></p>
+    <p id="provider-display" style="color:var(--accent-dark);font-weight:600;font-size:var(--fs-md);min-height:20px;margin-top:6px"></p>
     <div class="no-doctor-warning" id="no-doctor-warning">⚠ Please select a provider before submitting.</div>
   </div>
   <div class="checklist">
@@ -2472,7 +2418,7 @@
   </div>
   <div class="or-divider">or type manually</div>
   <div class="text-input-wrap">
-    <input type="text" id="patient-name" placeholder="Patient initials — e.g. J.S." style="width:100%;border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-family:'Inter',sans-serif;font-size:0.875rem;color:var(--text);background:var(--surface);outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+    <input type="text" id="patient-name" placeholder="Patient initials — e.g. J.S." style="width:100%;border:1px solid var(--border);border-radius:var(--r-md);padding:12px 16px;font-family:'Inter',sans-serif;font-size:var(--fs-md);color:var(--text);background:var(--surface);outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
       title="Enter initials only (e.g. J.S.) — do not enter full names">
     <textarea id="note-text" placeholder="E.g. She needs a follow-up in 2 weeks. Please send her the home exercise PDF. She mentioned lingering pain in the left shoulder so we adjusted her plan..."></textarea>
     <button class="submit-btn" id="submit-btn" onclick="submitNote()">
@@ -2532,7 +2478,7 @@
         <p class="tasks-sub">Tasks assigned to each team member</p>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
-        <button class="refresh-btn" id="tasks-refresh-btn" onclick="reloadTasks()" title="Refresh tasks" style="color:var(--text-muted);padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--surface)">
+        <button class="refresh-btn" id="tasks-refresh-btn" onclick="reloadTasks()" title="Refresh tasks" style="color:var(--text-muted);padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 4 23 10 17 10"></polyline>
             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
@@ -2598,11 +2544,11 @@
     <div class="tasks-topbar">
       <div>
         <h2 class="tasks-heading">Peptide Tracker</h2>
-        <p class="tasks-sub">New patients appear as a floating tile - drag it to the stage you want</p>
+        <p class="tasks-sub">New patients wait in the strip above the board until you drag them to a stage</p>
       </div>
       <span class="pep-stuck-summary" id="pep-stuck-summary" style="display:none"></span>
       <div style="display:flex;align-items:center;gap:10px">
-        <button class="refresh-btn" id="peptides-refresh-btn" onclick="loadPeptides()" title="Refresh" style="color:var(--text-muted);padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--surface)">
+        <button class="refresh-btn" id="peptides-refresh-btn" onclick="loadPeptides()" title="Refresh" style="color:var(--text-muted);padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 4 23 10 17 10"></polyline>
             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
@@ -2621,36 +2567,31 @@
         <input type="text" class="filter-search-input" id="pep-search" placeholder="Search patient name…" oninput="renderPeptideBoard()" autocomplete="off">
       </div>
     </div>
+    <div id="pep-tray" class="pep-tray" style="display:none"></div>
     <div class="kanban-scroll">
       <div class="kanban-cols" id="pep-cols"></div>
     </div>
   </div>
-  <div id="pep-tray" class="pep-tray" style="display:none"></div>
 </div>
 
 <!-- TREATMENT PLAN PIPELINE VIEW -->
 <div id="tpp-view" class="view">
-  <div class="tpp-mode-bar">
-    <div class="tpp-mode-toggle" id="tpp-mode-toggle">
-      <button class="tpp-mode-btn active" data-mode="regular" onclick="setTppMode('regular', this)">Regular</button>
-      <button class="tpp-mode-btn" data-mode="followup" onclick="setTppMode('followup', this)">Follow-Up</button>
-    </div>
-  </div>
   <div class="tpp-board tpp-board-discovery tpp-board-active">
     <div class="tasks-topbar">
       <div>
-        <h2 class="tasks-heading">Discovery &rarr; Treatment Plan</h2>
-        <p class="tasks-sub">Drag a tile between stages, or use its dropdown</p>
+        <h2 class="visually-hidden">Discovery &rarr; Treatment Plan</h2>
+        <div class="tpp-tabs" role="tablist"><button class="tpp-mode-btn active" data-mode="regular" role="tab" onclick="setTppMode('regular')">Discovery &rarr; Treatment Plan</button><button class="tpp-mode-btn" data-mode="followup" role="tab" onclick="setTppMode('followup')">Follow-Up</button></div>
+        <p class="tasks-sub">Drag a tile between stages, or click it for details</p>
       </div>
       <span class="pep-stuck-summary" id="tpp-disc-summary" style="display:none"></span>
       <div style="display:flex;align-items:center;gap:10px">
-        <button class="refresh-btn tpp-undo-btn" onclick="tppUndo()" title="Nothing to undo" disabled style="color:var(--text-muted);padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--surface)">
+        <button class="refresh-btn tpp-undo-btn" onclick="tppUndo()" title="Nothing to undo" disabled style="color:var(--text-muted);padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"></polyline><path d="M20 20v-7a4 4 0 0 0-4-4H4"></path></svg>
         </button>
-        <button class="refresh-btn tpp-redo-btn" onclick="tppRedo()" title="Nothing to redo" disabled style="color:var(--text-muted);padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--surface)">
+        <button class="refresh-btn tpp-redo-btn" onclick="tppRedo()" title="Nothing to redo" disabled style="color:var(--text-muted);padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 14 20 9 15 4"></polyline><path d="M4 20v-7a4 4 0 0 1 4-4h12"></path></svg>
         </button>
-        <button class="refresh-btn" onclick="reloadTpp(this)" title="Refresh" style="color:var(--text-muted);padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--surface)">
+        <button class="refresh-btn" onclick="reloadTpp(this)" title="Refresh" style="color:var(--text-muted);padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 4 23 10 17 10"></polyline>
             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
@@ -2674,26 +2615,27 @@
         <option value="">All labs</option><option value="labcorp">LabCorp</option><option value="evexia">Evexia</option>
       </select>
     </div>
+    <div id="tpp-disc-tray" class="pep-tray" style="display:none"></div>
     <div class="kanban-scroll">
       <div class="kanban-cols" id="tpp-discovery-cols"></div>
     </div>
-    <div id="tpp-disc-tray" class="pep-tray" style="display:none"></div>
   </div>
   <div class="tpp-board tpp-board-followup">
     <div class="tasks-topbar">
       <div>
-        <h2 class="tasks-heading">Follow-Up</h2>
+        <h2 class="visually-hidden">Follow-Up</h2>
+        <div class="tpp-tabs" role="tablist"><button class="tpp-mode-btn" data-mode="regular" role="tab" onclick="setTppMode('regular')">Discovery &rarr; Treatment Plan</button><button class="tpp-mode-btn active" data-mode="followup" role="tab" onclick="setTppMode('followup')">Follow-Up</button></div>
         <p class="tasks-sub">Repeatable labs / plan-review cycle after acceptance</p>
       </div>
       <span class="pep-stuck-summary" id="tpp-fu-summary" style="display:none"></span>
       <div style="display:flex;align-items:center;gap:10px">
-        <button class="refresh-btn tpp-undo-btn" onclick="tppUndo()" title="Nothing to undo" disabled style="color:var(--text-muted);padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--surface)">
+        <button class="refresh-btn tpp-undo-btn" onclick="tppUndo()" title="Nothing to undo" disabled style="color:var(--text-muted);padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"></polyline><path d="M20 20v-7a4 4 0 0 0-4-4H4"></path></svg>
         </button>
-        <button class="refresh-btn tpp-redo-btn" onclick="tppRedo()" title="Nothing to redo" disabled style="color:var(--text-muted);padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--surface)">
+        <button class="refresh-btn tpp-redo-btn" onclick="tppRedo()" title="Nothing to redo" disabled style="color:var(--text-muted);padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 14 20 9 15 4"></polyline><path d="M4 20v-7a4 4 0 0 1 4-4h12"></path></svg>
         </button>
-        <button class="refresh-btn" onclick="reloadTpp(this)" title="Refresh" style="color:var(--text-muted);padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--surface)">
+        <button class="refresh-btn" onclick="reloadTpp(this)" title="Refresh" style="color:var(--text-muted);padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 4 23 10 17 10"></polyline>
             <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
@@ -2714,10 +2656,10 @@
       <label class="filter-sort-toggle"><input type="checkbox" id="tpp-fu-overdue" onchange="setTppFilter('fuOverdue', this.checked)"> Overdue / due soon only</label>
       <label class="filter-sort-toggle"><input type="checkbox" id="tpp-fu-show-finished" onchange="setTppFilter('fuShowFinished', this.checked)"> Show finished rounds</label>
     </div>
+    <div id="tpp-fu-tray" class="pep-tray" style="display:none"></div>
     <div class="kanban-scroll">
       <div class="kanban-cols" id="tpp-fu-cols"></div>
     </div>
-    <div id="tpp-fu-tray" class="pep-tray" style="display:none"></div>
   </div>
 </div>
 
@@ -2732,7 +2674,7 @@
     </div>
     <div class="modal-body">
       <div class="modal-field">
-        <label class="modal-label">Assign to <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted);font-size:0.67rem">(select one or more — first to complete removes it from all)</span></label>
+        <label class="modal-label">Assign to <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted);font-size:var(--fs-xs)">(select one or more — first to complete removes it from all)</span></label>
         <div class="assignee-pills" id="assignee-checkboxes">
           <label class="assignee-pill"><input type="checkbox" name="assignee" value="Bella"><span>Bella</span></label>
           <label class="assignee-pill"><input type="checkbox" name="assignee" value="Bree"><span>Bree</span></label>
@@ -2803,7 +2745,7 @@
       </button>
     </div>
     <div class="modal-body">
-      <p id="kickback-modal-sub" style="font-size:0.8rem;color:var(--text-muted);margin-top:-8px"></p>
+      <p id="kickback-modal-sub" style="font-size:var(--fs-sm);color:var(--text-muted);margin-top:-8px"></p>
       <div class="modal-field" id="kickback-actor-field" style="display:none">
         <label class="modal-label">Which staff member is this?</label>
         <select id="kickback-actor" class="modal-select" onchange="rememberCommentAuthor(this.value)"></select>
@@ -2957,7 +2899,7 @@
       </button>
     </div>
     <div class="modal-body">
-      <p id="tpp-lab-sub" style="font-size:0.8rem;color:var(--text-muted);margin-top:-8px"></p>
+      <p id="tpp-lab-sub" style="font-size:var(--fs-sm);color:var(--text-muted);margin-top:-8px"></p>
       <div class="tpp-lab-choices">
         <button class="tpp-lab-choice" data-lab="labcorp" onclick="tppLabFinish('labcorp')">LabCorp</button>
         <button class="tpp-lab-choice" data-lab="evexia" onclick="tppLabFinish('evexia')">Evexia</button>
@@ -2977,14 +2919,14 @@
       </button>
     </div>
     <div class="modal-body">
-      <p id="tpp-date-sub" style="font-size:0.8rem;color:var(--text-muted);margin-top:-8px"></p>
+      <p id="tpp-date-sub" style="font-size:var(--fs-sm);color:var(--text-muted);margin-top:-8px"></p>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <div class="modal-field" style="flex:1 1 150px"><label class="modal-label">Date</label>
           <input type="date" id="tpp-date-input" class="modal-input" onkeydown="if(event.key==='Enter') tppDateSubmit()"></div>
         <div class="modal-field" id="tpp-date-time-wrap" style="flex:1 1 110px"><label class="modal-label">Time (optional)</label>
           <input type="time" id="tpp-date-time" class="modal-input" onkeydown="if(event.key==='Enter') tppDateSubmit()"></div>
       </div>
-      <p id="tpp-date-error" style="font-size:0.75rem;color:var(--danger);min-height:1em;margin:0"></p>
+      <p id="tpp-date-error" style="font-size:var(--fs-sm);color:var(--danger);min-height:1em;margin:0"></p>
     </div>
     <div class="modal-footer">
       <button class="modal-cancel" id="tpp-date-skip" onclick="tppDateFinish({ skip: true })">Skip for now</button>
@@ -3001,7 +2943,7 @@
       </button>
     </div>
     <div class="modal-body">
-      <p id="tpp-note-sub" style="font-size:0.8rem;color:var(--text-muted);margin-top:-8px"></p>
+      <p id="tpp-note-sub" style="font-size:var(--fs-sm);color:var(--text-muted);margin-top:-8px"></p>
       <div class="modal-field">
         <label class="modal-label">Note</label>
         <textarea id="tpp-note-text" class="modal-textarea" placeholder="e.g. Labs drawn 10/8, waiting on results" onkeydown="if(event.key==='Enter' &amp;&amp; (event.ctrlKey || event.metaKey)) submitTppNote()"></textarea>
@@ -3024,17 +2966,17 @@
       </button>
     </div>
     <div class="modal-body">
-      <p id="tpp-finish-sub" style="font-size:0.8rem;color:var(--text-muted);margin-top:-8px"></p>
+      <p id="tpp-finish-sub" style="font-size:var(--fs-sm);color:var(--text-muted);margin-top:-8px"></p>
       <div class="modal-field">
         <label class="modal-label">Next round due</label>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
-          <button type="button" class="modal-cancel" style="padding:5px 12px;font-size:0.75rem" onclick="setTppFinishDue(28)">4 wks</button>
-          <button type="button" class="modal-cancel" style="padding:5px 12px;font-size:0.75rem" onclick="setTppFinishDue(56)">8 wks</button>
-          <button type="button" class="modal-cancel" style="padding:5px 12px;font-size:0.75rem" onclick="setTppFinishDue(84)">12 wks</button>
-          <button type="button" class="modal-cancel" style="padding:5px 12px;font-size:0.75rem" onclick="setTppFinishDue(null)">No more rounds</button>
+          <button type="button" class="modal-cancel" style="padding:5px 12px;font-size:var(--fs-sm)" onclick="setTppFinishDue(28)">4 wks</button>
+          <button type="button" class="modal-cancel" style="padding:5px 12px;font-size:var(--fs-sm)" onclick="setTppFinishDue(56)">8 wks</button>
+          <button type="button" class="modal-cancel" style="padding:5px 12px;font-size:var(--fs-sm)" onclick="setTppFinishDue(84)">12 wks</button>
+          <button type="button" class="modal-cancel" style="padding:5px 12px;font-size:var(--fs-sm)" onclick="setTppFinishDue(null)">No more rounds</button>
         </div>
         <input type="date" id="tpp-finish-due" class="modal-input">
-        <span style="font-size:0.72rem;color:var(--text-muted)">The patient moves to &ldquo;Next Round Due&rdquo; and turns red if this date passes without a new round.</span>
+        <span style="font-size:var(--fs-xs);color:var(--text-muted)">The patient moves to &ldquo;Next Round Due&rdquo; and turns red if this date passes without a new round.</span>
       </div>
       <div class="modal-field">
         <label class="modal-label">Note (optional)</label>
@@ -3200,14 +3142,13 @@ function toggleTheme() {
   if (typeof renderKanban === 'function' && document.getElementById('tasks-view')) renderKanban();
 }
 document.addEventListener('DOMContentLoaded', updateThemeIcon);
-function setTppMode(mode, btn) {
-  document.querySelectorAll('.tpp-mode-btn').forEach(b => b.classList.remove('active'));
-  if (btn) {
-    btn.classList.add('active');
-  } else {
-    const match = document.querySelector('.tpp-mode-btn[data-mode="' + mode + '"]');
-    if (match) match.classList.add('active');
-  }
+function setTppMode(mode) {
+  // Both boards carry the same pair of tabs in their title row; keep them in sync.
+  document.querySelectorAll('.tpp-mode-btn').forEach(b => {
+    const on = b.dataset.mode === mode;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
   const discBoard = document.querySelector('.tpp-board-discovery');
   const fuBoard = document.querySelector('.tpp-board-followup');
   if (discBoard) discBoard.classList.toggle('tpp-board-active', mode === 'regular');
@@ -3449,7 +3390,7 @@ function renderPatientList() {
           </div>
         </div>
         <span class="p-time">${formatTime(a.timestamp)}</span>
-        ${a.provider ? `<span class="p-time" style="color:rgba(255,255,255,0.5);font-style:italic">${escapeHtml(a.provider)}</span>` : ''}
+        ${a.provider ? `<span class="p-time" style="font-style:italic">${escapeHtml(a.provider)}</span>` : ''}
         ${snippet ? `<div class="p-snippet">${highlight(snippet, searchQuery)}</div>` : ''}
       </div>`;
   }).join('');
@@ -3473,16 +3414,16 @@ function renderMainPanel(appt) {
         <div class="appt-card-header">
           <div style="flex:1">
             <input id="edit-patient-name" value="${escapeHtml(appt.patientName || s.patientName || '')}"
-              style="width:100%;font-size:1.25rem;font-weight:700;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-family:inherit;color:var(--text);background:var(--surface);outline:none;transition:border-color 0.2s"
+              style="width:100%;font-size:1.25rem;font-weight:700;border:1px solid var(--border);border-radius:var(--r-sm);padding:6px 10px;font-family:inherit;color:var(--text);background:var(--surface);outline:none;transition:border-color 0.2s"
               onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
               placeholder="Patient name / initials">
-            ${appt.provider ? `<div style="font-size:0.8rem;color:var(--accent-dark);font-weight:600;margin-top:6px">${escapeHtml(appt.provider)}</div>` : ''}
+            ${appt.provider ? `<div style="font-size:var(--fs-sm);color:var(--accent-dark);font-weight:600;margin-top:6px">${escapeHtml(appt.provider)}</div>` : ''}
           </div>
           <span class="appt-time">${formatTime(appt.timestamp)}</span>
         </div>
         ${noSummary ? `
           <div class="section-label">AI Summary</div>
-          <p style="font-size:0.85rem;color:var(--text-muted);font-style:italic;margin-bottom:24px">
+          <p style="font-size:var(--fs-md);color:var(--text-muted);font-style:italic;margin-bottom:24px">
             AI summary unavailable — add an Anthropic API key to the Worker to enable this.
           </p>
         ` : `
@@ -3490,24 +3431,24 @@ function renderMainPanel(appt) {
           <div class="summary-grid">
             <div class="summary-field">
               <div class="field-label">📅 Scheduling Needs</div>
-              <textarea id="edit-scheduling" rows="2" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:0.875rem;color:var(--text);background:var(--surface);resize:vertical;outline:none;transition:border-color 0.2s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">${escapeHtml(s.schedulingNeeds || '')}</textarea>
+              <textarea id="edit-scheduling" rows="2" style="width:100%;border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 10px;font-family:inherit;font-size:var(--fs-md);color:var(--text);background:var(--surface);resize:vertical;outline:none;transition:border-color 0.2s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">${escapeHtml(s.schedulingNeeds || '')}</textarea>
             </div>
             <div class="summary-field">
               <div class="field-label">📬 Follow-Up Actions</div>
-              <textarea id="edit-followup" rows="2" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:0.875rem;color:var(--text);background:var(--surface);resize:vertical;outline:none;transition:border-color 0.2s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">${escapeHtml(s.followUpActions || '')}</textarea>
+              <textarea id="edit-followup" rows="2" style="width:100%;border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 10px;font-family:inherit;font-size:var(--fs-md);color:var(--text);background:var(--surface);resize:vertical;outline:none;transition:border-color 0.2s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">${escapeHtml(s.followUpActions || '')}</textarea>
             </div>
             <div class="summary-field" style="grid-column: 1 / -1">
               <div class="field-label">📝 Additional Notes</div>
-              <textarea id="edit-addnotes" rows="2" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:0.875rem;color:var(--text);background:var(--surface);resize:vertical;outline:none;transition:border-color 0.2s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">${escapeHtml(s.additionalNotes || '')}</textarea>
+              <textarea id="edit-addnotes" rows="2" style="width:100%;border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 10px;font-family:inherit;font-size:var(--fs-md);color:var(--text);background:var(--surface);resize:vertical;outline:none;transition:border-color 0.2s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">${escapeHtml(s.additionalNotes || '')}</textarea>
             </div>
           </div>
         `}
         <div class="transcript-section">
           <div class="section-label">Full Transcript</div>
-          <textarea id="edit-transcript" rows="10" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:inherit;font-size:0.875rem;color:var(--text);background:var(--surface);resize:vertical;outline:none;line-height:1.6;transition:border-color 0.2s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">${escapeHtml(appt.transcript)}</textarea>
+          <textarea id="edit-transcript" rows="10" style="width:100%;border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;font-family:inherit;font-size:var(--fs-md);color:var(--text);background:var(--surface);resize:vertical;outline:none;line-height:1.6;transition:border-color 0.2s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">${escapeHtml(appt.transcript)}</textarea>
         </div>
         <div class="action-btn-row">
-          <button class="submit-btn" style="margin-top:0;padding:10px 20px;font-size:0.875rem" onclick="saveNoteEdit('${appt.id}')">✓ Save Changes</button>
+          <button class="submit-btn" style="margin-top:0;padding:10px 20px;font-size:var(--fs-md)" onclick="saveNoteEdit('${appt.id}')">✓ Save Changes</button>
           <button class="mark-unread-btn" onclick="cancelNoteEdit()">✕ Cancel</button>
         </div>
       </div>`;
@@ -3519,13 +3460,13 @@ function renderMainPanel(appt) {
       <div class="appt-card-header">
         <div>
           <h2>${escapeHtml(appt.patientName || s.patientName || 'Unknown Patient')}</h2>
-          ${appt.provider ? `<div style="font-size:0.8rem;color:var(--accent-dark);font-weight:600;margin-top:3px">${escapeHtml(appt.provider)}</div>` : ''}
+          ${appt.provider ? `<div style="font-size:var(--fs-sm);color:var(--accent-dark);font-weight:600;margin-top:3px">${escapeHtml(appt.provider)}</div>` : ''}
         </div>
         <span class="appt-time">${formatTime(appt.timestamp)}</span>
       </div>
       ${noSummary ? `
         <div class="section-label">AI Summary</div>
-        <p style="font-size:0.85rem;color:var(--text-muted);font-style:italic;margin-bottom:24px">
+        <p style="font-size:var(--fs-md);color:var(--text-muted);font-style:italic;margin-bottom:24px">
           AI summary unavailable — add an Anthropic API key to the Worker to enable this.
         </p>
       ` : `
@@ -3732,7 +3673,7 @@ const TPP_DECLINED_STAGE = { key: 'declined', label: 'Declined' };
 const TPP_ON_HOLD_STAGE = { key: 'on_hold', label: 'On Hold' };
 const TPP_OFFRAMP_KEYS = [TPP_DECLINED_STAGE.key, TPP_ON_HOLD_STAGE.key];
 const TPP_ALL_DISCOVERY_STAGES = TPP_DISCOVERY_STAGES.concat([TPP_DECLINED_STAGE, TPP_ON_HOLD_STAGE]);
-// New patients float in a tray until someone drags them to their real stage.
+// New patients wait in the strip above the board until someone drags them to their real stage.
 const TPP_UNPLACED = 'unplaced';
 // Above this many patients in one column, cards shrink to name-only.
 const TPP_COMPACT_THRESHOLD = 4;
@@ -3753,21 +3694,16 @@ const TPP_APPT_FIELDS = {
   scheduled_for_discovery: { field: 'discoveryConsultAt', label: 'Discovery consult', short: 'Consult' },
   deep_dive_scheduled: { field: 'deepDiveAt', label: 'Deep dive', short: 'Deep dive' },
 };
-// Tiles in these stages offer an "attach treatment plan" button when none is on file.
+// Tiles in these stages say whether a treatment plan is attached yet.
 const TPP_PLAN_UPLOAD_STAGES = ['deep_dive_completed', 'treatment_plan_sent'];
-// From here on, an attached plan shows as a link on the tile.
-const TPP_PLAN_LINK_FROM = 'deep_dive_completed';
 // Payment status ("paid" / "plan") is a tag that stays on the tile as the
-// patient moves. The buttons show on every stage after Labs Drawn.
-const TPP_PAYMENT_FROM = 'treatment_plan_sent';
-const TPP_PAYMENT_LABELS = { paid: 'Paid', plan: 'Working on payment plan' };
-// Shorter text for the buttons so they fit narrow tiles; full text is the tooltip.
-const TPP_PAYMENT_SHORT = { paid: 'Paid', plan: 'Payment plan' };
+// patient moves. It's set in the detail panel.
+const TPP_PAYMENT_LABELS = { paid: 'Paid', plan: 'Payment plan' };
 // Which lab the patient's labs go through (one or the other). Both take ~3 weeks.
 // Anyone saved as the retired 'both' option shows as "Set lab" again.
 const TPP_LABS = { labcorp: 'LabCorp', evexia: 'Evexia' };
 const TPP_LAB_FROM = 'labs_ordered';
-// Tiles here show a "Set lab" button when none is chosen yet.
+// Tiles here show the lab (or "No lab set").
 const TPP_LAB_ASK_STAGES = ['labs_ordered', 'labs_in_labcorp'];
 const TPP_FOLLOWUP_STAGES = [
   { key: 'labs_sent', label: 'Labs Sent' },
@@ -4223,7 +4159,7 @@ async function loadTasks() {
     renderKanban();
   } catch (err) {
     document.getElementById('kanban-cols').innerHTML =
-      '<div style="color:var(--danger);padding:24px;font-size:0.85rem">Could not load tasks: ' + escapeHtml(err.message) + '</div>';
+      '<div style="color:var(--danger);padding:24px;font-size:var(--fs-md)">Could not load tasks: ' + escapeHtml(err.message) + '</div>';
   }
 }
 
@@ -4241,7 +4177,7 @@ function renderKanban() {
   const orderedStaff = getStaffOrder().map(name => STAFF.find(s => s.name === name)).filter(Boolean).filter(s => cols.has(s.name));
   if (orderedStaff.length === 0) {
     container.className = 'kanban-cols';
-    container.innerHTML = '<div style="padding:40px 20px;color:var(--text-muted);font-size:0.85rem">No columns selected — pick some from the Columns filter above.</div>';
+    container.innerHTML = '<div style="padding:40px 20px;color:var(--text-muted);font-size:var(--fs-md)">No columns selected — pick some from the Columns filter above.</div>';
     return;
   }
   // Columns are flexible-width (see .kanban-col CSS) and each one waffles
@@ -4307,7 +4243,7 @@ function renderKanban() {
         </div>
         <div class="kanban-cards">
           ${openTasks.length === 0
-            ? `<div style="text-align:center;padding:20px 12px;color:var(--text-muted);font-size:0.78rem;line-height:1.6">${(taskPriorityFilter !== 'all' || taskDueFilter !== 'all' || taskPatientSearch.trim()) ? 'No tasks match your filters' : 'No tasks yet'}</div>`
+            ? `<div style="text-align:center;padding:20px 12px;color:var(--text-muted);font-size:var(--fs-sm);line-height:1.6">${(taskPriorityFilter !== 'all' || taskDueFilter !== 'all' || taskPatientSearch.trim()) ? 'No tasks match your filters' : 'No tasks yet'}</div>`
             : renderGroupedTaskCards(openTasks, s.name)}
           ${doneTasks.length > 0 ? `
           <div class="kanban-completed-wrap">
@@ -4368,7 +4304,7 @@ function renderTaskCard(t, actingAs) {
       ${t.createdAt ? `<div class="task-created-at">Added ${formatTime(t.createdAt)}</div>` : ''}
       ${coAssignees.length > 0 ? `
       <div class="co-assignees">
-        <span style="font-size:0.64rem;color:var(--text-muted);margin-right:2px">Also:</span>
+        <span style="font-size:var(--fs-xs);color:var(--text-muted);margin-right:2px">Also:</span>
         ${coAssignees.map(a => `<span class="co-assignee-chip">${escapeHtml(a)}</span>`).join('')}
       </div>` : ''}
       <div class="task-card-meta">
@@ -5031,7 +4967,7 @@ function renderPeptideBoard() {
     if (stuckCount > 0) {
       summaryEl.style.display = 'inline-block';
       summaryEl.classList.remove('none');
-      summaryEl.textContent = '⚠ ' + stuckCount + ' stuck ' + PEP_AGE_WARN_DAYS + '+ days';
+      summaryEl.textContent = stuckCount + ' stuck ' + PEP_AGE_WARN_DAYS + '+ days';
     } else {
       summaryEl.style.display = 'none';
     }
@@ -5133,7 +5069,7 @@ function renderPeptideOrderBlock(patient, order, orderIndex, isActive) {
       '<div class="pep-history-row">' +
         '<div class="pep-history-summary" onclick="toggleHistoryRow(\'' + rowId + '\')">' +
           '<span><strong>' + escapeHtml(stageLabel(h.stage)) + '</strong> — ' + formatTime(h.at) + (h.editedAt ? ' <em style="color:var(--text-muted);font-style:italic">(edited)</em>' : '') + '</span>' +
-          '<span style="color:var(--text-muted)">' + (h.comment ? '💬 ' : '') + '▾</span>' +
+          '<span style="color:var(--text-muted)">' + (h.comment ? 'Note &middot; ' : '') + '▾</span>' +
         '</div>' +
         '<div class="pep-history-detail" id="' + rowId + '">' +
           '<div class="modal-field">' +
@@ -5149,8 +5085,8 @@ function renderPeptideOrderBlock(patient, order, orderIndex, isActive) {
             '<textarea class="modal-textarea" id="' + rowId + '-comment" style="min-height:50px">' + escapeHtml(h.comment || '') + '</textarea>' +
           '</div>' +
           '<div style="display:flex;justify-content:space-between;gap:8px">' +
-            '<button class="modal-cancel" style="border-color:var(--danger);color:var(--danger);padding:6px 14px;font-size:0.78rem" onclick="deletePepHistoryEntry(\'' + patient.id + '\',\'' + order.id + '\',\'' + h.id + '\')">Delete entry</button>' +
-            '<button class="modal-submit" style="padding:6px 16px;font-size:0.78rem" onclick="saveHistoryEdit(\'' + patient.id + '\',\'' + order.id + '\',\'' + h.id + '\',\'' + rowId + '\')">Save</button>' +
+            '<button class="modal-cancel" style="border-color:var(--danger);color:var(--danger);padding:6px 14px;font-size:var(--fs-sm)" onclick="deletePepHistoryEntry(\'' + patient.id + '\',\'' + order.id + '\',\'' + h.id + '\')">Delete entry</button>' +
+            '<button class="modal-submit" style="padding:6px 16px;font-size:var(--fs-sm)" onclick="saveHistoryEdit(\'' + patient.id + '\',\'' + order.id + '\',\'' + h.id + '\',\'' + rowId + '\')">Save</button>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -5175,7 +5111,7 @@ function renderPeptideOrderBlock(patient, order, orderIndex, isActive) {
           '<label class="modal-label">Comment</label>' +
           '<textarea class="modal-textarea" id="' + addRowId + '-comment" style="min-height:50px" placeholder="Optional note — e.g. \'never actually had a consult\'"></textarea>' +
         '</div>' +
-        '<button class="modal-submit" style="align-self:flex-end;padding:6px 16px;font-size:0.78rem" onclick="addPepHistoryEntry(\'' + patient.id + '\',\'' + order.id + '\',\'' + addRowId + '\')">Add to timeline</button>' +
+        '<button class="modal-submit" style="align-self:flex-end;padding:6px 16px;font-size:var(--fs-sm)" onclick="addPepHistoryEntry(\'' + patient.id + '\',\'' + order.id + '\',\'' + addRowId + '\')">Add to timeline</button>' +
       '</div>' +
     '</div>';
   const files = order.files || [];
@@ -5185,7 +5121,7 @@ function renderPeptideOrderBlock(patient, order, orderIndex, isActive) {
       '<button class="modal-close" onclick="removePeptideFile(\'' + patient.id + '\',\'' + order.id + '\',\'' + f.id + '\')" title="Remove file">' +
         '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
       '</button>' +
-    '</div>').join('') : '<p style="color:var(--text-muted);font-size:0.8rem">No files yet.</p>';
+    '</div>').join('') : '<p style="color:var(--text-muted);font-size:var(--fs-sm)">No files yet.</p>';
   const moveOptions = isActive ? PEPTIDE_STAGES.filter(s => s.key !== order.stage)
     .map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('') : '';
   const orderMetaId = 'pep-ordermeta-' + order.id;
@@ -5193,7 +5129,7 @@ function renderPeptideOrderBlock(patient, order, orderIndex, isActive) {
     '<div class="pep-order-block">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
         '<span class="pep-section-title">Order ' + (orderIndex + 1) + (order.completedAt ? ' — Completed' : ' — In Progress') + '</span>' +
-        (isActive ? '<select class="modal-select" style="width:auto;font-size:0.78rem;padding:6px 10px" onchange="movePeptideStage(\'' + patient.id + '\',\'' + order.id + '\', this.value); this.selectedIndex=0;">' +
+        (isActive ? '<select class="modal-select" style="width:auto;font-size:var(--fs-sm);padding:6px 10px" onchange="movePeptideStage(\'' + patient.id + '\',\'' + order.id + '\', this.value); this.selectedIndex=0;">' +
           '<option value="">Move to…</option>' + moveOptions + '</select>' : '') +
       '</div>' +
       '<div class="modal-row" style="margin:8px 0">' +
@@ -5209,7 +5145,7 @@ function renderPeptideOrderBlock(patient, order, orderIndex, isActive) {
             '<option value="Dr. Hodson"' + (order.consultDoctor === 'Dr. Hodson' ? ' selected' : '') + '>Dr. Hodson</option>' +
           '</select>' +
         '</div>' +
-        '<button class="modal-submit" style="align-self:flex-end;padding:9px 16px;font-size:0.78rem" onclick="saveConsultInfo(\'' + patient.id + '\',\'' + order.id + '\',\'' + orderMetaId + '\')">Save</button>' +
+        '<button class="modal-submit" style="align-self:flex-end;padding:9px 16px;font-size:var(--fs-sm)" onclick="saveConsultInfo(\'' + patient.id + '\',\'' + order.id + '\',\'' + orderMetaId + '\')">Save</button>' +
       '</div>' +
       '<div class="modal-row">' +
         '<div class="modal-field" style="flex:1">' +
@@ -5220,7 +5156,7 @@ function renderPeptideOrderBlock(patient, order, orderIndex, isActive) {
           '<label class="modal-label">Order date</label>' +
           '<input type="date" class="modal-input" id="' + orderMetaId + '-date" value="' + escapeHtml(order.orderDate || '') + '">' +
         '</div>' +
-        '<button class="modal-submit" style="align-self:flex-end;padding:9px 16px;font-size:0.78rem" onclick="saveOrderMeta(\'' + patient.id + '\',\'' + order.id + '\',\'' + orderMetaId + '\')">Save</button>' +
+        '<button class="modal-submit" style="align-self:flex-end;padding:9px 16px;font-size:var(--fs-sm)" onclick="saveOrderMeta(\'' + patient.id + '\',\'' + order.id + '\',\'' + orderMetaId + '\')">Save</button>' +
       '</div>' +
       '<div class="modal-row">' +
         '<div class="modal-field" style="flex:1">' +
@@ -5231,7 +5167,7 @@ function renderPeptideOrderBlock(patient, order, orderIndex, isActive) {
           '<label class="modal-label">Recon kit tracking #</label>' +
           '<input type="text" class="modal-input" id="' + orderMetaId + '-tracktrecon" value="' + escapeHtml(order.trackingRecon || '') + '" placeholder="Carrier tracking #">' +
         '</div>' +
-        '<button class="modal-submit" style="align-self:flex-end;padding:9px 16px;font-size:0.78rem" onclick="saveTracking(\'' + patient.id + '\',\'' + order.id + '\',\'' + orderMetaId + '\')">Save</button>' +
+        '<button class="modal-submit" style="align-self:flex-end;padding:9px 16px;font-size:var(--fs-sm)" onclick="saveTracking(\'' + patient.id + '\',\'' + order.id + '\',\'' + orderMetaId + '\')">Save</button>' +
       '</div>' +
       '<div class="modal-row">' +
         '<div class="modal-field" style="flex:1">' +
@@ -5245,9 +5181,9 @@ function renderPeptideOrderBlock(patient, order, orderIndex, isActive) {
           '<label class="modal-label">Shipping address</label>' +
           '<textarea class="modal-textarea" id="' + orderMetaId + '-shipaddr" style="min-height:44px" placeholder="Street, city, state, zip">' + escapeHtml(order.shippingAddress || '') + '</textarea>' +
         '</div>' +
-        '<button class="modal-submit" style="align-self:flex-end;padding:9px 16px;font-size:0.78rem" onclick="saveShipping(\'' + patient.id + '\',\'' + order.id + '\',\'' + orderMetaId + '\')">Save</button>' +
+        '<button class="modal-submit" style="align-self:flex-end;padding:9px 16px;font-size:var(--fs-sm)" onclick="saveShipping(\'' + patient.id + '\',\'' + order.id + '\',\'' + orderMetaId + '\')">Save</button>' +
       '</div>' +
-      '<p style="font-size:0.78rem;color:var(--text-muted);margin:4px 0 10px">Current stage: <strong style="color:var(--text)">' + escapeHtml(stageLabel(order.stage)) + '</strong></p>' +
+      '<p style="font-size:var(--fs-sm);color:var(--text-muted);margin:4px 0 10px">Current stage: <strong style="color:var(--text)">' + escapeHtml(stageLabel(order.stage)) + '</strong></p>' +
       '<div class="pep-section-title">History</div>' +
       historyHtml +
       addHistoryHtml +
@@ -5255,16 +5191,16 @@ function renderPeptideOrderBlock(patient, order, orderIndex, isActive) {
       filesHtml +
       '<div class="pep-file-drop" ondragover="pepFileDragOver(event)" ondragleave="pepFileDragLeave(event)" ondrop="pepFileDrop(event,\'' + patient.id + '\',\'' + order.id + '\')">' +
         '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
-          '<select class="modal-select" id="pep-file-cat-' + order.id + '" style="width:auto;font-size:0.78rem;padding:6px 10px">' +
+          '<select class="modal-select" id="pep-file-cat-' + order.id + '" style="width:auto;font-size:var(--fs-sm);padding:6px 10px">' +
             '<option value="pricing">Pricing Guide</option>' +
             '<option value="dosing">Dosing Guide</option>' +
             '<option value="other">Other</option>' +
           '</select>' +
-          '<label class="modal-cancel" style="padding:6px 14px;font-size:0.78rem;cursor:pointer">' +
+          '<label class="modal-cancel" style="padding:6px 14px;font-size:var(--fs-sm);cursor:pointer">' +
             'Choose PDF' +
             '<input type="file" accept="application/pdf" multiple style="display:none" onchange="uploadPeptideFile(\'' + patient.id + '\',\'' + order.id + '\', this)">' +
           '</label>' +
-          '<span style="font-size:0.72rem;color:var(--text-muted)">or drop PDF(s) here</span>' +
+          '<span style="font-size:var(--fs-xs);color:var(--text-muted)">or drop PDF(s) here</span>' +
         '</div>' +
       '</div>' +
       (isActive && !order.completedAt ? '<button class="modal-submit" style="width:100%;margin-top:14px" onclick="finishOrder(\'' + patient.id + '\',\'' + order.id + '\')">\u2713 Finish Order</button>' : '') +
@@ -5290,7 +5226,7 @@ function renderPeptideDetail(patientId) {
       '<label class="modal-label">Patient name</label>' +
       '<div style="display:flex;gap:8px">' +
         '<input type="text" class="modal-input" id="pep-detail-name" value="' + escapeHtml(patient.name) + '">' +
-        '<button class="modal-submit" style="padding:8px 16px;font-size:0.78rem" onclick="savePeptideName(\'' + patient.id + '\')">Save</button>' +
+        '<button class="modal-submit" style="padding:8px 16px;font-size:var(--fs-sm)" onclick="savePeptideName(\'' + patient.id + '\')">Save</button>' +
       '</div>' +
     '</div>' +
     (canStartNew ? '<button class="modal-submit" style="width:100%" onclick="startNewOrder(\'' + patient.id + '\')">+ Start New Order</button>' : '') +
@@ -5715,13 +5651,39 @@ function tppDecisionButtonsHtml(patientId) {
     '<button class="tpp-decision-btn tpp-decline-btn" onclick="declineTppTreatmentPlan(\'' + patientId + '\')" title="Mark the treatment plan as declined">Decline</button>' +
     '<button class="tpp-decision-btn tpp-hold-btn" onclick="holdTppTreatmentPlan(\'' + patientId + '\')" title="Put the patient on hold">Put on hold</button>';
 }
-// Latest comment + a button to open the full thread. Shown on every tile.
-function tppCommentChipHtml(patient) {
+// -- Read-only tile lines ------------------------------------------------------
+// Tiles only report; changing anything happens in the detail panel. A missing
+// value shows as a muted "not set" line so it's still visible at a glance.
+function tppTileLabHtml(target, withCountdown) {
+  const lab = TPP_LABS[target.labProvider];
+  let html = '<div class="tpp-tile-fact">' + (lab ? lab : '<span class="tpp-tile-missing">No lab set</span>');
+  if (!withCountdown) return html + '</div>';
+  const info = tppLabsDrawnInfo(target);
+  if (!info) return html + ' &middot; <span class="tpp-tile-missing">No draw date</span></div>';
+  html += ' &middot; ' + (info.ready ? '<span class="tpp-tile-good">Results should be back</span>' : 'Day ' + info.days + ' of ' + TPP_LABS_RESULT_DAYS) + '</div>' +
+    '<div class="tpp-tile-sub">Drawn ' + info.drawnLabel + (info.ready ? '' : ' &middot; back ~' + info.backLabel) + '</div>' +
+    '<span class="tpp-labs-bar' + (info.ready ? ' ready' : '') + '"><span style="width:' + info.pct + '%"></span></span>';
+  return html;
+}
+function tppTileApptHtml(patient, stageKey) {
+  const cfg = TPP_APPT_FIELDS[stageKey];
+  const info = tppApptInfo(patient[cfg.field]);
+  if (!info) return '<div class="tpp-tile-fact"><span class="tpp-tile-missing">No ' + cfg.short.toLowerCase() + ' date</span></div>';
+  return '<div class="tpp-tile-fact">' + cfg.short + ': ' + escapeHtml(info.label) + '</div>' +
+    '<div class="tpp-tile-sub">' + (info.past ? '<span class="tpp-tile-late">Was ' + info.when + '</span>' : info.when.charAt(0).toUpperCase() + info.when.slice(1)) + '</div>';
+}
+function tppTilePlanHtml(patient) {
+  const f = tppPlanFile(patient);
+  if (!f) return '<div class="tpp-tile-fact"><span class="tpp-tile-missing">No plan attached</span></div>';
+  return '<div class="tpp-tile-fact"><a class="tpp-tile-link" href="' + WORKER_URL + '/tpp/files/' + f.id + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="' + escapeHtml(f.name) + '">Treatment plan (PDF)</a></div>';
+}
+function tppTileCommentHtml(patient) {
   const cs = patient.comments || [];
   const last = cs[cs.length - 1];
-  return (last ? '<div class="tpp-card-comment" title="' + escapeHtml(last.message) + '">' + (last.from ? '<strong>' + escapeHtml(last.from) + ':</strong> ' : '') + escapeHtml(last.message) + '</div>' : '') +
-    '<button class="tpp-comment-btn" onclick="event.stopPropagation();openTppComments(\'' + patient.id + '\')">' +
-      (cs.length ? cs.length + ' comment' + (cs.length === 1 ? '' : 's') : 'Comment') + '</button>';
+  if (!last) return '';
+  return '<div class="tpp-card-comment" title="' + escapeHtml(last.message) + '">' +
+    (last.from ? '<strong>' + escapeHtml(last.from) + ':</strong> ' : '') + escapeHtml(last.message) +
+    (cs.length > 1 ? ' <span class="tpp-tile-sub">(' + cs.length + ')</span>' : '') + '</div>';
 }
 function tppRenderTray(id, title, cardsHtml, count) {
   const el = document.getElementById(id);
@@ -5839,30 +5801,6 @@ function tppLabsDrawnInfo(patient) {
   return { days, ready: days >= TPP_LABS_RESULT_DAYS, drawnLabel: fmt(drawn), backLabel: fmt(back),
     pct: Math.min(100, Math.round(days / TPP_LABS_RESULT_DAYS * 100)) };
 }
-// One line for lab + countdown. `target` is the patient (Discovery board) or a
-// follow-up round (orderId set); both carry labProvider / labsDrawnAt.
-function tppLabArgs(patientId, orderId) {
-  return '\'' + patientId + '\', undefined, ' + (orderId ? '\'' + orderId + '\'' : 'null');
-}
-function tppLabLineHtml(patientId, target, orderId, withCountdown) {
-  const lab = TPP_LABS[target.labProvider];
-  const args = tppLabArgs(patientId, orderId);
-  const labPart = lab
-    ? '<button class="tpp-lab-badge" onclick="event.stopPropagation(); editTppLab(' + args + ')" title="Change lab">' + lab + '</button>'
-    : '<button class="tpp-lab-badge tpp-lab-missing" onclick="event.stopPropagation(); editTppLab(' + args + ')">Set lab</button>';
-  if (!withCountdown) return '<div class="tpp-lab-line">' + labPart + '</div>';
-  const info = tppLabsDrawnInfo(target);
-  const dateClick = 'onclick="event.stopPropagation(); editTppLabsDrawnDate(' + args + ')"';
-  const datePart = info
-    ? '<button class="tpp-labs-day' + (info.ready ? ' ready' : '') + '" ' + dateClick + ' title="Drawn ' + info.drawnLabel + ' &middot; click to change">' +
-        (info.ready ? 'Results should be back' : 'Day ' + info.days + ' of ' + TPP_LABS_RESULT_DAYS) + '</button>'
-    : '<button class="tpp-labs-missing" ' + dateClick + '>Set draw date</button>';
-  // The dot only sits between two pieces of text; buttons don't need it.
-  const sep = lab && info ? '<span class="tpp-lab-sep">&middot;</span>' : '';
-  return '<div class="tpp-lab-line">' + labPart + sep + datePart + '</div>' +
-    (info ? '<div class="tpp-labs-sub">Drawn ' + info.drawnLabel + (info.ready ? '' : ' &middot; back ~' + info.backLabel) + '</div>' +
-      '<span class="tpp-labs-bar' + (info.ready ? ' ready' : '') + '"><span style="width:' + info.pct + '%"></span></span>' : '');
-}
 function tppFindRound(patient, orderId) {
   return (patient.followupOrders || []).find(o => o.id === orderId) || null;
 }
@@ -5956,17 +5894,6 @@ function tppApptInfo(value) {
   }
   return { label, when, diff, past: diff < 0, today: diff === 0 };
 }
-function tppApptChipHtml(patient, stageKey) {
-  const cfg = TPP_APPT_FIELDS[stageKey];
-  if (!cfg) return '';
-  const info = tppApptInfo(patient[cfg.field]);
-  const click = 'onclick="event.stopPropagation(); editTppApptDate(\'' + patient.id + '\',\'' + stageKey + '\')"';
-  if (!info) return '<button class="tpp-labs-ticker tpp-labs-missing" ' + click + '>Set ' + cfg.short.toLowerCase() + ' date</button>';
-  return '<button class="tpp-labs-ticker tpp-appt' + (info.past ? ' tpp-appt-past' : info.today ? ' tpp-labs-ready' : '') + '" ' + click + ' title="Click to change">' +
-    '<span class="tpp-labs-line">' + cfg.short + ': ' + escapeHtml(info.label) + '</span>' +
-    '<span class="tpp-labs-sub">' + (info.past ? 'Was ' + info.when + ' \u2014 move them along?' : info.when.charAt(0).toUpperCase() + info.when.slice(1)) + '</span>' +
-  '</button>';
-}
 async function editTppApptDate(patientId, stageKey, value) {
   const cfg = TPP_APPT_FIELDS[stageKey];
   const patient = allTpp.find(p => p.id === patientId);
@@ -5988,20 +5915,7 @@ async function editTppApptDate(patientId, stageKey, value) {
     showToast('Could not save: ' + err.message);
   }
 }
-function tppShowsPayment(stageKey) {
-  const order = TPP_DISCOVERY_STAGES.map(s => s.key);
-  const at = order.indexOf(stageKey);
-  return at !== -1 && at >= order.indexOf(TPP_PAYMENT_FROM) && stageKey !== TPP_HANDOFF_STAGE;
-}
-function tppPaymentRowHtml(patient) {
-  const cur = patient.payment === 'paid' || patient.payment === 'plan' ? patient.payment : '';
-  const btn = (key, icon) => '<button class="tpp-pay-btn tpp-pay-' + key + (cur === key ? ' active' : '') + '" ' +
-    'onclick="event.stopPropagation(); setTppPayment(\'' + patient.id + '\',\'' + key + '\')" ' +
-    'title="' + TPP_PAYMENT_LABELS[key] + (cur === key ? ' (click to clear)' : '') + '">' +
-    TPP_PAYMENT_SHORT[key] + '</button>';
-  return '<div class="tpp-pay-row" onclick="event.stopPropagation()">' + btn('paid') + btn('plan') + '</div>';
-}
-// Before the buttons appear, a status someone already set still shows as text.
+// Payment status as one plain tag on the tile (set it in the detail panel).
 function tppPaymentTagHtml(patient) {
   const k = patient.payment === 'paid' || patient.payment === 'plan' ? patient.payment : '';
   return k ? '<div class="tpp-pay-tag">' + TPP_PAYMENT_LABELS[k] + '</div>' : '';
@@ -6141,19 +6055,6 @@ function tppRoundLabRowsHtml(patient, order) {
 function tppPlanFile(patient) {
   const fs = (patient.discoveryFiles || []).filter(f => f.category === 'treatment_plan');
   return fs.length ? fs[fs.length - 1] : null;
-}
-function tppPlanChipHtml(patient, stageKey) {
-  const order = TPP_DISCOVERY_STAGES.map(s => s.key);
-  const at = order.indexOf(stageKey);
-  const f = tppPlanFile(patient);
-  if (f && at >= order.indexOf(TPP_PLAN_LINK_FROM)) {
-    return '<a class="tpp-plan-chip" href="' + WORKER_URL + '/tpp/files/' + f.id + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="' + escapeHtml(f.name) + '">Treatment plan (PDF)</a>';
-  }
-  if (!f && TPP_PLAN_UPLOAD_STAGES.includes(stageKey)) {
-    return '<label class="tpp-plan-chip tpp-plan-add" onclick="event.stopPropagation()">Attach treatment plan' +
-      '<input type="file" accept=".pdf,application/pdf" style="display:none" onchange="uploadTppTreatmentPlan(\'' + patient.id + '\', this)"></label>';
-  }
-  return '';
 }
 async function uploadTppTreatmentPlan(patientId, input) {
   const file = (input.files || [])[0];
@@ -6477,8 +6378,6 @@ function renderTppDiscoveryBoard() {
       const bt = bHist.length ? bHist[bHist.length - 1].at : b.createdAt;
       return new Date(at) - new Date(bt);
     });
-    const options = TPP_ALL_DISCOVERY_STAGES.filter(s => s.key !== stage.key)
-      .map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('');
     const cardsHtml = cards.map(patient => {
       const hist = patient.discoveryHistory || [];
       const lastEntry = hist.length ? hist[hist.length - 1] : null;
@@ -6487,29 +6386,23 @@ function renderTppDiscoveryBoard() {
       const isLabs = stage.key === TPP_LABS_DRAWN_STAGE;
       const isAppt = !!TPP_APPT_FIELDS[stage.key];
       const ageHtml = (lastEntry && !isDeclined && !isUnplaced && !isLabs && !(isAppt && tppLabsWaiting(patient))) ? tppAgeInfo(lastEntry.at).html : '';
-      let actionHtml = '';
-      if (isPending) {
-        actionHtml = '<div class="tpp-decision-row" onclick="event.stopPropagation()">' + tppDecisionButtonsHtml(patient.id) + '</div>';
-      }
+      // Tiles are read-only summaries: name, the one fact that matters in this
+      // stage, payment, latest comment. Every action lives in the detail panel
+      // (click the tile) so the board stays scannable.
       return '' +
         '<div class="pep-card" draggable="true" ' +
           'ondragstart="tppCardDragStart(event,\'' + patient.id + '\')" ondragend="tppDragEnd()" ' +
-          'onclick="openTppDetail(\'' + patient.id + '\')">' +
+          'onclick="openTppDetail(\'' + patient.id + '\')" title="Open ' + escapeHtml(patient.name) + '">' +
           '<div class="pep-card-name">' + escapeHtml(patient.name) + tppDecisionTagHtml(patient) + '</div>' +
-          // Time moved is already covered by "N days in stage"; only show a note if there is one.
           (isUnplaced ? '<div class="pep-card-meta">Added ' + formatTime(patient.createdAt) + '</div>'
             : (lastEntry && lastEntry.comment ? '<div class="pep-card-meta">' + escapeHtml(lastEntry.comment) + '</div>' : '')) +
-          (filesCount ? '<div class="pep-card-files">' + filesCount + ' file' + (filesCount === 1 ? '' : 's') + ' attached</div>' : '') +
+          (TPP_LAB_ASK_STAGES.includes(stage.key) ? tppTileLabHtml(patient, isLabs) : '') +
+          (isAppt ? tppTileApptHtml(patient, stage.key) : '') +
+          (TPP_PLAN_UPLOAD_STAGES.includes(stage.key) ? tppTilePlanHtml(patient) : '') +
           (ageHtml ? '<div>' + ageHtml + '</div>' : '') +
-          (TPP_LAB_ASK_STAGES.includes(stage.key) ? tppLabLineHtml(patient.id, patient, null, isLabs) : '') +
-          (isAppt ? tppApptChipHtml(patient, stage.key) : '') +
-          tppPlanChipHtml(patient, stage.key) +
-          (tppShowsPayment(stage.key) ? tppPaymentRowHtml(patient) : tppPaymentTagHtml(patient)) +
-          tppCommentChipHtml(patient) +
-          actionHtml +
-          '<select class="pep-move-select" onclick="event.stopPropagation()" onchange="moveTppDiscoveryStage(\'' + patient.id + '\', this.value); this.selectedIndex = 0;">' +
-            '<option value="">Move to&hellip;</option>' + options +
-          '</select>' +
+          (filesCount ? '<div class="pep-card-files">' + filesCount + ' file' + (filesCount === 1 ? '' : 's') + '</div>' : '') +
+          tppPaymentTagHtml(patient) +
+          tppTileCommentHtml(patient) +
         '</div>';
     }).join('');
     if (isUnplaced) { trayCards = cardsHtml; trayCount = cards.length; return ''; }
@@ -6517,15 +6410,15 @@ function renderTppDiscoveryBoard() {
     return '' +
       '<div class="kanban-col pep-col' + (collapse ? ' pep-col-empty' : '') + (cards.length > TPP_COMPACT_THRESHOLD ? ' pep-col-compact' : '') + (stage.key === TPP_DECLINED_STAGE.key ? ' tpp-declined-col' : '') + (stage.key === TPP_ON_HOLD_STAGE.key ? ' tpp-onhold-col' : '') + '" title="' + escapeHtml(isHandoff ? 'Drop a patient here to send them to the Follow-Up board' : stage.label) + '" ' +
         'ondragover="tppColDragOver(event)" ondragleave="tppColDragLeave(event)" ondrop="tppColDrop(event,\'' + stage.key + '\')">' +
-        '<div class="kanban-col-header" style="flex-wrap:wrap">' +
+        '<div class="kanban-col-header">' +
           '<span class="kanban-col-name">' + stage.label + '</span>' +
           '<span class="kanban-col-count">' + cards.length + '</span>' +
         '</div>' +
         (stage.sub && !collapse ? '<div class="tpp-col-sub">' + escapeHtml(stage.sub) + '</div>' : '') +
-        '<div class="kanban-cards">' + (cardsHtml || (filtersActive && !collapse ? '<div style="text-align:center;padding:14px 8px;color:var(--text-muted);font-size:0.72rem">No matches</div>' : '')) + '</div>' +
+        '<div class="kanban-cards">' + (cardsHtml || (filtersActive && !collapse ? '<div style="text-align:center;padding:14px 8px;color:var(--text-muted);font-size:var(--fs-xs)">No matches</div>' : '')) + '</div>' +
       '</div>';
   }).join('');
-  container.innerHTML = html || '<div style="padding:40px 20px;color:var(--text-muted);font-size:0.85rem">No patients match these filters.</div>';
+  container.innerHTML = html || '<div style="padding:40px 20px;color:var(--text-muted);font-size:var(--fs-md)">No patients match these filters.</div>';
   tppRenderTray('tpp-disc-tray', 'New &ndash; drag to their starting stage', trayCards, trayCount);
 }
 function tppCardDragStart(e, patientId) {
@@ -6690,11 +6583,10 @@ function renderTppFollowupBoard() {
   const betweenHtml = between.map(patient => {
     const due = tppDueInfo(patient);
     return '' +
-      '<div class="pep-card' + (due.status === 'over' ? ' tpp-card-overdue' : '') + '" onclick="openTppDetail(\'' + patient.id + '\')">' +
+      '<div class="pep-card' + (due.status === 'over' ? ' tpp-card-overdue' : '') + '" onclick="openTppDetail(\'' + patient.id + '\')" title="Open ' + escapeHtml(patient.name) + '">' +
         '<div class="pep-card-name">' + escapeHtml(patient.name) + ' <span class="pep-order-badge">' + (patient.followupOrders || []).length + ' round' + ((patient.followupOrders || []).length === 1 ? '' : 's') + ' done</span></div>' +
         '<div><span class="tpp-due-badge ' + due.cls + '">' + due.label + '</span></div>' +
-        tppCommentChipHtml(patient) +
-        '<button class="tpp-handoff-btn" onclick="event.stopPropagation();startNewTppFollowupOrder(\'' + patient.id + '\')">Start next round &rarr;</button>' +
+        tppTileCommentHtml(patient) +
       '</div>';
   }).join('');
   const nextDueCol = '' +
@@ -6704,7 +6596,7 @@ function renderTppFollowupBoard() {
         '<span class="kanban-col-count">' + between.length + '</span>' +
         '<span class="tpp-col-hint">Between rounds</span>' +
       '</div>' +
-      '<div class="kanban-cards">' + (betweenHtml || '<div style="text-align:center;padding:14px 8px;color:var(--text-muted);font-size:0.72rem">Nobody waiting</div>') + '</div>' +
+      '<div class="kanban-cards">' + (betweenHtml || '<div style="text-align:center;padding:14px 8px;color:var(--text-muted);font-size:var(--fs-xs)">Nobody waiting</div>') + '</div>' +
     '</div>';
 
   // -- Round stage columns
@@ -6739,27 +6631,20 @@ function renderTppFollowupBoard() {
       const lastEntry = hist.length ? hist[hist.length - 1] : null;
       const filesCount = (order.files || []).length;
       const multiOrder = (patient.followupOrders || []).length > 1;
-      const options = TPP_FOLLOWUP_STAGES.filter(s => s.key !== order.stage)
-        .map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('');
       const ageHtml = (lastEntry && !order.completedAt && !isUnplaced && !tppRoundLabsWaiting(order)) ? tppAgeInfo(lastEntry.at).html : '';
       const showLab = !order.completedAt && (order.stage === TPP_FU_LAB_ASK || order.stage === TPP_FU_LABS_DRAWN);
       return '' +
         '<div class="pep-card' + (order.completedAt ? ' completed' : '') + '"' + (order.completedAt ? '' : ' draggable="true" ') +
           (order.completedAt ? '' : 'ondragstart="tppFuCardDragStart(event,\'' + patient.id + '\',\'' + order.id + '\')" ondragend="tppDragEnd()" ') +
-          'onclick="openTppDetail(\'' + patient.id + '\')">' +
+          'onclick="openTppDetail(\'' + patient.id + '\')" title="Open ' + escapeHtml(patient.name) + '">' +
           '<div class="pep-card-name">' + escapeHtml(patient.name) + (multiOrder ? ' <span class="pep-order-badge">Round ' + (orderIndex + 1) + '</span>' : '') +
             (order.completedAt ? '<span class="tpp-decision-tag accepted">Finished</span>' : '') + '</div>' +
           (isUnplaced ? '<div class="pep-card-meta">Added ' + formatTime(order.startedAt) + '</div>'
             : (lastEntry && lastEntry.comment ? '<div class="pep-card-meta">' + escapeHtml(lastEntry.comment) + '</div>' : '')) +
-          (showLab ? tppLabLineHtml(patient.id, order, order.id, order.stage === TPP_FU_LABS_DRAWN) : '') +
-          (filesCount ? '<div class="pep-card-files">' + filesCount + ' file' + (filesCount === 1 ? '' : 's') + ' attached</div>' : '') +
+          (showLab ? tppTileLabHtml(order, order.stage === TPP_FU_LABS_DRAWN) : '') +
           (ageHtml ? '<div>' + ageHtml + '</div>' : '') +
-          tppCommentChipHtml(patient) +
-          (order.completedAt ? '' : '<select class="pep-move-select" onclick="event.stopPropagation()" onchange="moveTppFollowupStage(\'' + patient.id + '\',\'' + order.id + '\', this.value); this.selectedIndex = 0;">' +
-            '<option value="">Move to&hellip;</option>' + options +
-          '</select>') +
-          (!order.completedAt && order.stage === 'adjustments'
-            ? '<button class="tpp-handoff-btn" onclick="event.stopPropagation();finishTppFollowupOrder(\'' + patient.id + '\',\'' + order.id + '\')">Finish round</button>' : '') +
+          (filesCount ? '<div class="pep-card-files">' + filesCount + ' file' + (filesCount === 1 ? '' : 's') + '</div>' : '') +
+          tppTileCommentHtml(patient) +
         '</div>';
     }).join('');
     if (isUnplaced) { fuTrayCards = cardsHtml; fuTrayCount = cards.length; return ''; }
@@ -6936,7 +6821,7 @@ function renderTppCommentsList() {
             '<button class="tpp-comment-del" title="Delete comment" onclick="deleteTppComment(\'' + patient.id + '\',\'' + c.id + '\')">&times;</button></div>' +
           '<div class="comment-entry-msg" style="white-space:pre-wrap">' + escapeHtml(c.message) + '</div>' +
         '</div>').join('') + '</div>'
-    : '<p style="color:var(--text-muted);font-size:0.8rem;margin:0 0 12px">No comments yet.</p>';
+    : '<p style="color:var(--text-muted);font-size:var(--fs-sm);margin:0 0 12px">No comments yet.</p>';
 }
 async function submitTppComment() {
   const patientId = tppCommentsPatientId;
@@ -7111,15 +6996,15 @@ function tppHistoryRowsHtml(patient, orderId, hist, stagesAll, kind) {
       '<div class="pep-history-row">' +
         '<div class="pep-history-summary" onclick="toggleHistoryRow(\'' + rowId + '\')">' +
           '<span><strong>' + escapeHtml(stageLabelFn(h.stage)) + '</strong> &mdash; ' + formatTime(h.at) + (h.editedAt ? ' <em style="color:var(--text-muted);font-style:italic">(edited)</em>' : '') + '</span>' +
-          '<span style="color:var(--text-muted)">' + (h.comment ? '💬 ' : '') + '▾</span>' +
+          '<span style="color:var(--text-muted)">' + (h.comment ? 'Note &middot; ' : '') + '▾</span>' +
         '</div>' +
         '<div class="pep-history-detail" id="' + rowId + '">' +
           '<div class="modal-field"><label class="modal-label">Stage</label><select class="modal-select" id="' + rowId + '-stage">' + stageOptions + '</select></div>' +
           '<div class="modal-field"><label class="modal-label">Timestamp</label><input type="datetime-local" class="modal-input" id="' + rowId + '-at" value="' + toLocalInputValue(h.at) + '"></div>' +
           '<div class="modal-field"><label class="modal-label">Comment / note</label><textarea class="modal-textarea" id="' + rowId + '-comment" style="min-height:50px">' + escapeHtml(h.comment || '') + '</textarea></div>' +
           '<div style="display:flex;justify-content:space-between;gap:8px">' +
-            '<button class="modal-cancel" style="border-color:var(--danger);color:var(--danger);padding:6px 14px;font-size:0.78rem" onclick="' + delFn + '(\'' + patient.id + '\',' + orderArg + '\'' + h.id + '\')">Delete entry</button>' +
-            '<button class="modal-submit" style="padding:6px 16px;font-size:0.78rem" onclick="' + editFn + '(\'' + patient.id + '\',' + orderArg + '\'' + h.id + '\',\'' + rowId + '\')">Save</button>' +
+            '<button class="modal-cancel" style="border-color:var(--danger);color:var(--danger);padding:6px 14px;font-size:var(--fs-sm)" onclick="' + delFn + '(\'' + patient.id + '\',' + orderArg + '\'' + h.id + '\')">Delete entry</button>' +
+            '<button class="modal-submit" style="padding:6px 16px;font-size:var(--fs-sm)" onclick="' + editFn + '(\'' + patient.id + '\',' + orderArg + '\'' + h.id + '\',\'' + rowId + '\')">Save</button>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -7140,7 +7025,7 @@ function renderTppDiscoverySection(patient) {
         '<div class="modal-field"><label class="modal-label">Stage</label><select class="modal-select" id="' + addRowId + '-stage">' + stageOptionsAll + '</select></div>' +
         '<div class="modal-field"><label class="modal-label">Timestamp</label><input type="datetime-local" class="modal-input" id="' + addRowId + '-at" value="' + toLocalInputValue(new Date().toISOString()) + '"></div>' +
         '<div class="modal-field"><label class="modal-label">Comment / note</label><textarea class="modal-textarea" id="' + addRowId + '-comment" style="min-height:50px" placeholder="Optional note"></textarea></div>' +
-        '<button class="modal-submit" style="align-self:flex-end;padding:6px 16px;font-size:0.78rem" onclick="addTppHistoryEntry(\'' + patient.id + '\',\'' + addRowId + '\')">Add to timeline</button>' +
+        '<button class="modal-submit" style="align-self:flex-end;padding:6px 16px;font-size:var(--fs-sm)" onclick="addTppHistoryEntry(\'' + patient.id + '\',\'' + addRowId + '\')">Add to timeline</button>' +
       '</div>' +
     '</div>';
   const files = patient.discoveryFiles || [];
@@ -7150,7 +7035,7 @@ function renderTppDiscoverySection(patient) {
       '<button class="modal-close" onclick="removeTppFile(\'' + patient.id + '\',null,\'' + f.id + '\')" title="Remove file">' +
         '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
       '</button>' +
-    '</div>').join('') : '<p style="color:var(--text-muted);font-size:0.8rem">No files yet.</p>';
+    '</div>').join('') : '<p style="color:var(--text-muted);font-size:var(--fs-sm)">No files yet.</p>';
   const isPending = tppDiscStage(patient) === TPP_DECISION_STAGE;
   const keyInfoHtml = tppKeyInfoHtml(patient);
   const moveOptions = TPP_ALL_DISCOVERY_STAGES.filter(s => s.key !== tppDiscStage(patient))
@@ -7159,25 +7044,26 @@ function renderTppDiscoverySection(patient) {
     '<div class="pep-order-block" style="border-top:none;padding-top:0;margin-top:0">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
         '<span class="pep-section-title">Discovery &rarr; Treatment Plan</span>' +
-        '<select class="modal-select" style="width:auto;font-size:0.78rem;padding:6px 10px" onchange="moveTppDiscoveryStage(\'' + patient.id + '\', this.value); this.selectedIndex=0;">' +
+        '<select class="modal-select" style="width:auto;font-size:var(--fs-sm);padding:6px 10px" onchange="moveTppDiscoveryStage(\'' + patient.id + '\', this.value); this.selectedIndex=0;">' +
           '<option value="">Move to&hellip;</option>' + moveOptions + '</select>' +
       '</div>' +
-      '<p style="font-size:0.78rem;color:var(--text-muted);margin:8px 0">Current stage: <strong style="color:var(--text)">' + escapeHtml(tppStageLabel(tppDiscStage(patient))) + '</strong>' +
+      '<p style="font-size:var(--fs-sm);color:var(--text-muted);margin:8px 0">Current stage: <strong style="color:var(--text)">' + escapeHtml(tppStageLabel(tppDiscStage(patient))) + '</strong>' +
         ' ' + tppDecisionTagHtml(patient) +
       '</p>' +
+      // The decision is the whole point of this stage, so it goes first.
+      (isPending ? '<div class="tpp-decision-block"><div class="tpp-decision-q">Did they accept the treatment plan?</div><div class="tpp-decision-row">' + tppDecisionButtonsHtml(patient.id) + '</div></div>' : '') +
       keyInfoHtml +
-      (isPending ? '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">Awaiting acceptance</div><div class="tpp-decision-row">' + tppDecisionButtonsHtml(patient.id) + '</div>' : '') +
       '<div class="pep-section-title" style="margin-top:12px">History</div>' +
       historyHtml + addHistoryHtml +
       '<div class="pep-section-title" style="margin-top:12px">Files</div>' +
       filesHtml +
       '<div class="pep-file-drop" ondragover="pepFileDragOver(event)" ondragleave="pepFileDragLeave(event)" ondrop="tppDiscoveryFileDrop(event,\'' + patient.id + '\')">' +
         '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
-          '<select class="modal-select" id="tpp-file-cat-' + patient.id + '" style="width:auto;font-size:0.78rem;padding:6px 10px">' +
+          '<select class="modal-select" id="tpp-file-cat-' + patient.id + '" style="width:auto;font-size:var(--fs-sm);padding:6px 10px">' +
             '<option value="labs">Labs</option><option value="deep_dive_notes">Deep Dive Notes</option><option value="treatment_plan">Treatment Plan</option><option value="other">Other</option>' +
           '</select>' +
-          '<label class="modal-cancel" style="padding:6px 14px;font-size:0.78rem;cursor:pointer">Choose File<input type="file" multiple style="display:none" onchange="uploadTppDiscoveryFile(\'' + patient.id + '\', this)"></label>' +
-          '<span style="font-size:0.72rem;color:var(--text-muted)">or drop file(s) here</span>' +
+          '<label class="modal-cancel" style="padding:6px 14px;font-size:var(--fs-sm);cursor:pointer">Choose File<input type="file" multiple style="display:none" onchange="uploadTppDiscoveryFile(\'' + patient.id + '\', this)"></label>' +
+          '<span style="font-size:var(--fs-xs);color:var(--text-muted)">or drop file(s) here</span>' +
         '</div>' +
       '</div>' +
     '</div>';
@@ -7197,7 +7083,7 @@ function renderTppFollowupOrderBlock(patient, order, orderIndex, isActive) {
         '<div class="modal-field"><label class="modal-label">Stage</label><select class="modal-select" id="' + addRowId + '-stage">' + stageOptionsAll + '</select></div>' +
         '<div class="modal-field"><label class="modal-label">Timestamp</label><input type="datetime-local" class="modal-input" id="' + addRowId + '-at" value="' + toLocalInputValue(new Date().toISOString()) + '"></div>' +
         '<div class="modal-field"><label class="modal-label">Comment / note</label><textarea class="modal-textarea" id="' + addRowId + '-comment" style="min-height:50px" placeholder="Optional note"></textarea></div>' +
-        '<button class="modal-submit" style="align-self:flex-end;padding:6px 16px;font-size:0.78rem" onclick="addTppFollowupHistoryEntry(\'' + patient.id + '\',\'' + order.id + '\',\'' + addRowId + '\')">Add to timeline</button>' +
+        '<button class="modal-submit" style="align-self:flex-end;padding:6px 16px;font-size:var(--fs-sm)" onclick="addTppFollowupHistoryEntry(\'' + patient.id + '\',\'' + order.id + '\',\'' + addRowId + '\')">Add to timeline</button>' +
       '</div>' +
     '</div>';
   const files = order.files || [];
@@ -7207,17 +7093,17 @@ function renderTppFollowupOrderBlock(patient, order, orderIndex, isActive) {
       '<button class="modal-close" onclick="removeTppFile(\'' + patient.id + '\',\'' + order.id + '\',\'' + f.id + '\')" title="Remove file">' +
         '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
       '</button>' +
-    '</div>').join('') : '<p style="color:var(--text-muted);font-size:0.8rem">No files yet.</p>';
+    '</div>').join('') : '<p style="color:var(--text-muted);font-size:var(--fs-sm)">No files yet.</p>';
   const moveOptions = isActive ? TPP_FOLLOWUP_STAGES.filter(s => s.key !== order.stage)
     .map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('') : '';
   return '' +
     '<div class="pep-order-block">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
         '<span class="pep-section-title">Round ' + (orderIndex + 1) + (order.completedAt ? ' &mdash; Finished' : ' &mdash; In Progress') + '</span>' +
-        (isActive ? '<select class="modal-select" style="width:auto;font-size:0.78rem;padding:6px 10px" onchange="moveTppFollowupStage(\'' + patient.id + '\',\'' + order.id + '\', this.value); this.selectedIndex=0;">' +
+        (isActive ? '<select class="modal-select" style="width:auto;font-size:var(--fs-sm);padding:6px 10px" onchange="moveTppFollowupStage(\'' + patient.id + '\',\'' + order.id + '\', this.value); this.selectedIndex=0;">' +
           '<option value="">Move to&hellip;</option>' + moveOptions + '</select>' : '') +
       '</div>' +
-      '<p style="font-size:0.78rem;color:var(--text-muted);margin:8px 0">Current stage: <strong style="color:var(--text)">' + escapeHtml(tppFollowupStageLabel(order.stage)) + '</strong></p>' +
+      '<p style="font-size:var(--fs-sm);color:var(--text-muted);margin:8px 0">Current stage: <strong style="color:var(--text)">' + escapeHtml(tppFollowupStageLabel(order.stage)) + '</strong></p>' +
       tppRoundLabRowsHtml(patient, order) +
       '<div class="pep-section-title">History</div>' +
       historyHtml + addHistoryHtml +
@@ -7225,14 +7111,14 @@ function renderTppFollowupOrderBlock(patient, order, orderIndex, isActive) {
       filesHtml +
       '<div class="pep-file-drop" ondragover="pepFileDragOver(event)" ondragleave="pepFileDragLeave(event)" ondrop="tppFollowupFileDrop(event,\'' + patient.id + '\',\'' + order.id + '\')">' +
         '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
-          '<select class="modal-select" id="tppfu-file-cat-' + order.id + '" style="width:auto;font-size:0.78rem;padding:6px 10px">' +
+          '<select class="modal-select" id="tppfu-file-cat-' + order.id + '" style="width:auto;font-size:var(--fs-sm);padding:6px 10px">' +
             '<option value="labs">Labs</option><option value="treatment_plan">Treatment Plan</option><option value="other">Other</option>' +
           '</select>' +
-          '<label class="modal-cancel" style="padding:6px 14px;font-size:0.78rem;cursor:pointer">Choose File<input type="file" multiple style="display:none" onchange="uploadTppFollowupFile(\'' + patient.id + '\',\'' + order.id + '\', this)"></label>' +
-          '<span style="font-size:0.72rem;color:var(--text-muted)">or drop file(s) here</span>' +
+          '<label class="modal-cancel" style="padding:6px 14px;font-size:var(--fs-sm);cursor:pointer">Choose File<input type="file" multiple style="display:none" onchange="uploadTppFollowupFile(\'' + patient.id + '\',\'' + order.id + '\', this)"></label>' +
+          '<span style="font-size:var(--fs-xs);color:var(--text-muted)">or drop file(s) here</span>' +
         '</div>' +
       '</div>' +
-      (isActive && !order.completedAt ? '<button class="modal-submit" style="width:100%;margin-top:14px" onclick="finishTppFollowupOrder(\'' + patient.id + '\',\'' + order.id + '\')">✓ Finish Round</button>' : '') +
+      (isActive && !order.completedAt ? '<button class="modal-submit" style="width:100%;margin-top:14px" onclick="finishTppFollowupOrder(\'' + patient.id + '\',\'' + order.id + '\')">Finish Round</button>' : '') +
     '</div>';
 }
 // Once a patient is in Follow-Up: when their next round is due.
@@ -7244,12 +7130,12 @@ function renderTppMetaRow(patient) {
   const active = tppActiveRound(patient);
   let dueHelp = '';
   if (dueIsDone) {
-    dueHelp = '<span style="font-size:0.7rem;color:var(--text-muted)">Marked \u201cno more rounds\u201d \u2014 pick a date to bring them back</span>';
+    dueHelp = '<span style="font-size:var(--fs-xs);color:var(--text-muted)">Marked \u201cno more rounds\u201d \u2014 pick a date to bring them back</span>';
   } else if (!active) {
     const info = tppDueInfo(patient);
     dueHelp = '<span class="tpp-due-badge ' + info.cls + '" style="margin-top:4px;align-self:flex-start">' + info.label + '</span>';
   } else {
-    dueHelp = '<span style="font-size:0.7rem;color:var(--text-muted)">Round in progress \u2014 set when you finish it</span>';
+    dueHelp = '<span style="font-size:var(--fs-xs);color:var(--text-muted)">Round in progress \u2014 set when you finish it</span>';
   }
   return '' +
     '<div class="modal-row" style="align-items:flex-start;flex-wrap:wrap">' +
@@ -7258,7 +7144,7 @@ function renderTppMetaRow(patient) {
         '<input type="date" class="modal-input" id="tpp-detail-due" value="' + escapeHtml(dueVal) + '">' +
         dueHelp +
       '</div>' +
-      '<button class="modal-submit" style="padding:9px 16px;font-size:0.78rem;margin-top:21px" onclick="saveTppMetaFromDetail(\'' + patient.id + '\')">Save</button>' +
+      '<button class="modal-submit" style="padding:9px 16px;font-size:var(--fs-sm);margin-top:21px" onclick="saveTppMetaFromDetail(\'' + patient.id + '\')">Save</button>' +
     '</div>';
 }
 function saveTppMetaFromDetail(patientId) {
@@ -7281,19 +7167,19 @@ function renderTppDetail(patientId) {
   const canStartNew = orders.length > 0 && !!orders[orders.length - 1].completedAt;
   const followupHtml = orders.length ? orders.slice().reverse()
     .map(o => renderTppFollowupOrderBlock(patient, o, orders.indexOf(o), activeOrder && o.id === activeOrder.id))
-    .join('') : '<p style="color:var(--text-muted);font-size:0.8rem">Not in the Follow-Up pipeline yet.</p>';
+    .join('') : '<p style="color:var(--text-muted);font-size:var(--fs-sm)">Not in the Follow-Up pipeline yet.</p>';
   const hasDiscovery = !!patient.discoveryStage;
   body.innerHTML = '' +
     '<div class="modal-field">' +
       '<label class="modal-label">Patient name</label>' +
       '<div style="display:flex;gap:8px">' +
         '<input type="text" class="modal-input" id="tpp-detail-name" value="' + escapeHtml(patient.name) + '">' +
-        '<button class="modal-submit" style="padding:8px 16px;font-size:0.78rem" onclick="saveTppName(\'' + patient.id + '\')">Save</button>' +
+        '<button class="modal-submit" style="padding:8px 16px;font-size:var(--fs-sm)" onclick="saveTppName(\'' + patient.id + '\')">Save</button>' +
       '</div>' +
     '</div>' +
     renderTppMetaRow(patient) +
     '<div class="modal-field">' +
-      '<button class="modal-cancel" style="align-self:flex-start;padding:7px 14px;font-size:0.78rem" onclick="openTppComments(\'' + patient.id + '\')">' +
+      '<button class="modal-cancel" style="align-self:flex-start;padding:7px 14px;font-size:var(--fs-sm)" onclick="openTppComments(\'' + patient.id + '\')">' +
         ((patient.comments || []).length ? 'Comments (' + patient.comments.length + ')' : 'Add a comment') + '</button>' +
       ((patient.comments || []).length ? '<div class="tpp-card-comment" style="-webkit-line-clamp:3">' + (patient.comments[patient.comments.length - 1].from ? '<strong>' + escapeHtml(patient.comments[patient.comments.length - 1].from) + ':</strong> ' : '') + escapeHtml(patient.comments[patient.comments.length - 1].message) + '</div>' : '') +
     '</div>' +
