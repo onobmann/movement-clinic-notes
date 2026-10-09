@@ -2228,6 +2228,63 @@
     border-radius: 6px; padding: 3px 10px; font-family: 'Inter', sans-serif; font-size: 0.78rem; font-weight: 700; cursor: pointer;
   }
   #toast .toast-action:hover { background: rgba(255,255,255,0.1); }
+  /* -- Pipeline: plain look --------------------------------------------------
+     Fewer boxes and colors: gold marks only the current step, amber only
+     something late, everything else is plain text in the site's grays. */
+  .tpp-board .pep-card-age { background: none !important; border: none !important; padding: 0; font-weight: 500; font-size: 0.7rem; color: var(--text-muted); }
+  .tpp-board .pep-card-age.age-warn, .tpp-board .pep-card-age.age-alert { color: var(--warn-text); font-weight: 600; }
+  .tpp-col-sub { background: none; color: var(--text-muted); font-weight: 500; font-style: italic; border-bottom: 1px solid var(--border); }
+  .tpp-board .tpp-labs-ticker { border: none; background: none; padding: 0; margin-top: 5px; border-radius: 0; }
+  .tpp-board .tpp-labs-ticker:hover .tpp-labs-line { text-decoration: underline; }
+  .tpp-board .tpp-labs-line { font-size: 0.74rem; font-weight: 600; color: var(--text); }
+  .tpp-board .tpp-labs-sub { font-size: 0.68rem; }
+  .tpp-board .tpp-labs-bar { height: 3px; background: var(--border); }
+  .tpp-board .tpp-labs-bar span { background: var(--text-muted); }
+  .tpp-board .tpp-labs-ready { background: none; border: none; }
+  .tpp-board .tpp-labs-ready .tpp-labs-line { color: var(--text); }
+  .tpp-board .tpp-labs-ready .tpp-labs-bar span { background: var(--accent); }
+  .tpp-board .tpp-appt-past .tpp-labs-line, .tpp-board .tpp-appt-past .tpp-labs-sub { color: var(--warn-text); }
+  .tpp-board .tpp-labs-missing, .tpp-board .tpp-lab-missing {
+    border: none; background: none; padding: 0; margin-top: 5px; font-size: 0.7rem; font-weight: 500;
+    color: var(--text-muted); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; display: inline-block;
+  }
+  .tpp-board .tpp-labs-missing:hover, .tpp-board .tpp-lab-missing:hover { color: var(--text); }
+  .tpp-board .tpp-lab-badge:not(.tpp-lab-missing) {
+    border: none; background: none; padding: 0; margin-top: 5px; border-radius: 0;
+    font-size: 0.7rem; font-weight: 500; color: var(--text-muted);
+  }
+  .tpp-board .tpp-lab-badge:not(.tpp-lab-missing):hover { color: var(--text); text-decoration: underline; }
+  .tpp-board .tpp-plan-chip {
+    border: none; background: none; padding: 0; border-radius: 0; margin-top: 5px; display: inline-block;
+    font-size: 0.7rem; font-weight: 600; color: var(--text); text-decoration: underline; text-underline-offset: 2px;
+  }
+  .tpp-board .tpp-plan-add { font-weight: 500; color: var(--text-muted); }
+  .tpp-board .tpp-plan-chip:hover { color: var(--accent-dark); background: none; }
+  .tpp-pay-row { gap: 0; display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; max-width: 100%; }
+  .tpp-pay-btn { border: none !important; border-radius: 0; background: var(--surface) !important; color: var(--text-muted) !important; font-weight: 500; padding: 3px 8px; }
+  .tpp-pay-btn + .tpp-pay-btn { border-left: 1px solid var(--border) !important; }
+  .tpp-pay-btn:hover { color: var(--text) !important; }
+  .tpp-pay-btn.active { background: var(--surface2) !important; color: var(--text) !important; font-weight: 700; }
+  .tpp-comment-btn { border: none; background: none; padding: 0; margin-top: 6px; border-radius: 0; font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
+  .tpp-comment-btn:hover { background: none; }
+  .tpp-decision-btn { border-radius: 6px; font-weight: 600; }
+  .tpp-hold-btn { color: var(--text) !important; border-color: var(--border) !important; }
+  /* Details card */
+  .tpp-ki { border-radius: 8px; }
+  .tpp-ki-head { background: none; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); padding: 10px 14px 6px; border-bottom: 1px solid var(--border); }
+  .tpp-ki-row { padding: 9px 14px; }
+  .tpp-ki-row.current { background: none; box-shadow: inset 3px 0 0 var(--accent); }
+  .tpp-ki-label { font-size: 0.82rem; font-weight: 600; }
+  .tpp-ki-row.current .tpp-ki-label { font-weight: 700; }
+  .tpp-ki-input { font-weight: 500; border-radius: 6px; }
+  .tpp-ki-seg { border-radius: 6px; }
+  .tpp-ki-seg-btn { font-weight: 500; }
+  .tpp-ki-seg-btn.active, .tpp-ki-seg-btn.tpp-ki-pay-plan.active { background: var(--surface2); color: var(--text); font-weight: 700; }
+  .tpp-ki-file { color: var(--text); text-decoration: underline; text-underline-offset: 2px; font-weight: 600; }
+  .tpp-ki-link { font-size: 0.8rem; font-weight: 500; text-underline-offset: 2px; }
+  .tpp-ki-good { color: var(--text); font-weight: 600; }
+  /* Each text link on a tile gets its own line */
+  .tpp-board .tpp-lab-badge, .tpp-board .tpp-labs-missing, .tpp-board .tpp-comment-btn, .tpp-board .tpp-plan-chip { display: block; width: fit-content; text-align: left; }
 </style>
 </head>
 <body>
@@ -5558,16 +5615,16 @@ function tppDecisionTagHtml(patient) {
   return '';
 }
 function tppDecisionButtonsHtml(patientId) {
-  return '<button class="tpp-decision-btn tpp-accept-btn" onclick="acceptTppTreatmentPlan(\'' + patientId + '\')">&#10003; Accepted</button>' +
-    '<button class="tpp-decision-btn tpp-decline-btn" onclick="declineTppTreatmentPlan(\'' + patientId + '\')">&#10007; Declined</button>' +
-    '<button class="tpp-decision-btn tpp-hold-btn" onclick="holdTppTreatmentPlan(\'' + patientId + '\')">&#10073;&#10073; On Hold</button>';
+  return '<button class="tpp-decision-btn tpp-accept-btn" onclick="acceptTppTreatmentPlan(\'' + patientId + '\')">Accepted</button>' +
+    '<button class="tpp-decision-btn tpp-decline-btn" onclick="declineTppTreatmentPlan(\'' + patientId + '\')">Declined</button>' +
+    '<button class="tpp-decision-btn tpp-hold-btn" onclick="holdTppTreatmentPlan(\'' + patientId + '\')">On hold</button>';
 }
 // Latest comment + a button to open the full thread. Shown on every tile.
 function tppCommentChipHtml(patient) {
   const cs = patient.comments || [];
   const last = cs[cs.length - 1];
   return (last ? '<div class="tpp-card-comment" title="' + escapeHtml(last.message) + '">' + (last.from ? '<strong>' + escapeHtml(last.from) + ':</strong> ' : '') + escapeHtml(last.message) + '</div>' : '') +
-    '<button class="tpp-comment-btn" onclick="event.stopPropagation();openTppComments(\'' + patient.id + '\')">&#128172; ' +
+    '<button class="tpp-comment-btn" onclick="event.stopPropagation();openTppComments(\'' + patient.id + '\')">' +
       (cs.length ? cs.length + ' comment' + (cs.length === 1 ? '' : 's') : 'Comment') + '</button>';
 }
 function tppRenderTray(id, title, cardsHtml, count) {
@@ -5689,9 +5746,9 @@ function tppLabsDrawnInfo(patient) {
 function tppLabsTickerHtml(patient) {
   const info = tppLabsDrawnInfo(patient);
   const click = 'onclick="event.stopPropagation(); editTppLabsDrawnDate(\'' + patient.id + '\')"';
-  if (!info) return '<button class="tpp-labs-ticker tpp-labs-missing" ' + click + ' title="Set the draw date">&#128197; Set draw date</button>';
+  if (!info) return '<button class="tpp-labs-ticker tpp-labs-missing" ' + click + ' title="Set the draw date">Set draw date</button>';
   return '<button class="tpp-labs-ticker' + (info.ready ? ' tpp-labs-ready' : '') + '" ' + click + ' title="Drawn ' + info.drawnLabel + ' &middot; click to change">' +
-    '<span class="tpp-labs-line">' + (info.ready ? '&#10003; Results should be back' : 'Day ' + info.days + ' of ' + TPP_LABS_RESULT_DAYS) + '</span>' +
+    '<span class="tpp-labs-line">' + (info.ready ? 'Results should be back' : 'Day ' + info.days + ' of ' + TPP_LABS_RESULT_DAYS) + '</span>' +
     '<span class="tpp-labs-sub">Drawn ' + info.drawnLabel + (info.ready ? '' : ' &middot; back ~' + info.backLabel) + '</span>' +
     '<span class="tpp-labs-bar"><span style="width:' + info.pct + '%"></span></span>' +
   '</button>';
@@ -5775,9 +5832,9 @@ function tppApptChipHtml(patient, stageKey) {
   if (!cfg) return '';
   const info = tppApptInfo(patient[cfg.field]);
   const click = 'onclick="event.stopPropagation(); editTppApptDate(\'' + patient.id + '\',\'' + stageKey + '\')"';
-  if (!info) return '<button class="tpp-labs-ticker tpp-labs-missing" ' + click + '>&#128197; Set ' + cfg.short.toLowerCase() + ' date</button>';
+  if (!info) return '<button class="tpp-labs-ticker tpp-labs-missing" ' + click + '>Set ' + cfg.short.toLowerCase() + ' date</button>';
   return '<button class="tpp-labs-ticker tpp-appt' + (info.past ? ' tpp-appt-past' : info.today ? ' tpp-labs-ready' : '') + '" ' + click + ' title="Click to change">' +
-    '<span class="tpp-labs-line">&#128197; ' + cfg.short + ': ' + escapeHtml(info.label) + '</span>' +
+    '<span class="tpp-labs-line">' + cfg.short + ': ' + escapeHtml(info.label) + '</span>' +
     '<span class="tpp-labs-sub">' + (info.past ? 'Was ' + info.when + ' \u2014 move them along?' : info.when.charAt(0).toUpperCase() + info.when.slice(1)) + '</span>' +
   '</button>';
 }
@@ -5812,8 +5869,8 @@ function tppPaymentRowHtml(patient) {
   const btn = (key, icon) => '<button class="tpp-pay-btn tpp-pay-' + key + (cur === key ? ' active' : '') + '" ' +
     'onclick="event.stopPropagation(); setTppPayment(\'' + patient.id + '\',\'' + key + '\')" ' +
     'title="' + TPP_PAYMENT_LABELS[key] + (cur === key ? ' (click to clear)' : '') + '">' +
-    icon + ' ' + TPP_PAYMENT_SHORT[key] + '</button>';
-  return '<div class="tpp-pay-row" onclick="event.stopPropagation()">' + btn('paid', '&#10003;') + btn('plan', '&#9719;') + '</div>';
+    TPP_PAYMENT_SHORT[key] + '</button>';
+  return '<div class="tpp-pay-row" onclick="event.stopPropagation()">' + btn('paid') + btn('plan') + '</div>';
 }
 // Clicking the active status again clears it.
 async function setTppPayment(patientId, key) {
@@ -5841,8 +5898,8 @@ function tppShowsLab(stageKey) {
 function tppLabBadgeHtml(patient, stageKey) {
   const lab = TPP_LABS[patient.labProvider];
   const click = 'onclick="event.stopPropagation(); editTppLab(\'' + patient.id + '\')"';
-  if (lab) return '<button class="tpp-lab-badge tpp-lab-' + patient.labProvider + '" ' + click + ' title="Click to change lab">&#129514; ' + lab + '</button>';
-  if (TPP_LAB_ASK_STAGES.includes(stageKey)) return '<button class="tpp-lab-badge tpp-lab-missing" ' + click + '>&#129514; Set lab</button>';
+  if (lab) return '<button class="tpp-lab-badge tpp-lab-' + patient.labProvider + '" ' + click + ' title="Click to change lab">Lab: ' + lab + '</button>';
+  if (TPP_LAB_ASK_STAGES.includes(stageKey)) return '<button class="tpp-lab-badge tpp-lab-missing" ' + click + '>Set lab</button>';
   return '';
 }
 // Lab picker popup. Resolves 'labcorp' | 'evexia', { skip: true }, or null if closed.
@@ -5889,7 +5946,7 @@ function tppKeyInfoHtml(patient) {
   const row = (label, stageKeys, controlHtml, statusHtml) => {
     const current = stageKeys.includes(st);
     return '<div class="tpp-ki-row' + (current ? ' current' : '') + '">' +
-      '<div class="tpp-ki-label">' + label + (current ? '<span class="tpp-ki-now">Now</span>' : '') + '</div>' +
+      '<div class="tpp-ki-label">' + label + '</div>' +
       '<div class="tpp-ki-value">' + controlHtml + (statusHtml ? '<div class="tpp-ki-status">' + statusHtml + '</div>' : '') + '</div>' +
     '</div>';
   };
@@ -5899,40 +5956,40 @@ function tppKeyInfoHtml(patient) {
     const info = tppApptInfo(v);
     const input = '<input type="datetime-local" class="tpp-ki-input" value="' + escapeHtml(v.length === 10 ? v + 'T00:00' : v) + '" ' +
       'onchange="editTppApptDate(\'' + id + '\',\'' + stageKey + '\', this.value)">';
-    const status = info ? (info.past ? '<span class="tpp-ki-warn">Was ' + info.when + '</span>' : info.when.charAt(0).toUpperCase() + info.when.slice(1)) : 'Not scheduled yet';
+    const status = info ? (info.past ? '<span class="tpp-ki-warn">Was ' + info.when + '</span>' : info.when.charAt(0).toUpperCase() + info.when.slice(1)) : '';
     return row(cfg.label, [stageKey], input, status);
   };
   // Lab: two big choices instead of a dropdown
   const labBtns = '<div class="tpp-ki-seg">' + Object.keys(TPP_LABS).map(k =>
     '<button class="tpp-ki-seg-btn' + (patient.labProvider === k ? ' active' : '') + '" onclick="editTppLab(\'' + id + '\',\'' + (patient.labProvider === k ? '' : k) + '\')">' + TPP_LABS[k] + '</button>'
   ).join('') + '</div>';
-  const labStatus = TPP_LABS[patient.labProvider] ? '' : 'Not chosen yet';
+  const labStatus = '';
   // Labs drawn
   const li = tppLabsDrawnInfo(patient);
   const drawInput = '<input type="date" class="tpp-ki-input" max="' + tppTodayStr() + '" value="' + escapeHtml(patient.labsDrawnAt || '') + '" ' +
     'onchange="if (this.value) editTppLabsDrawnDate(\'' + id + '\', this.value)">';
-  const drawStatus = li ? (li.ready ? '<span class="tpp-ki-good">&#10003; Results should be back</span>' : 'Day ' + li.days + ' of ' + TPP_LABS_RESULT_DAYS + ' &middot; results ~' + li.backLabel) : 'Not drawn yet';
+  const drawStatus = li ? (li.ready ? '<span class="tpp-ki-good">Results should be back</span>' : 'Day ' + li.days + ' of ' + TPP_LABS_RESULT_DAYS + ' &middot; results ~' + li.backLabel) : '';
   // Treatment plan
   const plan = tppPlanFile(patient);
   const fileInput = '<input type="file" accept=".pdf,application/pdf" style="display:none" onchange="uploadTppTreatmentPlan(\'' + id + '\', this)">';
   const planCtl = plan
-    ? '<div class="tpp-ki-inline"><a class="tpp-ki-file" href="' + WORKER_URL + '/tpp/files/' + plan.id + '" target="_blank" rel="noopener">&#128196; ' + escapeHtml(plan.name) + '</a>' +
+    ? '<div class="tpp-ki-inline"><a class="tpp-ki-file" href="' + WORKER_URL + '/tpp/files/' + plan.id + '" target="_blank" rel="noopener">' + escapeHtml(plan.name) + '</a>' +
         '<label class="tpp-ki-link">Replace' + fileInput + '</label></div>'
-    : '<label class="tpp-ki-btn">&#43; Attach PDF' + fileInput + '</label>';
+    : '<label class="tpp-ki-link">Attach PDF' + fileInput + '</label>';
   // Payment
   const pay = patient.payment === 'paid' || patient.payment === 'plan' ? patient.payment : '';
   const payBtns = '<div class="tpp-ki-seg">' + ['paid', 'plan'].map(k =>
     '<button class="tpp-ki-seg-btn tpp-ki-pay-' + k + (pay === k ? ' active' : '') + '" onclick="setTppPayment(\'' + id + '\',\'' + k + '\')">' +
-      (k === 'paid' ? '&#10003; Paid' : 'Payment plan') + '</button>'
+      (k === 'paid' ? 'Paid' : 'Payment plan') + '</button>'
   ).join('') + '</div>';
   return '<div class="tpp-ki">' +
-    '<div class="tpp-ki-head">Patient details</div>' +
+    '<div class="tpp-ki-head">Details</div>' +
     apptRow('scheduled_for_discovery') +
     row('Lab', ['labs_ordered'], labBtns, labStatus) +
     row('Labs drawn', [TPP_LABS_DRAWN_STAGE], drawInput, drawStatus) +
     apptRow('deep_dive_scheduled') +
-    row('Treatment plan', ['deep_dive_completed', TPP_DECISION_STAGE], planCtl, plan ? '' : 'No PDF attached') +
-    row('Payment', ['needs_to_pay', 'paid_awaiting_scheduling'], payBtns, pay ? '' : 'Not set') +
+    row('Treatment plan', ['deep_dive_completed', TPP_DECISION_STAGE], planCtl, '') +
+    row('Payment', ['needs_to_pay', 'paid_awaiting_scheduling'], payBtns, '') +
   '</div>';
 }
 // Latest attached treatment plan (category "treatment_plan"), if any.
@@ -5945,10 +6002,10 @@ function tppPlanChipHtml(patient, stageKey) {
   const at = order.indexOf(stageKey);
   const f = tppPlanFile(patient);
   if (f && at >= order.indexOf(TPP_PLAN_LINK_FROM)) {
-    return '<a class="tpp-plan-chip" href="' + WORKER_URL + '/tpp/files/' + f.id + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="' + escapeHtml(f.name) + '">&#128196; Treatment plan</a>';
+    return '<a class="tpp-plan-chip" href="' + WORKER_URL + '/tpp/files/' + f.id + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="' + escapeHtml(f.name) + '">Treatment plan (PDF)</a>';
   }
   if (!f && TPP_PLAN_UPLOAD_STAGES.includes(stageKey)) {
-    return '<label class="tpp-plan-chip tpp-plan-add" onclick="event.stopPropagation()">&#43; Attach treatment plan (PDF)' +
+    return '<label class="tpp-plan-chip tpp-plan-add" onclick="event.stopPropagation()">Attach treatment plan' +
       '<input type="file" accept=".pdf,application/pdf" style="display:none" onchange="uploadTppTreatmentPlan(\'' + patient.id + '\', this)"></label>';
   }
   return '';
@@ -7062,7 +7119,7 @@ function renderTppDetail(patientId) {
     '</div>' +
     renderTppMetaRow(patient) +
     '<div class="modal-field">' +
-      '<button class="modal-cancel" style="align-self:flex-start;padding:7px 14px;font-size:0.78rem" onclick="openTppComments(\'' + patient.id + '\')">&#128172; ' +
+      '<button class="modal-cancel" style="align-self:flex-start;padding:7px 14px;font-size:0.78rem" onclick="openTppComments(\'' + patient.id + '\')">' +
         ((patient.comments || []).length ? 'Comments (' + patient.comments.length + ')' : 'Add a comment') + '</button>' +
       ((patient.comments || []).length ? '<div class="tpp-card-comment" style="-webkit-line-clamp:3">' + (patient.comments[patient.comments.length - 1].from ? '<strong>' + escapeHtml(patient.comments[patient.comments.length - 1].from) + ':</strong> ' : '') + escapeHtml(patient.comments[patient.comments.length - 1].message) + '</div>' : '') +
     '</div>' +
