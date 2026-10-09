@@ -2121,7 +2121,6 @@
   }
   .tpp-lab-labcorp { border-color: #4a7fc1; color: #4a7fc1; }
   .tpp-lab-evexia { border-color: #3d9a74; color: #3d9a74; }
-  .tpp-lab-both { border-color: var(--accent); color: var(--accent-dark); }
   .tpp-lab-missing { border-style: dashed; color: var(--warn-text); border-color: var(--warn-border); font-weight: 600; }
   .tpp-lab-filter {
     font-size: 0.78rem; padding: 3px 8px; border-radius: 7px; border: 1px solid var(--border);
@@ -2789,7 +2788,6 @@
       <div class="tpp-lab-choices">
         <button class="tpp-lab-choice" data-lab="labcorp" onclick="tppLabFinish('labcorp')">LabCorp</button>
         <button class="tpp-lab-choice" data-lab="evexia" onclick="tppLabFinish('evexia')">Evexia</button>
-        <button class="tpp-lab-choice" data-lab="both" onclick="tppLabFinish('both')">Both</button>
       </div>
     </div>
     <div class="modal-footer">
@@ -3582,8 +3580,9 @@ const TPP_PLAN_LINK_FROM = 'deep_dive_completed';
 // patient moves. The buttons show on every stage after Labs Drawn.
 const TPP_PAYMENT_FROM = 'deep_dive_scheduled';
 const TPP_PAYMENT_LABELS = { paid: 'Paid', plan: 'Working on payment plan' };
-// Which lab the patient's labs go through. Both take ~3 weeks, one draw date.
-const TPP_LABS = { labcorp: 'LabCorp', evexia: 'Evexia', both: 'LabCorp + Evexia' };
+// Which lab the patient's labs go through (one or the other). Both take ~3 weeks.
+// Anyone saved as the retired 'both' option shows as "Set lab" again.
+const TPP_LABS = { labcorp: 'LabCorp', evexia: 'Evexia' };
 const TPP_LAB_FROM = 'labs_ordered';
 // Tiles here show a "Set lab" button when none is chosen yet.
 const TPP_LAB_ASK_STAGES = ['labs_ordered', 'labs_in_labcorp'];
@@ -5801,7 +5800,7 @@ async function setTppPayment(patientId, key) {
 }
 function tppLabMatches(patient, want) {
   if (!want) return true;
-  return patient.labProvider === want || patient.labProvider === 'both';
+  return patient.labProvider === want;
 }
 function tppShowsLab(stageKey) {
   const order = TPP_DISCOVERY_STAGES.map(s => s.key);
@@ -5815,7 +5814,7 @@ function tppLabBadgeHtml(patient, stageKey) {
   if (TPP_LAB_ASK_STAGES.includes(stageKey)) return '<button class="tpp-lab-badge tpp-lab-missing" ' + click + '>&#129514; Set lab</button>';
   return '';
 }
-// Lab picker popup. Resolves 'labcorp' | 'evexia' | 'both', { skip: true }, or null if closed.
+// Lab picker popup. Resolves 'labcorp' | 'evexia', { skip: true }, or null if closed.
 let tppLabResolve = null;
 function tppAskLab(name, current) {
   return new Promise(resolve => {
@@ -5839,7 +5838,7 @@ async function editTppLab(patientId, value) {
     if (!r || r.skip) return;
     value = r;
   }
-  if (value === (patient.labProvider || '')) return;
+  if (value === (TPP_LABS[patient.labProvider] ? patient.labProvider : '')) return;
   try {
     await tppPatch(patientId, { labProvider: value, _baseUpdatedAt: patient.updatedAt });
     renderTppBoard();
@@ -6879,7 +6878,7 @@ function renderTppDiscoverySection(patient) {
       '<div class="modal-field" style="margin:6px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
         '<label class="modal-label" style="margin:0;min-width:110px">Lab</label>' +
         '<select class="modal-select" style="width:auto;font-size:0.78rem;padding:5px 8px" onchange="editTppLab(\'' + patient.id + '\', this.value)">' +
-          '<option value=""' + (patient.labProvider ? '' : ' selected') + '>Not set</option>' +
+          '<option value=""' + (TPP_LABS[patient.labProvider] ? '' : ' selected') + '>Not set</option>' +
           Object.keys(TPP_LABS).map(k => '<option value="' + k + '"' + (patient.labProvider === k ? ' selected' : '') + '>' + TPP_LABS[k] + '</option>').join('') +
         '</select></div>' +
       labsHtml + planHtml +
