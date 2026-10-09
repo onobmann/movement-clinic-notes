@@ -2136,6 +2136,7 @@
   .tpp-pay-btn {
     font-size: 0.66rem; font-weight: 600; padding: 3px 8px; border-radius: 10px; cursor: pointer;
     border: 1px dashed var(--border); background: var(--surface); color: var(--text-muted); white-space: nowrap;
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; min-width: 0;
   }
   .tpp-pay-btn:hover { border-color: var(--accent); color: var(--accent-dark); }
   .tpp-pay-paid.active { border: 1px solid var(--accent); background: var(--accent); color: white; }
@@ -3580,6 +3581,8 @@ const TPP_PLAN_LINK_FROM = 'deep_dive_completed';
 // patient moves. The buttons show on every stage after Labs Drawn.
 const TPP_PAYMENT_FROM = 'deep_dive_scheduled';
 const TPP_PAYMENT_LABELS = { paid: 'Paid', plan: 'Working on payment plan' };
+// Shorter text for the buttons so they fit narrow tiles; full text is the tooltip.
+const TPP_PAYMENT_SHORT = { paid: 'Paid', plan: 'Payment plan' };
 // Which lab the patient's labs go through (one or the other). Both take ~3 weeks.
 // Anyone saved as the retired 'both' option shows as "Set lab" again.
 const TPP_LABS = { labcorp: 'LabCorp', evexia: 'Evexia' };
@@ -5780,8 +5783,8 @@ function tppPaymentRowHtml(patient) {
   const cur = patient.payment === 'paid' || patient.payment === 'plan' ? patient.payment : '';
   const btn = (key, icon) => '<button class="tpp-pay-btn tpp-pay-' + key + (cur === key ? ' active' : '') + '" ' +
     'onclick="event.stopPropagation(); setTppPayment(\'' + patient.id + '\',\'' + key + '\')" ' +
-    'title="' + (cur === key ? 'Click to clear' : 'Mark as ' + TPP_PAYMENT_LABELS[key].toLowerCase()) + '">' +
-    icon + ' ' + TPP_PAYMENT_LABELS[key] + '</button>';
+    'title="' + TPP_PAYMENT_LABELS[key] + (cur === key ? ' (click to clear)' : '') + '">' +
+    icon + ' ' + TPP_PAYMENT_SHORT[key] + '</button>';
   return '<div class="tpp-pay-row" onclick="event.stopPropagation()">' + btn('paid', '&#10003;') + btn('plan', '&#9719;') + '</div>';
 }
 // Clicking the active status again clears it.
