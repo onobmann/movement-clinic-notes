@@ -2114,6 +2114,25 @@
   .tpp-labs-ready .tpp-labs-line { color: var(--accent-dark); }
   .tpp-appt-past { border-color: var(--warn-border); }
   .tpp-appt-past .tpp-labs-sub { color: var(--warn-text); }
+  .tpp-lab-badge {
+    display: inline-flex; align-items: center; gap: 3px; margin-top: 6px; font-size: 0.66rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 10px; cursor: pointer; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--text);
+  }
+  .tpp-lab-labcorp { border-color: #4a7fc1; color: #4a7fc1; }
+  .tpp-lab-evexia { border-color: #3d9a74; color: #3d9a74; }
+  .tpp-lab-both { border-color: var(--accent); color: var(--accent-dark); }
+  .tpp-lab-missing { border-style: dashed; color: var(--warn-text); border-color: var(--warn-border); font-weight: 600; }
+  .tpp-lab-filter {
+    font-size: 0.78rem; padding: 3px 8px; border-radius: 7px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); cursor: pointer;
+  }
+  .tpp-lab-choices { display: flex; flex-direction: column; gap: 8px; }
+  .tpp-lab-choice {
+    padding: 10px 12px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface2);
+    color: var(--text); font-weight: 700; font-size: 0.86rem; cursor: pointer; text-align: left;
+  }
+  .tpp-lab-choice:hover, .tpp-lab-choice.active { border-color: var(--accent); background: var(--warn-bg); }
   .tpp-pay-row { display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
   .tpp-pay-btn {
     font-size: 0.66rem; font-weight: 600; padding: 3px 8px; border-radius: 10px; cursor: pointer;
@@ -2479,6 +2498,9 @@
       </div>
       <label class="filter-sort-toggle"><input type="checkbox" id="tpp-disc-stuck" onchange="setTppFilter('discStuck', this.checked)"> Stuck 7+ days</label>
       <label class="filter-sort-toggle"><input type="checkbox" id="tpp-disc-hide-empty" onchange="setTppFilter('discHideEmpty', this.checked)"> Hide empty stages</label>
+      <select id="tpp-disc-lab" class="tpp-lab-filter" onchange="setTppFilter('discLab', this.value)" title="Show only one lab's patients">
+        <option value="">All labs</option><option value="labcorp">LabCorp</option><option value="evexia">Evexia</option>
+      </select>
     </div>
     <div class="kanban-scroll">
       <div class="kanban-cols" id="tpp-discovery-cols"></div>
@@ -2754,6 +2776,27 @@
 </div>
 
 <!-- TPP NOTE MODAL: attach a note to the stage move that just happened -->
+<div id="tpp-lab-modal" class="modal-overlay" onclick="if(event.target===this) tppLabFinish(null)">
+  <div class="modal-box" style="max-width:340px">
+    <div class="modal-header">
+      <span class="modal-title">Which lab?</span>
+      <button class="modal-close" onclick="tppLabFinish(null)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p id="tpp-lab-sub" style="font-size:0.8rem;color:var(--text-muted);margin-top:-8px"></p>
+      <div class="tpp-lab-choices">
+        <button class="tpp-lab-choice" data-lab="labcorp" onclick="tppLabFinish('labcorp')">LabCorp</button>
+        <button class="tpp-lab-choice" data-lab="evexia" onclick="tppLabFinish('evexia')">Evexia</button>
+        <button class="tpp-lab-choice" data-lab="both" onclick="tppLabFinish('both')">Both</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="tppLabFinish({ skip: true })">Skip for now</button>
+    </div>
+  </div>
+</div>
 <div id="tpp-date-modal" class="modal-overlay" onclick="if(event.target===this) tppDateFinish(null)">
   <div class="modal-box" style="max-width:380px">
     <div class="modal-header">
@@ -3539,6 +3582,11 @@ const TPP_PLAN_LINK_FROM = 'deep_dive_completed';
 // patient moves. The buttons show on every stage after Labs Drawn.
 const TPP_PAYMENT_FROM = 'deep_dive_scheduled';
 const TPP_PAYMENT_LABELS = { paid: 'Paid', plan: 'Working on payment plan' };
+// Which lab the patient's labs go through. Both take ~3 weeks, one draw date.
+const TPP_LABS = { labcorp: 'LabCorp', evexia: 'Evexia', both: 'LabCorp + Evexia' };
+const TPP_LAB_FROM = 'labs_ordered';
+// Tiles here show a "Set lab" button when none is chosen yet.
+const TPP_LAB_ASK_STAGES = ['labs_ordered', 'labs_in_labcorp'];
 const TPP_FOLLOWUP_STAGES = [
   { key: 'labs_sent', label: 'Labs Sent' },
   { key: 'labs_in_labcorp', label: 'Labs in LabCorp' },
@@ -5559,7 +5607,7 @@ function stopTppPolling() {
 // One small state object for both boards so each person's view (toggles)
 // survives reloads. Search boxes are intentionally NOT persisted.
 const TPP_FILTER_DEFAULTS = {
-  discStuck: false, discHideEmpty: false,
+  discStuck: false, discHideEmpty: false, discLab: '',
   fuOverdue: false, fuShowFinished: false,
 };
 let tppFilters = (function() {
@@ -5577,6 +5625,8 @@ function tppSyncFilterUI() {
   const setChk = (id, v) => { const el = document.getElementById(id); if (el) el.checked = !!v; };
   setChk('tpp-disc-stuck', tppFilters.discStuck);
   setChk('tpp-disc-hide-empty', tppFilters.discHideEmpty);
+  const labSel = document.getElementById('tpp-disc-lab');
+  if (labSel) labSel.value = tppFilters.discLab || '';
   setChk('tpp-fu-overdue', tppFilters.fuOverdue);
   setChk('tpp-fu-show-finished', tppFilters.fuShowFinished);
 }
@@ -5749,6 +5799,56 @@ async function setTppPayment(patientId, key) {
     showToast('Could not save: ' + err.message);
   }
 }
+function tppLabMatches(patient, want) {
+  if (!want) return true;
+  return patient.labProvider === want || patient.labProvider === 'both';
+}
+function tppShowsLab(stageKey) {
+  const order = TPP_DISCOVERY_STAGES.map(s => s.key);
+  const at = order.indexOf(stageKey);
+  return at !== -1 && at >= order.indexOf(TPP_LAB_FROM);
+}
+function tppLabBadgeHtml(patient, stageKey) {
+  const lab = TPP_LABS[patient.labProvider];
+  const click = 'onclick="event.stopPropagation(); editTppLab(\'' + patient.id + '\')"';
+  if (lab) return '<button class="tpp-lab-badge tpp-lab-' + patient.labProvider + '" ' + click + ' title="Click to change lab">&#129514; ' + lab + '</button>';
+  if (TPP_LAB_ASK_STAGES.includes(stageKey)) return '<button class="tpp-lab-badge tpp-lab-missing" ' + click + '>&#129514; Set lab</button>';
+  return '';
+}
+// Lab picker popup. Resolves 'labcorp' | 'evexia' | 'both', { skip: true }, or null if closed.
+let tppLabResolve = null;
+function tppAskLab(name, current) {
+  return new Promise(resolve => {
+    if (tppLabResolve) tppLabResolve(null);
+    tppLabResolve = resolve;
+    document.getElementById('tpp-lab-sub').textContent = name;
+    document.querySelectorAll('#tpp-lab-modal .tpp-lab-choice').forEach(b => b.classList.toggle('active', b.dataset.lab === current));
+    document.getElementById('tpp-lab-modal').classList.add('open');
+  });
+}
+function tppLabFinish(result) {
+  document.getElementById('tpp-lab-modal').classList.remove('open');
+  const r = tppLabResolve; tppLabResolve = null;
+  if (r) r(result);
+}
+async function editTppLab(patientId, value) {
+  const patient = allTpp.find(p => p.id === patientId);
+  if (!patient) return;
+  if (value === undefined) {
+    const r = await tppAskLab(patient.name, patient.labProvider);
+    if (!r || r.skip) return;
+    value = r;
+  }
+  if (value === (patient.labProvider || '')) return;
+  try {
+    await tppPatch(patientId, { labProvider: value, _baseUpdatedAt: patient.updatedAt });
+    renderTppBoard();
+    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    showToast(value ? patient.name + ': ' + TPP_LABS[value] : patient.name + ': lab cleared');
+  } catch (err) {
+    showToast('Could not save: ' + err.message);
+  }
+}
 // Latest attached treatment plan (category "treatment_plan"), if any.
 function tppPlanFile(patient) {
   const fs = (patient.discoveryFiles || []).filter(f => f.category === 'treatment_plan');
@@ -5856,7 +5956,7 @@ async function tppPatch(patientId, body, opts) {
 // so undo can never wipe out a colleague's work. Files are never touched.
 // The history lives in this browser tab only and resets on page reload.
 const TPP_UNDO_LIMIT = 50;
-const TPP_RESTORE_FIELDS = ['name', 'discoveryStage', 'discoveryHistory', 'decision', 'followupOrders', 'followupDue', 'labsDrawnAt', 'discoveryConsultAt', 'deepDiveAt', 'payment'];
+const TPP_RESTORE_FIELDS = ['name', 'discoveryStage', 'discoveryHistory', 'decision', 'followupOrders', 'followupDue', 'labsDrawnAt', 'discoveryConsultAt', 'deepDiveAt', 'payment', 'labProvider'];
 let tppUndoStack = [];
 let tppRedoStack = [];
 let tppUndoBusy = false;
@@ -5886,6 +5986,7 @@ function tppDescribe(body, before, updated) {
   if (body.discoveryConsultAt !== undefined) return 'change ' + name + '\u2019s discovery consult date';
   if (body.deepDiveAt !== undefined) return 'change ' + name + '\u2019s deep dive date';
   if (body.payment !== undefined) return 'change ' + name + '\u2019s payment status';
+  if (body.labProvider !== undefined) return 'change ' + name + '\u2019s lab';
   return 'change ' + name;
 }
 function tppPushUndo(entry) {
@@ -6059,7 +6160,7 @@ function renderTppDiscoveryBoard() {
     summaryEl.textContent = '⚠ ' + stuckTotal + ' stuck ' + PEP_AGE_WARN_DAYS + '+ days';
     summaryEl.onclick = () => { setTppFilter('discStuck', !tppFilters.discStuck); };
   }
-  const filtersActive = !!query || tppFilters.discStuck;
+  const filtersActive = !!query || tppFilters.discStuck || !!tppFilters.discLab;
   let trayCards = '', trayCount = 0;
   const html = [{ key: TPP_UNPLACED, label: 'Unplaced' }].concat(TPP_ALL_DISCOVERY_STAGES).map(stage => {
     const isUnplaced = stage.key === TPP_UNPLACED;
@@ -6074,6 +6175,7 @@ function renderTppDiscoveryBoard() {
         return daysSince(hist.length ? hist[hist.length - 1].at : p.createdAt) >= PEP_AGE_WARN_DAYS;
       });
     }
+    if (tppFilters.discLab && !isUnplaced) cards = cards.filter(p => tppLabMatches(p, tppFilters.discLab));
     if (tppFilters.discHideEmpty && cards.length === 0) return '';
     if (stage.key === TPP_LABS_DRAWN_STAGE) {
       cards.sort((a, b) => String(a.labsDrawnAt || '9999') < String(b.labsDrawnAt || '9999') ? -1 : 1);
@@ -6109,6 +6211,7 @@ function renderTppDiscoveryBoard() {
           '<div class="pep-card-meta">' + (isUnplaced ? 'Added ' + formatTime(patient.createdAt) : (lastEntry ? formatTime(lastEntry.at) : '')) + (lastEntry && lastEntry.comment ? ' &mdash; ' + escapeHtml(lastEntry.comment) : '') + '</div>' +
           (filesCount ? '<div class="pep-card-files">' + filesCount + ' file' + (filesCount === 1 ? '' : 's') + ' attached</div>' : '') +
           (ageHtml ? '<div>' + ageHtml + '</div>' : '') +
+          (tppShowsLab(stage.key) ? tppLabBadgeHtml(patient, stage.key) : '') +
           (isLabs ? tppLabsTickerHtml(patient) : '') +
           (isAppt ? tppApptChipHtml(patient, stage.key) : '') +
           tppPlanChipHtml(patient, stage.key) +
@@ -6157,6 +6260,11 @@ async function moveTppDiscoveryStage(patientId, stageKey, comment) {
   if (!stageKey) return;
   const current = allTpp.find(p => p.id === patientId);
   const extra = {};
+  if (stageKey === TPP_LAB_FROM && current) {
+    const r = await tppAskLab(current.name, current.labProvider);
+    if (!r) return; // closed = don't move
+    if (!r.skip) extra.labProvider = r;
+  }
   if (stageKey === TPP_LABS_DRAWN_STAGE && current) {
     const r = await tppAskDate({ title: 'When were the labs drawn?', sub: current.name, value: current.labsDrawnAt,
       defaultToday: true, maxToday: true, allowSkip: true });
@@ -6767,7 +6875,14 @@ function renderTppDiscoverySection(patient) {
       '<p style="font-size:0.78rem;color:var(--text-muted);margin:8px 0">Current stage: <strong style="color:var(--text)">' + escapeHtml(tppStageLabel(tppDiscStage(patient))) + '</strong>' +
         ' ' + tppDecisionTagHtml(patient) +
       '</p>' +
-      apptHtml + labsHtml + planHtml +
+      apptHtml +
+      '<div class="modal-field" style="margin:6px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+        '<label class="modal-label" style="margin:0;min-width:110px">Lab</label>' +
+        '<select class="modal-select" style="width:auto;font-size:0.78rem;padding:5px 8px" onchange="editTppLab(\'' + patient.id + '\', this.value)">' +
+          '<option value=""' + (patient.labProvider ? '' : ' selected') + '>Not set</option>' +
+          Object.keys(TPP_LABS).map(k => '<option value="' + k + '"' + (patient.labProvider === k ? ' selected' : '') + '>' + TPP_LABS[k] + '</option>').join('') +
+        '</select></div>' +
+      labsHtml + planHtml +
       '<div class="modal-field" style="margin:6px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
         '<label class="modal-label" style="margin:0;min-width:110px">Payment</label>' + tppPaymentRowHtml(patient) + '</div>' +
       (isPending ? '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">Awaiting acceptance</div><div class="tpp-decision-row">' + tppDecisionButtonsHtml(patient.id) + '</div>' : '') +
