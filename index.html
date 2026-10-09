@@ -2099,6 +2099,23 @@
   .tpp-comment-del { margin-left: 6px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.8rem; padding: 0 2px; }
   .tpp-comment-del:hover { color: var(--danger); }
   .tpp-decision-row { display: flex; gap: 6px; margin-top: 8px; }
+  .tpp-col-sub { font-size: 0.7rem; font-weight: 600; color: var(--warn-text); background: var(--warn-bg); line-height: 1.3; padding: 5px 12px; border-bottom: 1px solid var(--border); }
+  .tpp-labs-ticker {
+    display: block; width: 100%; text-align: left; margin-top: 6px; padding: 5px 8px;
+    border: 1px solid var(--border); border-radius: 7px; background: var(--surface2);
+    cursor: pointer; font: inherit; color: var(--text);
+  }
+  .tpp-labs-ticker:hover { border-color: var(--accent); }
+  .tpp-labs-line { display: block; font-size: 0.72rem; font-weight: 700; }
+  .tpp-labs-sub { display: block; font-size: 0.66rem; color: var(--text-muted); margin-top: 1px; }
+  .tpp-labs-bar { display: block; height: 4px; border-radius: 2px; background: var(--border); margin-top: 4px; overflow: hidden; }
+  .tpp-labs-bar span { display: block; height: 100%; background: var(--accent); }
+  .tpp-labs-ready { border-color: var(--accent); background: var(--warn-bg); }
+  .tpp-labs-ready .tpp-labs-line { color: var(--accent-dark); }
+  .tpp-labs-missing { font-size: 0.7rem; font-weight: 600; color: var(--warn-text); border-color: var(--warn-border); }
+  .tpp-board .pep-col.pep-col-compact .tpp-labs-sub,
+  .tpp-board .pep-col.pep-col-compact .tpp-labs-bar { display: none; }
+  .tpp-board .pep-col.pep-col-compact .tpp-labs-ticker { padding: 2px 6px; margin-top: 3px; }
   .tpp-decision-btn {
     flex: 1; font-size: 0.72rem; font-weight: 700; padding: 6px 8px;
     border-radius: 7px; cursor: pointer; border: 1px solid var(--border);
@@ -3437,13 +3454,16 @@ let pepDetailPatientId = null;
 const TPP_DISCOVERY_STAGES = [
   { key: 'scheduled_for_discovery', label: 'Scheduled for Discovery' },
   { key: 'labs_ordered', label: 'Labs Ordered' },
-  { key: 'labs_in_labcorp', label: 'Labs in LabCorp' },
+  // Key kept as 'labs_in_labcorp' so existing patients stay put; only the name changed.
+  { key: 'labs_in_labcorp', label: 'Labs Drawn' },
   { key: 'deep_dive_scheduled', label: 'Deep Dive Scheduled' },
-  { key: 'deep_dive_completed', label: 'Deep Dive Completed' },
-  { key: 'treatment_plan_sent', label: 'Treatment Plan Sent' },
-  { key: 'pending_acceptance', label: 'Awaiting Acceptance' },
+  { key: 'deep_dive_completed', label: 'Deep Dive Completed', sub: 'Dr. Meyers needs to create and send treatment plan' },
+  // Treatment Plan Sent absorbed the old "Awaiting Acceptance" column; the
+  // Accept / Decline / On Hold buttons live here now.
+  { key: 'treatment_plan_sent', label: 'Treatment Plan Sent', sub: 'Awaiting acceptance' },
   { key: 'accepted_plan', label: 'Accepted Plan' },
   { key: 'needs_to_pay', label: 'Needs to Pay' },
+  { key: 'paid_awaiting_scheduling', label: 'Paid & Awaiting Scheduling' },
   { key: 'treatment_plan_scheduled', label: 'Treatment Plan Scheduled' },
   { key: 'followup_labs_ordered', label: 'Follow-Up Labs Ordered' },
 ];
@@ -3457,6 +3477,10 @@ const TPP_ALL_DISCOVERY_STAGES = TPP_DISCOVERY_STAGES.concat([TPP_DECLINED_STAGE
 const TPP_UNPLACED = 'unplaced';
 // Above this many patients in one column, cards shrink to name-only.
 const TPP_COMPACT_THRESHOLD = 4;
+// Labs Drawn: results take about three weeks, so tiles count up from the draw date.
+const TPP_LABS_DRAWN_STAGE = 'labs_in_labcorp';
+const TPP_LABS_RESULT_DAYS = 21;
+const TPP_DECISION_STAGE = 'treatment_plan_sent';
 const TPP_FOLLOWUP_STAGES = [
   { key: 'labs_sent', label: 'Labs Sent' },
   { key: 'labs_in_labcorp', label: 'Labs in LabCorp' },
@@ -5374,6 +5398,7 @@ async function removePeptideFile(patientId, orderId, fileId) {
 function tppStageLabel(key) {
   if (key === TPP_UNPLACED) return 'Not placed yet';
   if (key === 'declined_on_hold') return 'Declined / On Hold';
+  if (key === 'pending_acceptance') return 'Awaiting Acceptance';
   const s = TPP_ALL_DISCOVERY_STAGES.find(s => s.key === key);
   return s ? s.label : key;
 }
@@ -5386,6 +5411,8 @@ function tppFollowupStageLabel(key) {
 // migrated them; show them in the right new column either way.
 function tppDiscStage(p) {
   if (p.discoveryStage === 'declined_on_hold') return p.decision === 'declined' ? 'declined' : 'on_hold';
+  // Old "Awaiting Acceptance" column merged into Treatment Plan Sent.
+  if (p.discoveryStage === 'pending_acceptance') return TPP_DECISION_STAGE;
   return p.discoveryStage;
 }
 function tppDecisionTagHtml(patient) {
@@ -5508,6 +5535,60 @@ function tppMatchesSearch(patient, q) {
   if (nq.split(' ').filter(Boolean).every(tok => target.includes(tok))) return true;
   return target.replace(/\s+/g, '').includes(nq.replace(/\s+/g, ''));
 }
+// labsDrawnAt is a YYYY-MM-DD date. Day 1 is the day they were drawn.
+function tppLabsDrawnInfo(patient) {
+  const d = patient.labsDrawnAt;
+  if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return null;
+  const [y, m, day] = d.split('-').map(Number);
+  const drawn = new Date(y, m - 1, day);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const days = Math.max(0, Math.round((today - drawn) / 86400000));
+  const back = new Date(drawn); back.setDate(back.getDate() + TPP_LABS_RESULT_DAYS);
+  const fmt = dt => dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return { days, ready: days >= TPP_LABS_RESULT_DAYS, drawnLabel: fmt(drawn), backLabel: fmt(back),
+    pct: Math.min(100, Math.round(days / TPP_LABS_RESULT_DAYS * 100)) };
+}
+function tppLabsTickerHtml(patient) {
+  const info = tppLabsDrawnInfo(patient);
+  const click = 'onclick="event.stopPropagation(); editTppLabsDrawnDate(\'' + patient.id + '\')"';
+  if (!info) return '<button class="tpp-labs-ticker tpp-labs-missing" ' + click + ' title="Set the draw date">&#128197; Set draw date</button>';
+  return '<button class="tpp-labs-ticker' + (info.ready ? ' tpp-labs-ready' : '') + '" ' + click + ' title="Drawn ' + info.drawnLabel + ' &middot; click to change">' +
+    '<span class="tpp-labs-line">' + (info.ready ? '&#10003; Results should be back' : 'Day ' + info.days + ' of ' + TPP_LABS_RESULT_DAYS) + '</span>' +
+    '<span class="tpp-labs-sub">Drawn ' + info.drawnLabel + (info.ready ? '' : ' &middot; back ~' + info.backLabel) + '</span>' +
+    '<span class="tpp-labs-bar"><span style="width:' + info.pct + '%"></span></span>' +
+  '</button>';
+}
+function tppTodayStr() {
+  const t = new Date();
+  return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+}
+// Returns YYYY-MM-DD, or null if cancelled.
+function tppAskDrawDate(name, current) {
+  while (true) {
+    const v = prompt('What day were ' + name + '\u2019s labs drawn? (YYYY-MM-DD)', current || tppTodayStr());
+    if (v === null) return null;
+    const t = v.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(t) && !isNaN(new Date(t + 'T00:00:00'))) {
+      if (t > tppTodayStr()) { alert('That date is in the future.'); continue; }
+      return t;
+    }
+    alert('Please use the format YYYY-MM-DD, e.g. ' + tppTodayStr());
+  }
+}
+async function editTppLabsDrawnDate(patientId, value) {
+  const patient = allTpp.find(p => p.id === patientId);
+  if (!patient) return;
+  const date = value || tppAskDrawDate(patient.name, patient.labsDrawnAt);
+  if (!date || date === patient.labsDrawnAt) return;
+  try {
+    await tppPatch(patientId, { labsDrawnAt: date, _baseUpdatedAt: patient.updatedAt });
+    renderTppBoard();
+    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    showToast('Draw date set to ' + tppLabsDrawnInfo({ labsDrawnAt: date }).drawnLabel);
+  } catch (err) {
+    showToast('Could not save: ' + err.message);
+  }
+}
 function tppAgeInfo(iso) {
   const days = daysSince(iso);
   let cls = 'age-ok';
@@ -5584,7 +5665,7 @@ async function tppPatch(patientId, body, opts) {
 // so undo can never wipe out a colleague's work. Files are never touched.
 // The history lives in this browser tab only and resets on page reload.
 const TPP_UNDO_LIMIT = 50;
-const TPP_RESTORE_FIELDS = ['name', 'discoveryStage', 'discoveryHistory', 'decision', 'followupOrders', 'followupDue'];
+const TPP_RESTORE_FIELDS = ['name', 'discoveryStage', 'discoveryHistory', 'decision', 'followupOrders', 'followupDue', 'labsDrawnAt'];
 let tppUndoStack = [];
 let tppRedoStack = [];
 let tppUndoBusy = false;
@@ -5610,6 +5691,7 @@ function tppDescribe(body, before, updated) {
   if (body.deleteDiscoveryHistory || body.deleteFollowupHistory) return 'delete a timeline step for ' + name;
   if (body.name !== undefined) return 'rename ' + ((before && before.name) || 'patient') + ' to ' + body.name;
   if (body.followupDue !== undefined) return 'change ' + name + '\u2019s next-due date';
+  if (body.labsDrawnAt !== undefined) return 'change ' + name + '\u2019s lab draw date';
   return 'change ' + name;
 }
 function tppPushUndo(entry) {
@@ -5752,6 +5834,12 @@ function renderTppBoard() {
   renderTppFollowupBoard();
   if (tppCommentsPatientId) renderTppCommentsList();
 }
+// In Labs Drawn and still inside the ~3 week wait: expected, not stuck.
+function tppLabsWaiting(p) {
+  if (tppDiscStage(p) !== TPP_LABS_DRAWN_STAGE) return false;
+  const info = tppLabsDrawnInfo(p);
+  return !!info && !info.ready;
+}
 function renderTppDiscoveryBoard() {
   const container = document.getElementById('tpp-discovery-cols');
   if (!container) return;
@@ -5761,6 +5849,7 @@ function renderTppDiscoveryBoard() {
   allTpp.forEach(p => {
     const st = tppDiscStage(p);
     if (!st || st === TPP_UNPLACED || TPP_OFFRAMP_KEYS.includes(st) || st === TPP_HANDOFF_STAGE) return;
+    if (tppLabsWaiting(p)) return;
     const hist = p.discoveryHistory || [];
     const last = hist.length ? hist[hist.length - 1].at : p.createdAt;
     if (daysSince(last) >= PEP_AGE_WARN_DAYS) stuckTotal++;
@@ -5783,13 +5872,15 @@ function renderTppDiscoveryBoard() {
     let cards = isHandoff ? [] : allTpp.filter(p => tppDiscStage(p) === stage.key && tppMatchesSearch(p, query));
     if (tppFilters.discStuck && !isUnplaced) {
       cards = cards.filter(p => {
-        if (isDeclined) return false;
+        if (isDeclined || tppLabsWaiting(p)) return false;
         const hist = p.discoveryHistory || [];
         return daysSince(hist.length ? hist[hist.length - 1].at : p.createdAt) >= PEP_AGE_WARN_DAYS;
       });
     }
     if (tppFilters.discHideEmpty && cards.length === 0) return '';
-    cards.sort((a, b) => {
+    if (stage.key === TPP_LABS_DRAWN_STAGE) {
+      cards.sort((a, b) => String(a.labsDrawnAt || '9999') < String(b.labsDrawnAt || '9999') ? -1 : 1);
+    } else cards.sort((a, b) => {
       const aHist = a.discoveryHistory || [];
       const bHist = b.discoveryHistory || [];
       const at = aHist.length ? aHist[aHist.length - 1].at : a.createdAt;
@@ -5802,8 +5893,9 @@ function renderTppDiscoveryBoard() {
       const hist = patient.discoveryHistory || [];
       const lastEntry = hist.length ? hist[hist.length - 1] : null;
       const filesCount = (patient.discoveryFiles || []).length;
-      const isPending = patient.discoveryStage === 'pending_acceptance';
-      const ageHtml = (lastEntry && !isDeclined && !isUnplaced) ? tppAgeInfo(lastEntry.at).html : '';
+      const isPending = tppDiscStage(patient) === TPP_DECISION_STAGE;
+      const isLabs = stage.key === TPP_LABS_DRAWN_STAGE;
+      const ageHtml = (lastEntry && !isDeclined && !isUnplaced && !isLabs) ? tppAgeInfo(lastEntry.at).html : '';
       let actionHtml = '';
       if (isPending) {
         actionHtml = '<div class="tpp-decision-row" onclick="event.stopPropagation()">' + tppDecisionButtonsHtml(patient.id) + '</div>';
@@ -5816,6 +5908,7 @@ function renderTppDiscoveryBoard() {
           '<div class="pep-card-meta">' + (isUnplaced ? 'Added ' + formatTime(patient.createdAt) : (lastEntry ? formatTime(lastEntry.at) : '')) + (lastEntry && lastEntry.comment ? ' &mdash; ' + escapeHtml(lastEntry.comment) : '') + '</div>' +
           (filesCount ? '<div class="pep-card-files">' + filesCount + ' file' + (filesCount === 1 ? '' : 's') + ' attached</div>' : '') +
           (ageHtml ? '<div>' + ageHtml + '</div>' : '') +
+          (isLabs ? tppLabsTickerHtml(patient) : '') +
           tppCommentChipHtml(patient) +
           actionHtml +
           '<select class="pep-move-select" onclick="event.stopPropagation()" onchange="moveTppDiscoveryStage(\'' + patient.id + '\', this.value); this.selectedIndex = 0;">' +
@@ -5832,6 +5925,7 @@ function renderTppDiscoveryBoard() {
           '<span class="kanban-col-name">' + stage.label + '</span>' +
           '<span class="kanban-col-count">' + cards.length + '</span>' +
         '</div>' +
+        (stage.sub && !collapse ? '<div class="tpp-col-sub">' + escapeHtml(stage.sub) + '</div>' : '') +
         '<div class="kanban-cards">' + (cardsHtml || (filtersActive && !collapse ? '<div style="text-align:center;padding:14px 8px;color:var(--text-muted);font-size:0.72rem">No matches</div>' : '')) + '</div>' +
       '</div>';
   }).join('');
@@ -5857,13 +5951,24 @@ async function tppColDrop(e, stageKey) {
 }
 async function moveTppDiscoveryStage(patientId, stageKey, comment) {
   if (!stageKey) return;
+  const current = allTpp.find(p => p.id === patientId);
+  let drawDate = null;
+  if (stageKey === TPP_LABS_DRAWN_STAGE && current) {
+    drawDate = tppAskDrawDate(current.name, current.labsDrawnAt);
+    if (!drawDate) return; // Cancel means don't move
+  }
   try {
     const body = { setDiscoveryStage: { stage: stageKey, comment: comment || '' } };
+    if (drawDate) body.labsDrawnAt = drawDate;
     const handoff = stageKey === TPP_HANDOFF_STAGE;
     // The worker applies setDiscoveryStage before sendToFollowUp, and only
     // opens a new round if there isn't one already in progress.
     if (handoff) { body.sendToFollowUp = true; body.followupDue = ''; }
     const updated = await tppPatch(patientId, body);
+    if (updated.discoveryStage !== stageKey) {
+      renderTppBoard();
+      throw new Error('the server needs updating first (deploy the new worker.js)');
+    }
     renderTppBoard();
     if (tppDetailPatientId === patientId) renderTppDetail(patientId);
     if (handoff) { showToast(updated.name + ' sent to Follow-Up'); return; }
@@ -6410,7 +6515,16 @@ function renderTppDiscoverySection(patient) {
         '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
       '</button>' +
     '</div>').join('') : '<p style="color:var(--text-muted);font-size:0.8rem">No files yet.</p>';
-  const isPending = patient.discoveryStage === 'pending_acceptance';
+  const isPending = tppDiscStage(patient) === TPP_DECISION_STAGE;
+  const labsInfo = tppLabsDrawnInfo(patient);
+  const showLabs = tppDiscStage(patient) === TPP_LABS_DRAWN_STAGE || !!patient.labsDrawnAt;
+  const labsHtml = showLabs ? '' +
+    '<div class="modal-field" style="margin:8px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+      '<label class="modal-label" style="margin:0">Labs drawn</label>' +
+      '<input type="date" class="modal-input" style="width:auto;padding:5px 8px;font-size:0.78rem" max="' + tppTodayStr() + '" value="' + escapeHtml(patient.labsDrawnAt || '') + '" ' +
+        'onchange="if (this.value) editTppLabsDrawnDate(\'' + patient.id + '\', this.value)">' +
+      (labsInfo ? '<span style="font-size:0.75rem;color:var(--text-muted)">' + (labsInfo.ready ? 'Results should be back' : 'Day ' + labsInfo.days + ' of ' + TPP_LABS_RESULT_DAYS + ' &middot; back ~' + labsInfo.backLabel) + '</span>' : '') +
+    '</div>' : '';
   const moveOptions = TPP_ALL_DISCOVERY_STAGES.filter(s => s.key !== tppDiscStage(patient))
     .map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('');
   return '' +
@@ -6423,7 +6537,8 @@ function renderTppDiscoverySection(patient) {
       '<p style="font-size:0.78rem;color:var(--text-muted);margin:8px 0">Current stage: <strong style="color:var(--text)">' + escapeHtml(tppStageLabel(tppDiscStage(patient))) + '</strong>' +
         ' ' + tppDecisionTagHtml(patient) +
       '</p>' +
-      (isPending ? '<div class="tpp-decision-row">' + tppDecisionButtonsHtml(patient.id) + '</div>' : '') +
+      labsHtml +
+      (isPending ? '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">Awaiting acceptance</div><div class="tpp-decision-row">' + tppDecisionButtonsHtml(patient.id) + '</div>' : '') +
       '<div class="pep-section-title" style="margin-top:12px">History</div>' +
       historyHtml + addHistoryHtml +
       '<div class="pep-section-title" style="margin-top:12px">Files</div>' +
