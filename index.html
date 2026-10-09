@@ -2323,6 +2323,47 @@
   .tpp-board .tpp-handoff-btn:hover { background: var(--surface2); }
   /* Each text link on a tile gets its own line */
   .tpp-board .tpp-lab-badge, .tpp-board .tpp-labs-missing, .tpp-board .tpp-comment-btn, .tpp-board .tpp-plan-chip { display: block; width: fit-content; text-align: left; }
+  /* -- Pipeline v3: no underlined links, gold only for the current step -----
+     Tile actions are small gray buttons; gold is kept for the current-step
+     marker, finished lab countdowns and the main buttons (Add Patient, Accepted). */
+  .tpp-board .tpp-labs-missing, .tpp-board .tpp-lab-missing, .tpp-board .tpp-plan-add,
+  .tpp-board .tpp-comment-btn, .tpp-board .tpp-plan-chip {
+    display: inline-flex !important; align-items: center; width: auto; margin: 6px 4px 0 0;
+    padding: 3px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface);
+    color: var(--text-muted); font-size: 0.68rem; font-weight: 600; text-decoration: none; cursor: pointer;
+  }
+  .tpp-board .tpp-labs-missing:hover, .tpp-board .tpp-lab-missing:hover, .tpp-board .tpp-plan-add:hover,
+  .tpp-board .tpp-comment-btn:hover, .tpp-board .tpp-plan-chip:hover {
+    color: var(--text); border-color: var(--text-muted); background: var(--surface2);
+  }
+  .tpp-board .tpp-plan-chip:not(.tpp-plan-add) { color: var(--text); }
+  .tpp-board .tpp-lab-line { gap: 0 4px; }
+  .tpp-board .tpp-lab-line { row-gap: 4px; }
+  .tpp-board .tpp-lab-line .tpp-lab-badge, .tpp-board .tpp-lab-line .tpp-labs-missing { margin: 0; }
+  .tpp-board .tpp-lab-line .tpp-lab-badge:not(.tpp-lab-missing) { text-decoration: none; padding: 1px 3px; margin-left: -3px; border-radius: 4px; }
+  .tpp-board .tpp-lab-line .tpp-lab-badge:not(.tpp-lab-missing):hover { background: var(--surface2); color: var(--text); text-decoration: none; }
+  .tpp-labs-day { padding: 1px 3px; border-radius: 4px; }
+  .tpp-labs-day:hover { text-decoration: none; background: var(--surface2); }
+  .tpp-labs-day.ready { color: var(--text); }
+  .tpp-board .tpp-labs-bar span { background: var(--text-muted); }
+  .tpp-board .tpp-labs-bar.ready span { background: var(--tpp-gold); }
+  .tpp-pay-tag { color: var(--text-muted); }
+  .tpp-pay-btn.active { color: var(--text) !important; box-shadow: none; background: var(--surface2) !important; }
+  .tpp-col-sub { box-shadow: none; }
+  .tpp-board .kanban-col.tpp-nextdue-col .kanban-col-header { box-shadow: none; }
+  .tpp-board .tpp-handoff-btn { color: var(--text); border-color: var(--border); }
+  .tpp-board .tpp-lab-badge:not(.tpp-lab-missing):hover { color: var(--text); }
+  /* Details card */
+  .tpp-ki-head { color: var(--text-muted); }
+  .tpp-ki-row.current .tpp-ki-label { color: var(--text); }
+  .tpp-ki-seg-btn.active, .tpp-ki-seg-btn.tpp-ki-pay-plan.active { color: var(--text); box-shadow: none; background: var(--surface2); }
+  .tpp-ki-link {
+    display: inline-flex; align-items: center; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--surface); color: var(--text); font-size: 0.78rem; font-weight: 600; text-decoration: none; cursor: pointer;
+  }
+  .tpp-ki-link:hover { background: var(--surface2); }
+  .tpp-ki-file { text-decoration: none; }
+  .tpp-ki-file:hover { text-decoration: underline; text-decoration-color: var(--text-muted); }
 </style>
 </head>
 <body>
@@ -5808,7 +5849,9 @@ function tppLabLineHtml(patientId, target, orderId, withCountdown) {
     ? '<button class="tpp-labs-day' + (info.ready ? ' ready' : '') + '" ' + dateClick + ' title="Drawn ' + info.drawnLabel + ' &middot; click to change">' +
         (info.ready ? 'Results should be back' : 'Day ' + info.days + ' of ' + TPP_LABS_RESULT_DAYS) + '</button>'
     : '<button class="tpp-labs-missing" ' + dateClick + '>Set draw date</button>';
-  return '<div class="tpp-lab-line">' + labPart + '<span class="tpp-lab-sep">&middot;</span>' + datePart + '</div>' +
+  // The dot only sits between two pieces of text; buttons don't need it.
+  const sep = lab && info ? '<span class="tpp-lab-sep">&middot;</span>' : '';
+  return '<div class="tpp-lab-line">' + labPart + sep + datePart + '</div>' +
     (info ? '<div class="tpp-labs-sub">Drawn ' + info.drawnLabel + (info.ready ? '' : ' &middot; back ~' + info.backLabel) + '</div>' +
       '<span class="tpp-labs-bar' + (info.ready ? ' ready' : '') + '"><span style="width:' + info.pct + '%"></span></span>' : '');
 }
