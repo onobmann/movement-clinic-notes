@@ -6587,8 +6587,8 @@ function tppTlFollowupDue(patient) {
 }
 function tppTlTodoHtml(week) {
   if (week === TPP_TL_PAST) {
-    return '<div class="tpp-tl-todo"><div class="tpp-tl-todo-title">Phase 1 complete</div>' +
-      '<div class="tpp-tl-todo-note">Past week 12.</div></div>';
+    return '<div class="tpp-tl-todo"><div class="tpp-tl-todo-title">Finished Phase One</div>' +
+      '<div class="tpp-tl-todo-note">All 12 weeks are done.</div></div>';
   }
   const items = tppTlItemsForWeek(week);
   return '<div class="tpp-tl-todo"><div class="tpp-tl-todo-title">To do this week</div><ul>' +
@@ -6705,7 +6705,7 @@ function renderTppTimelineBoard() {
     }).join('');
     cols.push('' +
       '<div class="kanban-col pep-col tpp-tl-col' + (cards.length || tppTlShowEmpty || tlAuto.has(w) || tppTlOpen.has('tl' + w) ? '' : ' pep-col-empty') + '" data-tl-key="tl' + w + '" onclick="tppTlToggleCol(this)">' +
-        '<div class="kanban-col-header"><span class="kanban-col-name">' + (w === TPP_TL_PAST ? 'Past week 12' : 'Week ' + w) + '</span>' +
+        '<div class="kanban-col-header"><span class="kanban-col-name">' + (w === TPP_TL_PAST ? 'Finished Phase One' : 'Week ' + w) + '</span>' +
           '<span class="kanban-col-count">' + cards.length + '</span></div>' +
         tppTlTodoHtml(w) +
         '<div class="kanban-cards">' + cardsHtml + '</div>' +
@@ -6759,7 +6759,7 @@ function renderTppRepairBoard() {
         '<div class="pep-card tpp-tl-card" onclick="openTppDetail(\'' + patient.id + '\')" title="Open ' + escapeHtml(patient.name) + '">' +
           '<div class="pep-card-name">' + escapeHtml(patient.name) + '</div>' +
           '<div class="tpp-tile-fact">' + tppStartLine(info, TPP_RC_WEEKS) + '</div>' +
-          (main.started ? '<div class="tpp-tile-sub">' + (main.week <= TPP_TL_WEEKS ? 'Phase One: week ' + main.week : 'Phase One: past week 12') + '</div>' : '') +
+          (main.started ? '<div class="tpp-tile-sub">' + (main.week <= TPP_TL_WEEKS ? 'Phase One: week ' + main.week : 'Phase One: finished') + '</div>' : '') +
           (!info.started ? '<button class="tpp-tl-start" onclick="event.stopPropagation(); startTppRepair(\'' + patient.id + '\')">Start Repair &amp; Clear today</button>' : '') +
           tppTileCommentHtml(patient) +
         '</div>';
@@ -6859,7 +6859,7 @@ function renderTppTimelineSection(patient) {
   }).join('');
   let status;
   if (info.started && info.week <= TPP_TL_WEEKS) status = 'Week ' + info.week + ', day ' + info.day + ' of ' + (TPP_TL_WEEKS * 7);
-  else if (info.started) status = 'Past week 12 (started ' + tppTlLabel(info.startDate) + ')';
+  else if (info.started) status = 'Finished Phase One (started ' + tppTlLabel(info.startDate) + ')';
   else if (info.startDate) status = 'Starts ' + tppTlLabel(info.startDate);
   else status = 'Not started';
   const rc = tppRcInfo(patient);
@@ -7559,7 +7559,7 @@ function tppTlAddDateNote() {
   let msg = '';
   if (v) {
     const days = Math.round((new Date(tppTodayStr() + 'T00:00:00') - new Date(v + 'T00:00:00')) / 86400000);
-    if (days >= TPP_TL_WEEKS * 7) msg = 'That is more than 12 weeks ago. They would sit in "Past week 12" and not move on by themselves. If they are already in follow-up, add them from the Follow-Up tab instead.';
+    if (days >= TPP_TL_WEEKS * 7) msg = 'That is more than 12 weeks ago. They would sit in "Finished Phase One" and not move on by themselves. If they are already in follow-up, add them from the Follow-Up tab instead.';
   }
   el.textContent = msg;
 }
@@ -7682,7 +7682,7 @@ function tppWhere(patient) {
   const tl = patient.timeline;
   if (tl && tl.startedAt) {
     const i = tppTlInfo(patient);
-    out.push({ tab: 'Timeline', text: !i.started ? 'Not started' : (i.week > TPP_TL_WEEKS ? 'Past week ' + TPP_TL_WEEKS : 'Week ' + i.week + ' of ' + TPP_TL_WEEKS) });
+    out.push({ tab: 'Timeline', text: !i.started ? 'Not started' : (i.week > TPP_TL_WEEKS ? 'Finished Phase One' : 'Week ' + i.week + ' of ' + TPP_TL_WEEKS) });
   }
   if (tppRcVisible(patient)) {
     const r = tppRcInfo(patient);
