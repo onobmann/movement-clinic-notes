@@ -2038,11 +2038,11 @@
   /* -- Treatment Plan Pipeline ---------------------------------------------- */
   #tpp-view { flex-direction: column; overflow: hidden; }
   /* Discovery / Follow-Up tabs live in each board's title row. */
-  .tpp-tabs { display: flex; align-items: flex-end; gap: 18px; }
+  .tpp-tabs { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 4px 18px; }
   .tpp-mode-btn {
     position: relative; padding: 2px 0 6px; border: none; background: none; cursor: pointer;
     font-family: 'Bebas Neue', sans-serif; font-size: 1.35rem; letter-spacing: 0.04em; line-height: 1.1;
-    color: var(--text-muted); transition: color 0.15s;
+    color: var(--text-muted); transition: color 0.15s; white-space: nowrap;
   }
   .tpp-mode-btn:hover { color: var(--text); }
   .tpp-mode-btn.active { color: var(--text); }
@@ -2050,6 +2050,16 @@
   .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .tpp-board { display: none; flex-direction: column; overflow: hidden; flex: 1 1 0; min-height: 0; }
   .tpp-board.tpp-board-active { display: flex; }
+  /* Treatment Plan Timeline page */
+  .tpp-tl-scroll { flex: 1 1 0; min-height: 0; overflow-y: auto; padding: 20px 24px 24px; }
+  .tpp-tl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; align-items: start; }
+  .tpp-tl-card { cursor: pointer; }
+  .tpp-tl-steps { margin: 8px 0 0; padding: 8px 0 0; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
+  .tpp-tl-step { display: flex; gap: 8px; font-size: var(--fs-xs); color: var(--text-muted); overflow-wrap: break-word; word-break: normal; }
+  .tpp-tl-step-date { flex: 0 0 auto; min-width: 52px; }
+  .tpp-tl-step-label { color: var(--text); }
+  .tpp-tl-step.current .tpp-tl-step-label { font-weight: 600; }
+  .tpp-tl-empty { grid-column: 1 / -1; padding: 40px 20px; color: var(--text-muted); font-size: var(--fs-md); }
   .tpp-board .kanban-scroll { overflow-y: hidden; }
   /* Slimmer title + filter strips on the pipeline boards */
   .tpp-board .tasks-topbar { padding: 6px 28px; }
@@ -2590,7 +2600,7 @@
     <div class="tasks-topbar">
       <div>
         <h2 class="visually-hidden">Discovery &rarr; Treatment Plan</h2>
-        <div class="tpp-tabs" role="tablist"><button class="tpp-mode-btn active" data-mode="regular" role="tab" onclick="setTppMode('regular')">Discovery &rarr; Treatment Plan</button><button class="tpp-mode-btn" data-mode="followup" role="tab" onclick="setTppMode('followup')">Follow-Up</button></div>
+        <div class="tpp-tabs" role="tablist"><button class="tpp-mode-btn active" data-mode="regular" role="tab" onclick="setTppMode('regular')">Discovery &rarr; Treatment Plan</button><button class="tpp-mode-btn" data-mode="followup" role="tab" onclick="setTppMode('followup')">Follow-Up</button><button class="tpp-mode-btn" data-mode="timeline" role="tab" onclick="setTppMode('timeline')">Treatment Plan Timeline</button></div>
         <p class="tasks-sub">Drag a tile between stages, or click it for details</p>
       </div>
       <span class="pep-stuck-summary" id="tpp-disc-summary" style="display:none"></span>
@@ -2634,7 +2644,7 @@
     <div class="tasks-topbar">
       <div>
         <h2 class="visually-hidden">Follow-Up</h2>
-        <div class="tpp-tabs" role="tablist"><button class="tpp-mode-btn" data-mode="regular" role="tab" onclick="setTppMode('regular')">Discovery &rarr; Treatment Plan</button><button class="tpp-mode-btn active" data-mode="followup" role="tab" onclick="setTppMode('followup')">Follow-Up</button></div>
+        <div class="tpp-tabs" role="tablist"><button class="tpp-mode-btn" data-mode="regular" role="tab" onclick="setTppMode('regular')">Discovery &rarr; Treatment Plan</button><button class="tpp-mode-btn active" data-mode="followup" role="tab" onclick="setTppMode('followup')">Follow-Up</button><button class="tpp-mode-btn" data-mode="timeline" role="tab" onclick="setTppMode('timeline')">Treatment Plan Timeline</button></div>
         <p class="tasks-sub">Repeatable labs / plan-review cycle after acceptance</p>
       </div>
       <span class="pep-stuck-summary" id="tpp-fu-summary" style="display:none"></span>
@@ -2669,6 +2679,34 @@
     <div id="tpp-fu-tray" class="pep-tray" style="display:none"></div>
     <div class="kanban-scroll">
       <div class="kanban-cols" id="tpp-fu-cols"></div>
+    </div>
+  </div>
+  <div class="tpp-board tpp-board-timeline">
+    <div class="tasks-topbar">
+      <div>
+        <h2 class="visually-hidden">Treatment Plan Timeline</h2>
+        <div class="tpp-tabs" role="tablist"><button class="tpp-mode-btn" data-mode="regular" role="tab" onclick="setTppMode('regular')">Discovery &rarr; Treatment Plan</button><button class="tpp-mode-btn" data-mode="followup" role="tab" onclick="setTppMode('followup')">Follow-Up</button><button class="tpp-mode-btn active" data-mode="timeline" role="tab" onclick="setTppMode('timeline')">Treatment Plan Timeline</button></div>
+        <p class="tasks-sub">Patients whose treatment plan has been scheduled. Click a tile for details.</p>
+      </div>
+      <span class="pep-stuck-summary none" id="tpp-tl-summary" style="display:none"></span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="refresh-btn" onclick="reloadTpp(this)" title="Refresh" style="color:var(--text-muted);padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="tasks-filterbar">
+      <span class="filter-label">Filter</span>
+      <div class="filter-search-wrap">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" class="filter-search-input" id="tpp-tl-search" placeholder="Search patient name&hellip;" oninput="renderTppTimelineBoard()" autocomplete="off">
+      </div>
+    </div>
+    <div class="tpp-tl-scroll">
+      <div class="tpp-tl-grid" id="tpp-timeline-list"></div>
     </div>
   </div>
 </div>
@@ -3163,14 +3201,16 @@ function setTppMode(mode) {
   });
   const discBoard = document.querySelector('.tpp-board-discovery');
   const fuBoard = document.querySelector('.tpp-board-followup');
+  const tlBoard = document.querySelector('.tpp-board-timeline');
   if (discBoard) discBoard.classList.toggle('tpp-board-active', mode === 'regular');
   if (fuBoard) fuBoard.classList.toggle('tpp-board-active', mode === 'followup');
+  if (tlBoard) tlBoard.classList.toggle('tpp-board-active', mode === 'timeline');
   try { localStorage.setItem('mc-tpp-mode', mode); } catch (e) {}
 }
 (function() {
   let savedTppMode = null;
   try { savedTppMode = localStorage.getItem('mc-tpp-mode'); } catch (e) {}
-  if (savedTppMode === 'followup') setTppMode('followup');
+  if (savedTppMode === 'followup' || savedTppMode === 'timeline') setTppMode(savedTppMode);
 })();
 function setView(view, btn) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -3677,7 +3717,10 @@ const TPP_DISCOVERY_STAGES = [
   { key: 'needs_to_pay', label: 'Needs to Pay' },
   // Key kept from when this was "Paid & Awaiting Scheduling" so nobody moves.
   { key: 'paid_awaiting_scheduling', label: 'Awaiting Scheduling' },
+  // Reaching Treatment Plan Scheduled also puts the patient on the Treatment
+  // Plan Timeline page; the tile itself carries on along this board.
   { key: 'treatment_plan_scheduled', label: 'Treatment Plan Scheduled' },
+  { key: 'treatment_plan_in_progress', label: 'Treatment Plan In Progress' },
   { key: 'followup_labs_ordered', label: 'Follow-Up Labs Ordered' },
 ];
 // Two separate off-ramps from Awaiting Acceptance (used to be one combined
@@ -3694,6 +3737,9 @@ const TPP_COMPACT_THRESHOLD = 4;
 const TPP_LABS_DRAWN_STAGE = 'labs_in_labcorp';
 const TPP_LABS_RESULT_DAYS = 21;
 const TPP_DECISION_STAGE = 'treatment_plan_sent';
+// Reaching Scheduled puts a patient on the Treatment Plan Timeline page.
+const TPP_SCHEDULED_STAGE = 'treatment_plan_scheduled';
+const TPP_IN_PROGRESS_STAGE = 'treatment_plan_in_progress';
 // Follow-Up rounds: lab asked when labs are sent, draw date when drawn.
 const TPP_FU_LAB_ASK = 'labs_sent';
 const TPP_FU_LABS_DRAWN = 'labs_in_labcorp';
@@ -6163,7 +6209,7 @@ async function tppPatch(patientId, body, opts) {
 // so undo can never wipe out a colleague's work. Files are never touched.
 // The history lives in this browser tab only and resets on page reload.
 const TPP_UNDO_LIMIT = 50;
-const TPP_RESTORE_FIELDS = ['name', 'discoveryStage', 'discoveryHistory', 'decision', 'followupOrders', 'followupDue', 'labsDrawnAt', 'discoveryConsultAt', 'deepDiveAt', 'payment', 'labProvider'];
+const TPP_RESTORE_FIELDS = ['name', 'discoveryStage', 'discoveryHistory', 'decision', 'followupOrders', 'followupDue', 'labsDrawnAt', 'discoveryConsultAt', 'deepDiveAt', 'payment', 'labProvider', 'timeline'];
 let tppUndoStack = [];
 let tppRedoStack = [];
 let tppUndoBusy = false;
@@ -6319,6 +6365,59 @@ async function reloadTpp(btn) {
   await loadTpp();
   if (btn) btn.classList.remove('spinning');
 }
+// -- Treatment Plan Timeline page ---------------------------------------------
+// The same patient record shown a second time: one tile here per patient who
+// has reached Treatment Plan Scheduled (the worker stamps `timeline.startedAt`).
+// Nothing is copied, so the tile here and the one on the Discovery board can
+// never disagree. Clicking a tile opens the usual detail panel.
+const TPP_TIMELINE_FROM = TPP_DISCOVERY_STAGES.findIndex(s => s.key === TPP_SCHEDULED_STAGE);
+function tppTimelineSteps(patient) {
+  // Stage changes from Treatment Plan Scheduled onward, oldest first.
+  const keys = TPP_DISCOVERY_STAGES.slice(TPP_TIMELINE_FROM).map(s => s.key);
+  const hist = (patient.discoveryHistory || []).filter(h => keys.includes(h.stage));
+  return hist.sort((a, b) => new Date(a.at) - new Date(b.at));
+}
+function renderTppTimelineBoard() {
+  const container = document.getElementById('tpp-timeline-list');
+  if (!container) return;
+  const query = tppSearchQuery('tpp-tl-search');
+  const onTimeline = allTpp.filter(p => p.timeline && p.timeline.startedAt);
+  const summaryEl = document.getElementById('tpp-tl-summary');
+  if (summaryEl) {
+    summaryEl.style.display = onTimeline.length ? 'inline-block' : 'none';
+    summaryEl.textContent = onTimeline.length + (onTimeline.length === 1 ? ' patient' : ' patients');
+  }
+  const cards = onTimeline.filter(p => tppMatchesSearch(p, query))
+    .sort((a, b) => new Date(a.timeline.startedAt) - new Date(b.timeline.startedAt));
+  if (!cards.length) {
+    container.innerHTML = '<div class="tpp-tl-empty">' + (onTimeline.length
+      ? 'No patients match this search.'
+      : 'No one is here yet. Patients appear when they reach Treatment Plan Scheduled on the Discovery board.') + '</div>';
+    return;
+  }
+  container.innerHTML = cards.map(patient => {
+    const stage = tppDiscStage(patient);
+    const handedOff = stage === TPP_HANDOFF_STAGE;
+    const days = daysSince(patient.timeline.startedAt);
+    const steps = tppTimelineSteps(patient);
+    const stepsHtml = steps.map((h, i) =>
+      '<div class="tpp-tl-step' + (i === steps.length - 1 ? ' current' : '') + '">' +
+        '<span class="tpp-tl-step-date">' + escapeHtml(new Date(h.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })) + '</span>' +
+        '<span class="tpp-tl-step-label">' + escapeHtml(tppStageLabel(h.stage)) + (h.comment ? ' &middot; ' + escapeHtml(h.comment) : '') + '</span>' +
+      '</div>').join('');
+    return '' +
+      '<div class="pep-card tpp-tl-card" onclick="openTppDetail(\'' + patient.id + '\')" title="Open ' + escapeHtml(patient.name) + '">' +
+        '<div class="pep-card-name">' + escapeHtml(patient.name) + tppDecisionTagHtml(patient) + '</div>' +
+        '<div class="tpp-tile-fact">' + (handedOff ? 'Now on the Follow-Up board' : escapeHtml(tppStageLabel(stage))) + '</div>' +
+        '<div class="tpp-tile-sub">Started ' + escapeHtml(new Date(patient.timeline.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })) +
+          ' &middot; ' + days + (days === 1 ? ' day' : ' days') + ' in</div>' +
+        tppTilePlanHtml(patient) +
+        tppPaymentTagHtml(patient) +
+        (stepsHtml ? '<div class="tpp-tl-steps">' + stepsHtml + '</div>' : '') +
+        tppTileCommentHtml(patient) +
+      '</div>';
+  }).join('');
+}
 // -- Drag helpers (shared) ----------------------------------------------------
 function tppMarkDragging(e) {
   const board = e.target.closest && e.target.closest('.tpp-board');
@@ -6334,6 +6433,7 @@ function renderTppBoard() {
   tppSyncFilterUI();
   renderTppDiscoveryBoard();
   renderTppFollowupBoard();
+  renderTppTimelineBoard();
   if (tppCommentsPatientId) renderTppCommentsList();
 }
 // In Labs Drawn and still inside the ~3 week wait: expected, not stuck.
@@ -6341,6 +6441,8 @@ function tppLabsWaiting(p) {
   const st = tppDiscStage(p);
   const cfg = TPP_APPT_FIELDS[st];
   if (cfg) { const a = tppApptInfo(p[cfg.field]); return !!a && !a.past; }
+  // Treatment takes weeks, so sitting In Progress is expected, not stuck.
+  if (st === TPP_IN_PROGRESS_STAGE) return true;
   if (st !== TPP_LABS_DRAWN_STAGE) return false;
   const info = tppLabsDrawnInfo(p);
   return !!info && !info.ready;
@@ -6403,7 +6505,8 @@ function renderTppDiscoveryBoard() {
       const isPending = tppDiscStage(patient) === TPP_DECISION_STAGE;
       const isLabs = stage.key === TPP_LABS_DRAWN_STAGE;
       const isAppt = !!TPP_APPT_FIELDS[stage.key];
-      const ageHtml = (lastEntry && !isDeclined && !isUnplaced && !isLabs && !(isAppt && tppLabsWaiting(patient))) ? tppAgeInfo(lastEntry.at).html : '';
+      // In Progress is meant to last weeks, so no "days in stage" warning; the Timeline page shows how long they've been in.
+      const ageHtml = (lastEntry && !isDeclined && !isUnplaced && !isLabs && stage.key !== TPP_IN_PROGRESS_STAGE && !(isAppt && tppLabsWaiting(patient))) ? tppAgeInfo(lastEntry.at).html : '';
       // Tiles are read-only summaries: name, the one fact that matters in this
       // stage, payment, latest comment. Every action lives in the detail panel
       // (click the tile) so the board stays scannable.
