@@ -2077,7 +2077,7 @@
   .tpp-board { display: none; flex-direction: column; overflow: hidden; flex: 1 1 0; min-height: 0; }
   .tpp-board.tpp-board-active { display: flex; }
   /* Phase One Timeline page: one column per week */
-  .tpp-tl-col { flex: 1 1 250px; min-width: 190px; }
+  .tpp-tl-col { flex: 0 0 250px; min-width: 250px; }
   .tpp-tl-col.pep-col-empty .tpp-tl-todo { display: none; }
   .tpp-tl-toggle { font: inherit; font-size: var(--fs-sm); font-weight: 600; padding: 7px 12px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); cursor: pointer; white-space: nowrap; }
   .tpp-tl-toggle:hover { border-color: var(--text-muted); }
@@ -6562,6 +6562,31 @@ function tppStartLine(info, weeks) {
 // Empty weeks collapse to a thin strip; click one to open its to-do list, click
 // the header of an opened empty week to fold it back.
 const tppTlOpen = new Set();
+// Occupied weeks keep their normal width and their tiles stack. Empty weeks stay
+// thin, except the ones right after an occupied week (one step ahead first, then
+// two, and so on) which open for as long as the page still has room.
+function tppTlAutoOpen(occupiedWeeks, totalCols, container) {
+  const open = new Set(occupiedWeeks);
+  const scroller = container && container.parentElement;
+  const avail = (scroller && scroller.clientWidth > 0 ? scroller.clientWidth : document.documentElement.clientWidth) - 48;
+  const FULL = 250, THIN = 46, GAP = 14;
+  const widthOf = n => open.size * FULL + (n - open.size) * THIN + (n - 1) * GAP;
+  const occ = Array.from(new Set(occupiedWeeks)).sort((a, b) => a - b);
+  for (let d = 1; d < totalCols && occ.length; d++) {
+    for (const w of occ) {
+      const t = w + d;
+      if (t > totalCols || open.has(t)) continue;
+      if (widthOf(totalCols) + (FULL - THIN) > avail) return open;
+      open.add(t);
+    }
+  }
+  return open;
+}
+let tppTlResizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(tppTlResizeTimer);
+  tppTlResizeTimer = setTimeout(() => { renderTppTimelineBoard(); renderTppRepairBoard(); }, 150);
+});
 let tppTlShowEmpty = false;
 try { tppTlShowEmpty = localStorage.getItem('mc-tpp-show-empty') === '1'; } catch (e) {}
 function tppTlSyncToggle() {
@@ -6607,6 +6632,7 @@ function renderTppTimelineBoard() {
   }
   const matches = onTimeline.filter(p => tppMatchesSearch(p, query));
   const cols = [];
+  const tlAuto = tppTlAutoOpen(matches.map(p => tppTlInfo(p).week), TPP_TL_PAST, container);
   for (let w = 1; w <= TPP_TL_PAST; w++) {
     const cards = matches.filter(p => tppTlInfo(p).week === w)
       .sort((a, b) => String(tppTlInfo(a).startDate || '9999') < String(tppTlInfo(b).startDate || '9999') ? -1 : 1);
@@ -6634,7 +6660,7 @@ function renderTppTimelineBoard() {
         '</div>';
     }).join('');
     cols.push('' +
-      '<div class="kanban-col pep-col tpp-tl-col' + (cards.length || tppTlShowEmpty || tppTlOpen.has('tl' + w) ? '' : ' pep-col-empty') + '" data-tl-key="tl' + w + '" onclick="tppTlToggleCol(this)">' +
+      '<div class="kanban-col pep-col tpp-tl-col' + (cards.length || tppTlShowEmpty || tlAuto.has(w) || tppTlOpen.has('tl' + w) ? '' : ' pep-col-empty') + '" data-tl-key="tl' + w + '" onclick="tppTlToggleCol(this)">' +
         '<div class="kanban-col-header"><span class="kanban-col-name">' + (w === TPP_TL_PAST ? 'Past week 12' : 'Week ' + w) + '</span>' +
           '<span class="kanban-col-count">' + cards.length + '</span></div>' +
         tppTlTodoHtml(w) +
@@ -6676,6 +6702,7 @@ function renderTppRepairBoard() {
   }
   const matches = here.filter(p => tppMatchesSearch(p, query));
   const cols = [];
+  const rcAuto = tppTlAutoOpen(matches.map(p => tppRcInfo(p).week), TPP_RC_PAST, container);
   for (let w = 1; w <= TPP_RC_PAST; w++) {
     const past = w === TPP_RC_PAST;
     const phase = TPP_RC_PHASES.find(ph => ph.weeks.includes(w));
@@ -6699,7 +6726,7 @@ function renderTppRepairBoard() {
         '<div><strong>' + escapeHtml(phase.title) + '</strong></div>' +
         (phase.note ? '<div class="tpp-tl-todo-note">' + escapeHtml(phase.note) + '</div>' : '') + '</div>';
     cols.push('' +
-      '<div class="kanban-col pep-col tpp-tl-col' + (cards.length || tppTlShowEmpty || tppTlOpen.has('rc' + w) ? '' : ' pep-col-empty') + '" data-tl-key="rc' + w + '" onclick="tppTlToggleCol(this)">' +
+      '<div class="kanban-col pep-col tpp-tl-col' + (cards.length || tppTlShowEmpty || rcAuto.has(w) || tppTlOpen.has('rc' + w) ? '' : ' pep-col-empty') + '" data-tl-key="rc' + w + '" onclick="tppTlToggleCol(this)">' +
         '<div class="kanban-col-header"><span class="kanban-col-name">' + (past ? 'Complete' : 'Week ' + w) + '</span>' +
           '<span class="kanban-col-count">' + cards.length + '</span></div>' +
         todo +
