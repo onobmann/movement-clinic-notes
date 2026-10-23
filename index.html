@@ -2059,6 +2059,7 @@
   .tpp-tl-todo li span { color: var(--text-muted); }
   .tpp-tl-todo-note { font-size: var(--fs-xs); color: var(--text-muted); font-weight: 400; overflow-wrap: break-word; word-break: normal; }
   .tpp-tl-todo-note-inline { font-size: var(--fs-xs); color: var(--text-muted); }
+  .tpp-tl-card.tpp-tl-alert { background: color-mix(in srgb, var(--danger) 14%, var(--surface)); border-color: color-mix(in srgb, var(--danger) 55%, var(--border)); }
   .tpp-tl-start { margin-top: 8px; padding: 6px 10px; font-size: var(--fs-sm); font-family: inherit; color: var(--text); background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); cursor: pointer; }
   .tpp-tl-start:hover { border-color: var(--text-muted); }
   .tpp-tl-rows { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
@@ -2608,7 +2609,7 @@
     <div class="tasks-topbar">
       <div>
         <h2 class="visually-hidden">Discovery &rarr; Treatment Plan</h2>
-        <div class="tpp-tabs" role="tablist"><button class="tpp-mode-btn active" data-mode="regular" role="tab" onclick="setTppMode('regular')">Discovery &rarr; Treatment Plan</button><button class="tpp-mode-btn" data-mode="followup" role="tab" onclick="setTppMode('followup')">Follow-Up</button><button class="tpp-mode-btn" data-mode="timeline" role="tab" onclick="setTppMode('timeline')">Treatment Plan Timeline</button></div>
+        <div class="tpp-tabs" role="tablist"><button class="tpp-mode-btn active" data-mode="regular" role="tab" onclick="setTppMode('regular')">Discovery &rarr; Treatment Plan</button><button class="tpp-mode-btn" data-mode="followup" role="tab" onclick="setTppMode('followup')">Follow-Up</button><button class="tpp-mode-btn" data-mode="timeline" role="tab" onclick="setTppMode('timeline')">Treatment Plan Timeline</button><button class="tpp-mode-btn" data-mode="repair" role="tab" onclick="setTppMode('repair')">Repair &amp; Clear</button></div>
         <p class="tasks-sub">Drag a tile between stages, or click it for details</p>
       </div>
       <span class="pep-stuck-summary" id="tpp-disc-summary" style="display:none"></span>
@@ -2652,7 +2653,7 @@
     <div class="tasks-topbar">
       <div>
         <h2 class="visually-hidden">Follow-Up</h2>
-        <div class="tpp-tabs" role="tablist"><button class="tpp-mode-btn" data-mode="regular" role="tab" onclick="setTppMode('regular')">Discovery &rarr; Treatment Plan</button><button class="tpp-mode-btn active" data-mode="followup" role="tab" onclick="setTppMode('followup')">Follow-Up</button><button class="tpp-mode-btn" data-mode="timeline" role="tab" onclick="setTppMode('timeline')">Treatment Plan Timeline</button></div>
+        <div class="tpp-tabs" role="tablist"><button class="tpp-mode-btn" data-mode="regular" role="tab" onclick="setTppMode('regular')">Discovery &rarr; Treatment Plan</button><button class="tpp-mode-btn active" data-mode="followup" role="tab" onclick="setTppMode('followup')">Follow-Up</button><button class="tpp-mode-btn" data-mode="timeline" role="tab" onclick="setTppMode('timeline')">Treatment Plan Timeline</button><button class="tpp-mode-btn" data-mode="repair" role="tab" onclick="setTppMode('repair')">Repair &amp; Clear</button></div>
         <p class="tasks-sub">Repeatable labs / plan-review cycle after acceptance</p>
       </div>
       <span class="pep-stuck-summary" id="tpp-fu-summary" style="display:none"></span>
@@ -2693,7 +2694,7 @@
     <div class="tasks-topbar">
       <div>
         <h2 class="visually-hidden">Treatment Plan Timeline</h2>
-        <div class="tpp-tabs" role="tablist"><button class="tpp-mode-btn" data-mode="regular" role="tab" onclick="setTppMode('regular')">Discovery &rarr; Treatment Plan</button><button class="tpp-mode-btn" data-mode="followup" role="tab" onclick="setTppMode('followup')">Follow-Up</button><button class="tpp-mode-btn active" data-mode="timeline" role="tab" onclick="setTppMode('timeline')">Treatment Plan Timeline</button></div>
+        <div class="tpp-tabs" role="tablist"><button class="tpp-mode-btn" data-mode="regular" role="tab" onclick="setTppMode('regular')">Discovery &rarr; Treatment Plan</button><button class="tpp-mode-btn" data-mode="followup" role="tab" onclick="setTppMode('followup')">Follow-Up</button><button class="tpp-mode-btn active" data-mode="timeline" role="tab" onclick="setTppMode('timeline')">Treatment Plan Timeline</button><button class="tpp-mode-btn" data-mode="repair" role="tab" onclick="setTppMode('repair')">Repair &amp; Clear</button></div>
         <p class="tasks-sub">12-week plan, week by week. Click a tile for details and checkoffs</p>
       </div>
       <span class="pep-stuck-summary none" id="tpp-tl-summary" style="display:none"></span>
@@ -2715,6 +2716,34 @@
     </div>
     <div class="kanban-scroll">
       <div class="kanban-cols" id="tpp-timeline-cols"></div>
+    </div>
+  </div>
+  <div class="tpp-board tpp-board-repair">
+    <div class="tasks-topbar">
+      <div>
+        <h2 class="visually-hidden">Repair &amp; Clear</h2>
+        <div class="tpp-tabs" role="tablist"><button class="tpp-mode-btn" data-mode="regular" role="tab" onclick="setTppMode('regular')">Discovery &rarr; Treatment Plan</button><button class="tpp-mode-btn" data-mode="followup" role="tab" onclick="setTppMode('followup')">Follow-Up</button><button class="tpp-mode-btn" data-mode="timeline" role="tab" onclick="setTppMode('timeline')">Treatment Plan Timeline</button><button class="tpp-mode-btn active" data-mode="repair" role="tab" onclick="setTppMode('repair')">Repair &amp; Clear</button></div>
+        <p class="tasks-sub">Six weeks, tracked on its own. Starts at week 3</p>
+      </div>
+      <span class="pep-stuck-summary none" id="tpp-rc-summary" style="display:none"></span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="refresh-btn" onclick="reloadTpp(this)" title="Refresh" style="color:var(--text-muted);padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="tasks-filterbar">
+      <span class="filter-label">Filter</span>
+      <div class="filter-search-wrap">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" class="filter-search-input" id="tpp-rc-search" placeholder="Search patient name&hellip;" oninput="renderTppRepairBoard()" autocomplete="off">
+      </div>
+    </div>
+    <div class="kanban-scroll">
+      <div class="kanban-cols" id="tpp-repair-cols"></div>
     </div>
   </div>
 </div>
@@ -3210,15 +3239,17 @@ function setTppMode(mode) {
   const discBoard = document.querySelector('.tpp-board-discovery');
   const fuBoard = document.querySelector('.tpp-board-followup');
   const tlBoard = document.querySelector('.tpp-board-timeline');
+  const rcBoard = document.querySelector('.tpp-board-repair');
   if (discBoard) discBoard.classList.toggle('tpp-board-active', mode === 'regular');
   if (fuBoard) fuBoard.classList.toggle('tpp-board-active', mode === 'followup');
   if (tlBoard) tlBoard.classList.toggle('tpp-board-active', mode === 'timeline');
+  if (rcBoard) rcBoard.classList.toggle('tpp-board-active', mode === 'repair');
   try { localStorage.setItem('mc-tpp-mode', mode); } catch (e) {}
 }
 (function() {
   let savedTppMode = null;
   try { savedTppMode = localStorage.getItem('mc-tpp-mode'); } catch (e) {}
-  if (savedTppMode === 'followup' || savedTppMode === 'timeline') setTppMode(savedTppMode);
+  if (savedTppMode === 'followup' || savedTppMode === 'timeline' || savedTppMode === 'repair') setTppMode(savedTppMode);
 })();
 function setView(view, btn) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -6241,6 +6272,9 @@ function tppDescribe(body, before, updated) {
   if (body.editDiscoveryHistory || body.editFollowupHistory) return 'edit ' + name + '\u2019s timeline';
   if (body.addDiscoveryHistory || body.addFollowupHistory) return 'add a timeline step for ' + name;
   if (body.deleteDiscoveryHistory || body.deleteFollowupHistory) return 'delete a timeline step for ' + name;
+  if (body.setTimelineFollowup) return 'change ' + name + '\u2019s ' + body.setTimelineFollowup.week + '-week follow-up';
+  if (body.setTimelineBinder) return 'change ' + name + '\u2019s binder status';
+  if (body.setRepairStart) return 'change ' + name + '\u2019s Repair & Clear start date';
   if (body.setTimelineStart) return 'change ' + name + '\u2019s timeline start date';
   if (body.name !== undefined) return 'rename ' + ((before && before.name) || 'patient') + ' to ' + body.name;
   if (body.followupDue !== undefined) return 'change ' + name + '\u2019s next-due date';
@@ -6376,37 +6410,45 @@ async function reloadTpp(btn) {
 }
 // -- Treatment Plan Timeline page ---------------------------------------------
 // Twelve week columns, left to right. Each column lists what gets done that
-// week (the same for every patient, taken from the 12-week Phase 1 plan), and
-// patient tiles sit in whichever week they are in. A patient reaches this page
-// by hitting Treatment Plan Scheduled (the worker stamps `timeline.startedAt`).
-// Their week comes from `timeline.startDate`, set with the Start button or the
-// date picker in the detail panel. It is the same patient record as on the
-// Discovery board, so nothing is copied and the two tiles can't disagree.
-// Per-patient checkoffs live in `timeline.progress`, keyed 'w<week>.<item>'.
+// week (the same for every patient), and patient tiles sit in whichever week
+// they are in. A patient reaches this page by hitting Treatment Plan Scheduled
+// (the worker stamps `timeline.startedAt`). Their week comes from
+// `timeline.startDate`, set with the Start button or the date picker in the
+// detail panel. It is the same patient record as on the Discovery board, so
+// nothing is copied and the two tiles can't disagree.
+// Everything per patient lives in `timeline`:
+//   startDate, progress { 'w<week>.<item>': n }, followups { w4, w8, w12 },
+//   binder, repairStart (the Repair & Clear clock).
 const TPP_TL_WEEKS = 12;
 const TPP_TL_PAST = TPP_TL_WEEKS + 1; // column after week 12
-const TPP_TL_FOLLOWUP_NOTES = {
-  4: 'Early check-in, symptom review & protocol adjustment',
-  8: 'Mid-protocol check-in, labs review & protocol adjustment',
-  12: 'End of Phase 1 review, lab reorder & Phase 2 planning',
-};
 // min / max = sessions per week. min === max === 1 shows as a plain checkbox.
+// `info` items are shown but not checked off here (Repair & Clear has its own tab).
 const TPP_TL_ITEMS = [
   { key: 'flowpresso', label: 'Flowpresso', from: 1, to: 12, min: 1, max: 1, note: 'Once a week' },
   { key: 'hbot', label: 'HBOT', from: 1, to: 12, min: 3, max: 5, note: '1-hour sessions' },
   { key: 'ozone', label: 'Ozone IV', from: 1, to: 12, min: 2, max: 2, note: 'Schedule the IV first, then HBOT right after' },
+  { key: 'sauna', label: 'Far Infrared Sauna', from: 3, to: 12, min: 2, max: 3, note: '' },
   { key: 'epitalon', label: 'Epitalon', from: 1, to: 1, min: 1, max: 1, note: '10-day protocol' },
   { key: 'peptides', label: 'Thymogen, KPV, BPC-157', from: 3, to: 12, min: 1, max: 1, note: 'Immune peptides' },
-  { key: 'repair', label: 'Repair & Clear program', from: 3, to: 8, min: 1, max: 1, note: '6-week supplement regimen with dietary restriction' },
-  { key: 'sauna', label: 'Far Infrared Sauna', from: 4, to: 12, min: 1, max: 3, note: '' },
-  { key: 'followup', label: 'Provider follow-up', weeks: [4, 8, 12], min: 1, max: 1, note: '' },
+  { key: 'repair', label: 'Repair & Clear', from: 3, to: 8, info: true, note: 'Tracked on the Repair & Clear tab' },
+  { key: 'followup', label: '4-week follow-up', weeks: [4], min: 1, max: 1, note: 'Early check-in, symptom review & protocol adjustment' },
+  { key: 'labs_ordered', label: 'Order labs', weeks: [8], min: 1, max: 1, note: '' },
+  { key: 'followup', label: '8-week follow-up', weeks: [8], min: 1, max: 1, note: 'Mid-protocol check-in & protocol adjustment' },
+  { key: 'labs_drawn', label: 'Labs drawn?', weeks: [9], min: 1, max: 1, note: 'Results should be back by week 12' },
+  { key: 'followup', label: '12-week follow-up', weeks: [12], min: 1, max: 1, note: 'Lab review, end of Phase 1 review & Phase 2 planning' },
+];
+// Each follow-up has a date and time in the patient's profile. The tile turns
+// light red from the week before through the follow-up week while it is unset.
+const TPP_TL_FOLLOWUPS = [
+  { week: 4, label: '4-week follow-up', redFrom: 3 },
+  { week: 8, label: '8-week follow-up', redFrom: 7 },
+  { week: 12, label: '12-week follow-up', redFrom: 11 },
 ];
 function tppTlItemsForWeek(week) {
-  return TPP_TL_ITEMS.filter(it => it.weeks ? it.weeks.includes(week) : (week >= it.from && week <= it.to))
-    .map(it => Object.assign({}, it, { note: it.key === 'followup' ? TPP_TL_FOLLOWUP_NOTES[week] : it.note }));
+  return TPP_TL_ITEMS.filter(it => it.weeks ? it.weeks.includes(week) : (week >= it.from && week <= it.to));
 }
 function tppTlTarget(it) {
-  if (it.max === 1) return '';
+  if (it.info || it.max === 1) return '';
   return it.min === it.max ? it.min + ' per week' : it.min + '–' + it.max + ' per week';
 }
 function tppTlDateStr(d) {
@@ -6414,19 +6456,25 @@ function tppTlDateStr(d) {
   return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
 }
 function tppTlLabel(dateStr) {
-  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return new Date(dateStr.slice(0, 10) + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
-// Where is this patient on the timeline? Not started (no date, or a date still
-// ahead) sits in week 1; each seven days after the start date moves them on.
-function tppTlInfo(patient) {
-  const tl = patient.timeline || {};
-  const start = /^\d{4}-\d{2}-\d{2}$/.test(tl.startDate || '') ? tl.startDate : '';
+function tppTlWhen(at) {
+  if (!at) return '';
+  if (at.length <= 10) return tppTlLabel(at);
+  return new Date(at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+// Shared clock maths: a start date plus how many weeks the program runs.
+// Not started (no date, or a date still ahead) sits in week 1; each seven days
+// after the start date moves them on; after the last week they are "past".
+function tppClockInfo(startDate, weeks) {
+  const start = /^\d{4}-\d{2}-\d{2}$/.test(startDate || '') ? startDate : '';
   if (!start) return { started: false, week: 1, startDate: '' };
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  const diff = Math.round((new Date(start + 'T00:00:00') - today) / -86400000);
+  const diff = Math.round((today - new Date(start + 'T00:00:00')) / 86400000);
   if (diff < 0) return { started: false, week: 1, startDate: start, startsIn: -diff };
-  return { started: true, week: Math.min(Math.floor(diff / 7) + 1, TPP_TL_PAST), day: diff + 1, startDate: start };
+  return { started: true, week: Math.min(Math.floor(diff / 7) + 1, weeks + 1), day: diff + 1, startDate: start };
 }
+function tppTlInfo(patient) { return tppClockInfo((patient.timeline || {}).startDate, TPP_TL_WEEKS); }
 function tppTlCount(patient, week, key) {
   const n = ((patient.timeline || {}).progress || {})['w' + week + '.' + key];
   return typeof n === 'number' ? n : 0;
@@ -6434,13 +6482,25 @@ function tppTlCount(patient, week, key) {
 // "done of needed" for one week: each item counts up to its minimum.
 function tppTlWeekProgress(patient, week) {
   let done = 0, need = 0;
-  tppTlItemsForWeek(week).forEach(it => { need += it.min; done += Math.min(tppTlCount(patient, week, it.key), it.min); });
+  tppTlItemsForWeek(week).forEach(it => {
+    if (it.info) return;
+    need += it.min; done += Math.min(tppTlCount(patient, week, it.key), it.min);
+  });
   return { done, need };
+}
+function tppTlFollowupAt(patient, week) {
+  return (((patient.timeline || {}).followups) || {})['w' + week] || '';
+}
+// The follow-up this tile should be nagging about right now, if any.
+function tppTlFollowupDue(patient) {
+  const info = tppTlInfo(patient);
+  if (!info.started || info.week > TPP_TL_WEEKS) return null;
+  return TPP_TL_FOLLOWUPS.find(f => info.week >= f.redFrom && info.week <= f.week) || null;
 }
 function tppTlTodoHtml(week) {
   if (week === TPP_TL_PAST) {
     return '<div class="tpp-tl-todo"><div class="tpp-tl-todo-title">Phase 1 complete</div>' +
-      '<div class="tpp-tl-todo-note">Past week 12. The week 12 follow-up covers lab reorder and Phase 2 planning.</div></div>';
+      '<div class="tpp-tl-todo-note">Past week 12.</div></div>';
   }
   const items = tppTlItemsForWeek(week);
   return '<div class="tpp-tl-todo"><div class="tpp-tl-todo-title">To do this week</div><ul>' +
@@ -6448,6 +6508,12 @@ function tppTlTodoHtml(week) {
       (tppTlTarget(it) ? ' <span>' + tppTlTarget(it) + '</span>' : '') +
       (it.note ? '<div class="tpp-tl-todo-note">' + escapeHtml(it.note) + '</div>' : '') + '</li>').join('') +
     '</ul></div>';
+}
+function tppStartLine(info, weeks) {
+  if (info.started && info.week <= weeks) return 'Day ' + info.day + ' of ' + (weeks * 7) + ' &middot; started ' + tppTlLabel(info.startDate);
+  if (info.started) return 'Started ' + tppTlLabel(info.startDate);
+  if (info.startDate) return 'Starts ' + tppTlLabel(info.startDate);
+  return '<span class="tpp-tile-missing">Not started</span>';
 }
 function renderTppTimelineBoard() {
   const container = document.getElementById('tpp-timeline-cols');
@@ -6467,20 +6533,21 @@ function renderTppTimelineBoard() {
     const cardsHtml = cards.map(patient => {
       const info = tppTlInfo(patient);
       const stage = tppDiscStage(patient);
-      let status;
-      if (info.started && info.week <= TPP_TL_WEEKS) status = 'Day ' + info.day + ' of ' + (TPP_TL_WEEKS * 7) + ' &middot; started ' + tppTlLabel(info.startDate);
-      else if (info.started) status = 'Started ' + tppTlLabel(info.startDate);
-      else if (info.startDate) status = 'Starts ' + tppTlLabel(info.startDate);
-      else status = 'Not started';
       const prog = info.started && info.week <= TPP_TL_WEEKS ? tppTlWeekProgress(patient, info.week) : null;
       const showStage = stage !== TPP_SCHEDULED_STAGE && stage !== TPP_IN_PROGRESS_STAGE;
+      const due = tppTlFollowupDue(patient);
+      const dueAt = due ? tppTlFollowupAt(patient, due.week) : '';
+      const alert = !!due && !dueAt;
       return '' +
-        '<div class="pep-card tpp-tl-card" onclick="openTppDetail(\'' + patient.id + '\')" title="Open ' + escapeHtml(patient.name) + '">' +
+        '<div class="pep-card tpp-tl-card' + (alert ? ' tpp-tl-alert' : '') + '" onclick="openTppDetail(\'' + patient.id + '\')" title="Open ' + escapeHtml(patient.name) + '">' +
           '<div class="pep-card-name">' + escapeHtml(patient.name) + tppDecisionTagHtml(patient) + '</div>' +
-          '<div class="tpp-tile-fact">' + (info.started ? status : '<span class="tpp-tile-missing">' + status + '</span>') + '</div>' +
+          '<div class="tpp-tile-fact">' + tppStartLine(info, TPP_TL_WEEKS) + '</div>' +
+          (alert ? '<div class="tpp-tile-sub"><span class="tpp-tile-late">' + due.label + ' not scheduled</span></div>' : '') +
+          (due && dueAt ? '<div class="tpp-tile-sub">' + due.label + ': ' + escapeHtml(tppTlWhen(dueAt)) + '</div>' : '') +
           (prog ? '<div class="tpp-tile-sub">' + prog.done + ' of ' + prog.need + ' done this week</div>' : '') +
           (showStage ? '<div class="tpp-tile-sub">' + (stage === TPP_HANDOFF_STAGE ? 'Now on the Follow-Up board' : escapeHtml(tppStageLabel(stage))) + '</div>' : '') +
           (!info.started ? '<button class="tpp-tl-start" onclick="event.stopPropagation(); startTppTimeline(\'' + patient.id + '\')">Start week 1 today</button>' : '') +
+          ((patient.timeline || {}).binder ? '<div class="tpp-tile-sub">On binder</div>' : '') +
           tppPaymentTagHtml(patient) +
           tppTileCommentHtml(patient) +
         '</div>';
@@ -6495,6 +6562,72 @@ function renderTppTimelineBoard() {
   }
   container.innerHTML = cols.join('');
 }
+
+// -- Repair & Clear timeline ----------------------------------------------------
+// A second, separate six-week clock. A patient shows up here automatically once
+// they reach week 3 of the main timeline (Repair & Clear runs weeks 3 to 8), but
+// the clock only runs once someone clicks Start or enters the date they began.
+const TPP_RC_WEEKS = 6;
+const TPP_RC_PAST = TPP_RC_WEEKS + 1;
+const TPP_RC_PHASES = [
+  { weeks: [1], title: 'Anti-inflammatory immune boost', note: 'Anti-inflammatory Trio: Turmero, Resvero, Trizomal Glutathione' },
+  { weeks: [2, 3], title: 'Gut: intestinal support', note: '' },
+  { weeks: [4, 5, 6], title: 'Liver detox', note: '' },
+];
+function tppRcInfo(patient) { return tppClockInfo((patient.timeline || {}).repairStart, TPP_RC_WEEKS); }
+function tppRcVisible(patient) {
+  const tl = patient.timeline;
+  if (!tl || !tl.startedAt) return false;
+  if (tl.repairStart) return true;
+  const main = tppTlInfo(patient);
+  return main.started && main.week >= 3;
+}
+function renderTppRepairBoard() {
+  const container = document.getElementById('tpp-repair-cols');
+  if (!container) return;
+  const query = tppSearchQuery('tpp-rc-search');
+  const here = allTpp.filter(tppRcVisible);
+  const summaryEl = document.getElementById('tpp-rc-summary');
+  if (summaryEl) {
+    summaryEl.style.display = here.length ? 'inline-block' : 'none';
+    summaryEl.textContent = here.length + (here.length === 1 ? ' patient' : ' patients');
+  }
+  const matches = here.filter(p => tppMatchesSearch(p, query));
+  const cols = [];
+  for (let w = 1; w <= TPP_RC_PAST; w++) {
+    const past = w === TPP_RC_PAST;
+    const phase = TPP_RC_PHASES.find(ph => ph.weeks.includes(w));
+    const cards = matches.filter(p => tppRcInfo(p).week === w)
+      .sort((a, b) => String(tppRcInfo(a).startDate || '9999') < String(tppRcInfo(b).startDate || '9999') ? -1 : 1);
+    const cardsHtml = cards.map(patient => {
+      const info = tppRcInfo(patient);
+      const main = tppTlInfo(patient);
+      return '' +
+        '<div class="pep-card tpp-tl-card" onclick="openTppDetail(\'' + patient.id + '\')" title="Open ' + escapeHtml(patient.name) + '">' +
+          '<div class="pep-card-name">' + escapeHtml(patient.name) + '</div>' +
+          '<div class="tpp-tile-fact">' + tppStartLine(info, TPP_RC_WEEKS) + '</div>' +
+          (main.started ? '<div class="tpp-tile-sub">' + (main.week <= TPP_TL_WEEKS ? 'Main timeline: week ' + main.week : 'Main timeline: past week 12') + '</div>' : '') +
+          (!info.started ? '<button class="tpp-tl-start" onclick="event.stopPropagation(); startTppRepair(\'' + patient.id + '\')">Start Repair &amp; Clear today</button>' : '') +
+          tppTileCommentHtml(patient) +
+        '</div>';
+    }).join('');
+    const todo = past
+      ? '<div class="tpp-tl-todo"><div class="tpp-tl-todo-title">Repair &amp; Clear complete</div></div>'
+      : '<div class="tpp-tl-todo"><div class="tpp-tl-todo-title">Main timeline week ' + (w + 2) + '</div>' +
+        '<div><strong>' + escapeHtml(phase.title) + '</strong></div>' +
+        (phase.note ? '<div class="tpp-tl-todo-note">' + escapeHtml(phase.note) + '</div>' : '') + '</div>';
+    cols.push('' +
+      '<div class="kanban-col pep-col tpp-tl-col">' +
+        '<div class="kanban-col-header"><span class="kanban-col-name">' + (past ? 'Complete' : 'Week ' + w) + '</span>' +
+          '<span class="kanban-col-count">' + cards.length + '</span></div>' +
+        todo +
+        '<div class="kanban-cards">' + cardsHtml + '</div>' +
+      '</div>');
+  }
+  container.innerHTML = cols.join('');
+}
+
+// -- Saving ---------------------------------------------------------------------
 async function tppTlSave(patientId, body, opts) {
   try {
     await tppPatch(patientId, body, opts);
@@ -6518,28 +6651,46 @@ function startTppTimeline(patientId) {
 function setTppTimelineStart(patientId, date) {
   return tppTlSave(patientId, { setTimelineStart: { date: date || '' } });
 }
+function startTppRepair(patientId) {
+  return tppTlSave(patientId, { setRepairStart: { date: tppTlDateStr(new Date()) } });
+}
+function setTppRepairStart(patientId, date) {
+  return tppTlSave(patientId, { setRepairStart: { date: date || '' } });
+}
 function setTppTimelineProgress(patientId, week, key, count) {
   // Checkoffs are saved straight away and kept out of the undo list.
   return tppTlSave(patientId, { setTimelineProgress: { week, item: key, count } }, { noUndo: true });
+}
+function setTppTimelineFollowup(patientId, week, at) {
+  return tppTlSave(patientId, { setTimelineFollowup: { week, at: at || '' } });
+}
+function setTppTimelineBinder(patientId, on) {
+  return tppTlSave(patientId, { setTimelineBinder: { on: !!on } });
 }
 const tppTlDetailWeek = {};
 function setTppTlDetailWeek(patientId, week) {
   tppTlDetailWeek[patientId] = parseInt(week, 10);
   renderTppDetail(patientId);
 }
-// Detail panel: start date (saves the moment a date is picked) and the
-// checklist for one week at a time, defaulting to the patient's current week.
+// -- Detail panel ---------------------------------------------------------------
+// Start date (saves the moment a date is picked), the checklist for one week at a
+// time (defaulting to the patient's current week), the three follow-up dates, the
+// binder toggle, and the Repair & Clear clock.
 function renderTppTimelineSection(patient) {
   const info = tppTlInfo(patient);
-  const week = tppTlDetailWeek[patient.id] || Math.min(info.week, TPP_TL_WEEKS);
+  const id = patient.id;
+  const tl = patient.timeline || {};
+  const week = tppTlDetailWeek[id] || Math.min(info.week, TPP_TL_WEEKS);
   const weekOptions = [];
   for (let w = 1; w <= TPP_TL_WEEKS; w++) {
     weekOptions.push('<option value="' + w + '"' + (w === week ? ' selected' : '') + '>Week ' + w + (info.started && info.week === w ? ' (current)' : '') + '</option>');
   }
   const rows = tppTlItemsForWeek(week).map(it => {
-    const n = tppTlCount(patient, week, it.key);
-    const id = patient.id;
     const note = it.note ? '<div class="tpp-tl-todo-note">' + escapeHtml(it.note) + '</div>' : '';
+    if (it.info) {
+      return '<div class="tpp-tl-row"><span><strong>' + escapeHtml(it.label) + '</strong>' + note + '</span></div>';
+    }
+    const n = tppTlCount(patient, week, it.key);
     if (it.max === 1) {
       return '<label class="tpp-tl-row"><input type="checkbox"' + (n >= 1 ? ' checked' : '') +
         ' onchange="setTppTimelineProgress(\'' + id + '\',' + week + ',\'' + it.key + '\',this.checked?1:0)">' +
@@ -6557,20 +6708,44 @@ function renderTppTimelineSection(patient) {
   else if (info.started) status = 'Past week 12 (started ' + tppTlLabel(info.startDate) + ')';
   else if (info.startDate) status = 'Starts ' + tppTlLabel(info.startDate);
   else status = 'Not started';
+  const rc = tppRcInfo(patient);
+  let rcStatus;
+  if (rc.started && rc.week <= TPP_RC_WEEKS) rcStatus = 'Week ' + rc.week + ', day ' + rc.day + ' of ' + (TPP_RC_WEEKS * 7);
+  else if (rc.started) rcStatus = 'Complete (started ' + tppTlLabel(rc.startDate) + ')';
+  else if (rc.startDate) rcStatus = 'Starts ' + tppTlLabel(rc.startDate);
+  else rcStatus = 'Not started';
+  const btn = 'style="padding:7px 14px;font-size:var(--fs-sm)"';
+  const followupRows = TPP_TL_FOLLOWUPS.map(f =>
+    '<div class="modal-field"><label class="modal-label" for="tpp-tl-fu-' + f.week + '">' + f.label + '</label>' +
+      '<input type="datetime-local" class="modal-input" id="tpp-tl-fu-' + f.week + '" style="width:auto" value="' + escapeHtml(tppTlFollowupAt(patient, f.week).length > 10 ? tppTlFollowupAt(patient, f.week) : '') + '" ' +
+        'onchange="setTppTimelineFollowup(\'' + id + '\',' + f.week + ', this.value)"></div>').join('');
   return '<div class="pep-order-block">' +
     '<div class="modal-label" style="margin-bottom:8px">Treatment plan timeline</div>' +
     '<div class="modal-field"><label class="modal-label" for="tpp-tl-start-date">Start date</label>' +
       '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
-        '<input type="date" class="modal-input" id="tpp-tl-start-date" style="width:auto" value="' + escapeHtml(info.startDate) + '" onchange="setTppTimelineStart(\'' + patient.id + '\', this.value)">' +
-        (info.startDate ? '<button class="modal-cancel" style="padding:7px 14px;font-size:var(--fs-sm)" onclick="setTppTimelineStart(\'' + patient.id + '\', \'\')">Clear</button>' : '') +
-        (!info.started ? '<button class="modal-cancel" style="padding:7px 14px;font-size:var(--fs-sm)" onclick="startTppTimeline(\'' + patient.id + '\')">Start today</button>' : '') +
+        '<input type="date" class="modal-input" id="tpp-tl-start-date" style="width:auto" value="' + escapeHtml(info.startDate) + '" onchange="setTppTimelineStart(\'' + id + '\', this.value)">' +
+        (info.startDate ? '<button class="modal-cancel" ' + btn + ' onclick="setTppTimelineStart(\'' + id + '\', \'\')">Clear</button>' : '') +
+        (!info.started ? '<button class="modal-cancel" ' + btn + ' onclick="startTppTimeline(\'' + id + '\')">Start today</button>' : '') +
       '</div>' +
       '<p style="font-size:var(--fs-sm);color:var(--text-muted);margin:6px 0 14px">' + status + '</p>' +
     '</div>' +
     '<div class="modal-field"><label class="modal-label" for="tpp-tl-week-select">Checklist for</label>' +
-      '<select id="tpp-tl-week-select" class="modal-select" style="width:auto" onchange="setTppTlDetailWeek(\'' + patient.id + '\', this.value)">' + weekOptions.join('') + '</select>' +
+      '<select id="tpp-tl-week-select" class="modal-select" style="width:auto" onchange="setTppTlDetailWeek(\'' + id + '\', this.value)">' + weekOptions.join('') + '</select>' +
     '</div>' +
     '<div class="tpp-tl-rows">' + rows + '</div>' +
+    '<div class="modal-label" style="margin:18px 0 8px">Follow-up appointments</div>' +
+    followupRows +
+    '<label class="tpp-tl-row" style="margin-top:6px"><input type="checkbox"' + (tl.binder ? ' checked' : '') + ' onchange="setTppTimelineBinder(\'' + id + '\', this.checked)">' +
+      '<span><strong>On binder</strong><div class="tpp-tl-todo-note">CSM</div></span></label>' +
+    '<div class="modal-label" style="margin:18px 0 8px">Repair &amp; Clear</div>' +
+    '<div class="modal-field"><label class="modal-label" for="tpp-rc-start-date">Start date</label>' +
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+        '<input type="date" class="modal-input" id="tpp-rc-start-date" style="width:auto" value="' + escapeHtml(rc.startDate) + '" onchange="setTppRepairStart(\'' + id + '\', this.value)">' +
+        (rc.startDate ? '<button class="modal-cancel" ' + btn + ' onclick="setTppRepairStart(\'' + id + '\', \'\')">Clear</button>' : '') +
+        (!rc.started ? '<button class="modal-cancel" ' + btn + ' onclick="startTppRepair(\'' + id + '\')">Start today</button>' : '') +
+      '</div>' +
+      '<p style="font-size:var(--fs-sm);color:var(--text-muted);margin:6px 0 0">' + rcStatus + '</p>' +
+    '</div>' +
   '</div>';
 }
 // -- Drag helpers (shared) ----------------------------------------------------
@@ -6589,6 +6764,7 @@ function renderTppBoard() {
   renderTppDiscoveryBoard();
   renderTppFollowupBoard();
   renderTppTimelineBoard();
+  renderTppRepairBoard();
   if (tppCommentsPatientId) renderTppCommentsList();
 }
 // In Labs Drawn and still inside the ~3 week wait: expected, not stuck.
