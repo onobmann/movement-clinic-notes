@@ -2077,7 +2077,8 @@
   .tpp-board { display: none; flex-direction: column; overflow: hidden; flex: 1 1 0; min-height: 0; }
   .tpp-board.tpp-board-active { display: flex; }
   /* Treatment Plan Timeline page: one column per week */
-  .tpp-tl-col { flex: 0 0 250px; min-width: 250px; }
+  .tpp-tl-col { flex: 1 1 250px; min-width: 190px; }
+  .tpp-tl-col.pep-col-empty .tpp-tl-todo { display: none; }
   .tpp-tl-todo { margin: 0 10px 10px; padding: 8px 10px; border-left: 3px solid var(--accent); background: var(--surface2); border-radius: var(--r-sm); }
   .tpp-tl-todo-title { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; }
   .tpp-tl-todo ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
@@ -6586,7 +6587,7 @@ function renderTppTimelineBoard() {
         '</div>';
     }).join('');
     cols.push('' +
-      '<div class="kanban-col pep-col tpp-tl-col">' +
+      '<div class="kanban-col pep-col tpp-tl-col' + (cards.length ? '' : ' pep-col-empty') + '">' +
         '<div class="kanban-col-header"><span class="kanban-col-name">' + (w === TPP_TL_PAST ? 'Past week 12' : 'Week ' + w) + '</span>' +
           '<span class="kanban-col-count">' + cards.length + '</span></div>' +
         tppTlTodoHtml(w) +
@@ -6650,7 +6651,7 @@ function renderTppRepairBoard() {
         '<div><strong>' + escapeHtml(phase.title) + '</strong></div>' +
         (phase.note ? '<div class="tpp-tl-todo-note">' + escapeHtml(phase.note) + '</div>' : '') + '</div>';
     cols.push('' +
-      '<div class="kanban-col pep-col tpp-tl-col">' +
+      '<div class="kanban-col pep-col tpp-tl-col' + (cards.length ? '' : ' pep-col-empty') + '">' +
         '<div class="kanban-col-header"><span class="kanban-col-name">' + (past ? 'Complete' : 'Week ' + w) + '</span>' +
           '<span class="kanban-col-count">' + cards.length + '</span></div>' +
         todo +
