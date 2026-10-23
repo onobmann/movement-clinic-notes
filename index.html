@@ -2088,6 +2088,9 @@
   .tpp-tl-todo-note-inline { font-size: var(--fs-xs); color: var(--text-muted); }
   .tpp-tl-card.tpp-tl-alert { background: color-mix(in srgb, var(--danger) 14%, var(--surface)); border-color: color-mix(in srgb, var(--danger) 55%, var(--border)); }
   .tpp-tl-start { margin-top: 8px; padding: 6px 10px; font-size: var(--fs-sm); font-family: inherit; color: var(--text); background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); cursor: pointer; }
+  .tpp-tl-labbtn { margin-top: 8px; padding: 6px 12px; font-size: var(--fs-sm); font-weight: 600; font-family: inherit; color: var(--text); background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); cursor: pointer; display: block; }
+  .tpp-tl-labbtn:hover { border-color: var(--text-muted); }
+  .tpp-tl-labbtn.done { background: var(--accent); border-color: var(--accent); color: #fff; }
   .tpp-tl-start:hover { border-color: var(--text-muted); }
   .tpp-tl-rows { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
   .tpp-tl-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; font-size: var(--fs-sm); cursor: pointer; overflow-wrap: break-word; word-break: normal; }
@@ -6466,9 +6469,9 @@ const TPP_TL_ITEMS = [
   { key: 'peptides', label: 'Thymogen, KPV, BPC-157', from: 3, to: 12, min: 1, max: 1, note: 'Immune peptides' },
   { key: 'repair', label: 'Repair & Clear', from: 3, to: 8, info: true, note: 'Tracked on the Repair & Clear tab' },
   { key: 'followup', label: '4-week follow-up', weeks: [4], min: 1, max: 1, note: 'Early check-in, symptom review & protocol adjustment' },
-  { key: 'labs_ordered', label: 'Order labs', weeks: [8], min: 1, max: 1, note: '' },
+  { key: 'labs_ordered', label: 'Labs sent', weeks: [8], min: 1, max: 1, note: '' },
   { key: 'followup', label: '8-week follow-up', weeks: [8], min: 1, max: 1, note: 'Mid-protocol check-in & protocol adjustment' },
-  { key: 'labs_drawn', label: 'Labs drawn?', weeks: [9], min: 1, max: 1, note: 'Results should be back by week 12' },
+  { key: 'labs_drawn', label: 'Labs completed', weeks: [9], min: 1, max: 1, note: 'Results should be back by week 12' },
   { key: 'followup', label: '12-week follow-up', weeks: [12], min: 1, max: 1, note: 'Lab review, end of Phase 1 review & Phase 2 planning' },
 ];
 // Each follow-up has a date and time in the patient's profile. The tile turns
@@ -6549,6 +6552,16 @@ function tppStartLine(info, weeks) {
   if (info.startDate) return 'Starts ' + tppTlLabel(info.startDate);
   return '<span class="tpp-tile-missing">Not started</span>';
 }
+// Week 8 shows a "Labs sent" button, week 9 a "Labs completed" button. They only
+// record that the step happened, and click again to undo.
+function tppTlLabBtnHtml(patient, info) {
+  if (!info.started) return '';
+  const cfg = info.week === 8 ? { key: 'labs_ordered', label: 'Labs sent' } : info.week === 9 ? { key: 'labs_drawn', label: 'Labs completed' } : null;
+  if (!cfg) return '';
+  const done = tppTlCount(patient, info.week, cfg.key) > 0;
+  return '<button class="tpp-tl-labbtn' + (done ? ' done' : '') + '" aria-pressed="' + done + '" onclick="event.stopPropagation(); setTppTimelineProgress(\'' + patient.id + '\',' + info.week + ',\'' + cfg.key + '\',' + (done ? 0 : 1) + ')">' +
+    (done ? '&#10003; ' : '') + cfg.label + '</button>';
+}
 function renderTppTimelineBoard() {
   const container = document.getElementById('tpp-timeline-cols');
   if (!container) return;
@@ -6581,6 +6594,7 @@ function renderTppTimelineBoard() {
           (prog ? '<div class="tpp-tile-sub">' + prog.done + ' of ' + prog.need + ' done this week</div>' : '') +
           (showStage ? '<div class="tpp-tile-sub">' + (stage === TPP_HANDOFF_STAGE ? 'Now on the Follow-Up board' : escapeHtml(tppStageLabel(stage))) + '</div>' : '') +
           (!info.started ? '<button class="tpp-tl-start" onclick="event.stopPropagation(); startTppTimeline(\'' + patient.id + '\')">Start week 1 today</button>' : '') +
+          tppTlLabBtnHtml(patient, info) +
           ((patient.timeline || {}).binder ? '<div class="tpp-tile-sub">On binder</div>' : '') +
           tppPaymentTagHtml(patient) +
           tppTileCommentHtml(patient) +
