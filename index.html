@@ -2048,9 +2048,9 @@
   .tpp-mode-btn.active { color: var(--text); }
   .tpp-mode-btn.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--accent); }
   .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .tpp-lookup { padding: 10px 16px 0; flex: 0 0 auto; }
+  .tpp-lookup { padding: 6px 16px 0; flex: 0 0 auto; }
   .tpp-lookup-wrap { position: relative; max-width: 520px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); background: var(--surface); border-radius: var(--r-sm); padding: 0 10px; color: var(--text-muted); }
-  .tpp-lookup-input { flex: 1; border: 0; background: transparent; color: var(--text); font: inherit; font-size: var(--fs-md); padding: 9px 0; outline: none; min-width: 0; }
+  .tpp-lookup-input { flex: 1; border: 0; background: transparent; color: var(--text); font: inherit; font-size: var(--fs-sm); padding: 5px 0; outline: none; min-width: 0; }
   .tpp-lookup-results { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 60; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); box-shadow: 0 8px 24px rgba(0,0,0,.18); max-height: 60vh; overflow-y: auto; }
   .tpp-lookup-item { display: block; width: 100%; text-align: left; background: transparent; border: 0; border-bottom: 1px solid var(--border); padding: 10px 12px; cursor: pointer; color: var(--text); font: inherit; }
   .tpp-lookup-item:last-child { border-bottom: 0; }
@@ -2072,7 +2072,6 @@
   .tpp-ov-plan-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 6px; }
   .tpp-ov-btn { font-size: var(--fs-sm); font-weight: 600; padding: 7px 14px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--surface); color: var(--text); cursor: pointer; text-decoration: none; display: inline-block; }
   .tpp-ov-btn:hover { background: var(--surface2); }
-  .tpp-ov-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
   .tpp-ov-btn.danger { color: var(--danger); border-color: var(--danger); }
   .tpp-board { display: none; flex-direction: column; overflow: hidden; flex: 1 1 0; min-height: 0; }
   .tpp-board.tpp-board-active { display: flex; }
@@ -2114,7 +2113,7 @@
   .tpp-board .kanban-col.tpp-nextdue-col .kanban-col-header { flex-wrap: wrap; row-gap: 2px; }
   .tpp-board .tasks-heading { font-size: 1.25rem; margin-bottom: 0; line-height: 1.1; }
   .tpp-board .tasks-sub { font-size: var(--fs-xs); }
-  .tpp-board .task-add-btn { padding: 5px 14px; font-size: var(--fs-sm); }
+  .tpp-board .task-add-btn { padding: 5px 14px; font-size: var(--fs-sm); white-space: nowrap; flex-shrink: 0; }
   .tpp-board .tasks-topbar .refresh-btn { padding: 4px !important; }
   .tpp-board .tasks-topbar .refresh-btn:disabled { opacity: 0.35; cursor: default; }
   .tpp-board .tasks-topbar .refresh-btn:disabled:hover { color: var(--text-muted); }
@@ -2378,8 +2377,8 @@
     .tpp-board .tasks-topbar, .tpp-board .tasks-filterbar { padding-left: 12px; padding-right: 12px; }
     .tpp-board .tasks-sub { display: none; }
     #sec-view { height: calc(100vh - 92px); }
-    .tpp-tabs { gap: 14px; }
-    .tpp-mode-btn { font-size: 1.15rem; }
+    .tpp-tabs { gap: 4px 12px; }
+    .tpp-mode-btn { font-size: 0.9rem; }
     .kanban-scroll { padding-left: 12px; padding-right: 12px; }
   }
 </style>
@@ -2643,7 +2642,7 @@
   <div class="tpp-lookup" id="tpp-lookup">
     <div class="tpp-lookup-wrap">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-      <input type="text" id="tpp-lookup-input" class="tpp-lookup-input" placeholder="Look up a patient (shows every stage they are in)&hellip;" oninput="renderTppLookup()" onfocus="renderTppLookup()" autocomplete="off">
+      <input type="text" id="tpp-lookup-input" class="tpp-lookup-input" placeholder="Look up a patient&hellip;" oninput="renderTppLookup()" onfocus="renderTppLookup()" autocomplete="off">
       <div class="tpp-lookup-results" id="tpp-lookup-results" style="display:none"></div>
     </div>
   </div>
@@ -2651,7 +2650,7 @@
     <div class="tasks-topbar">
       <div>
         <h2 class="visually-hidden">Discovery &rarr; Treatment Plan</h2>
-        <div class="tpp-tabs" role="tablist"><button class="tpp-mode-btn active" data-mode="regular" role="tab" onclick="setTppMode('regular')">Discovery &rarr; Treatment Plan</button><button class="tpp-mode-btn" data-mode="timeline" role="tab" onclick="setTppMode('timeline')">Phase One Timeline</button><button class="tpp-mode-btn" data-mode="repair" role="tab" onclick="setTppMode('repair')">Repair &amp; Clear</button><button class="tpp-mode-btn" data-mode="followup" role="tab" onclick="setTppMode('followup')">Follow-Up</button></div>
+        <div class="tpp-tabs" role="tablist" data-active="regular"></div>
         <p class="tasks-sub">Drag a tile between stages, or click it for details</p>
       </div>
       <span class="pep-stuck-summary" id="tpp-disc-summary" style="display:none"></span>
@@ -2695,7 +2694,7 @@
     <div class="tasks-topbar">
       <div>
         <h2 class="visually-hidden">Follow-Up</h2>
-        <div class="tpp-tabs" role="tablist"><button class="tpp-mode-btn" data-mode="regular" role="tab" onclick="setTppMode('regular')">Discovery &rarr; Treatment Plan</button><button class="tpp-mode-btn" data-mode="timeline" role="tab" onclick="setTppMode('timeline')">Phase One Timeline</button><button class="tpp-mode-btn" data-mode="repair" role="tab" onclick="setTppMode('repair')">Repair &amp; Clear</button><button class="tpp-mode-btn active" data-mode="followup" role="tab" onclick="setTppMode('followup')">Follow-Up</button></div>
+        <div class="tpp-tabs" role="tablist" data-active="followup"></div>
         <p class="tasks-sub">Repeatable labs / plan-review cycle after acceptance</p>
       </div>
       <span class="pep-stuck-summary" id="tpp-fu-summary" style="display:none"></span>
@@ -2736,7 +2735,7 @@
     <div class="tasks-topbar">
       <div>
         <h2 class="visually-hidden">Phase One Timeline</h2>
-        <div class="tpp-tabs" role="tablist"><button class="tpp-mode-btn" data-mode="regular" role="tab" onclick="setTppMode('regular')">Discovery &rarr; Treatment Plan</button><button class="tpp-mode-btn active" data-mode="timeline" role="tab" onclick="setTppMode('timeline')">Phase One Timeline</button><button class="tpp-mode-btn" data-mode="repair" role="tab" onclick="setTppMode('repair')">Repair &amp; Clear</button><button class="tpp-mode-btn" data-mode="followup" role="tab" onclick="setTppMode('followup')">Follow-Up</button></div>
+        <div class="tpp-tabs" role="tablist" data-active="timeline"></div>
         <p class="tasks-sub">12-week plan, week by week. Click a tile for details and checkoffs</p>
       </div>
       <span class="pep-stuck-summary none" id="tpp-tl-summary" style="display:none"></span>
@@ -2769,7 +2768,7 @@
     <div class="tasks-topbar">
       <div>
         <h2 class="visually-hidden">Repair &amp; Clear</h2>
-        <div class="tpp-tabs" role="tablist"><button class="tpp-mode-btn" data-mode="regular" role="tab" onclick="setTppMode('regular')">Discovery &rarr; Treatment Plan</button><button class="tpp-mode-btn" data-mode="timeline" role="tab" onclick="setTppMode('timeline')">Phase One Timeline</button><button class="tpp-mode-btn active" data-mode="repair" role="tab" onclick="setTppMode('repair')">Repair &amp; Clear</button><button class="tpp-mode-btn" data-mode="followup" role="tab" onclick="setTppMode('followup')">Follow-Up</button></div>
+        <div class="tpp-tabs" role="tablist" data-active="repair"></div>
         <p class="tasks-sub">Six weeks, tracked on its own. Starts at week 3</p>
       </div>
       <span class="pep-stuck-summary none" id="tpp-rc-summary" style="display:none"></span>
@@ -3167,6 +3166,17 @@
 
 <div id="toast"></div>
 <script>
+// The four Pipeline tabs are the same on every board, so they are written once.
+const TPP_TABS = [
+  ['regular', 'Discovery &rarr; Treatment Plan'],
+  ['timeline', 'Phase One Timeline'],
+  ['repair', 'Repair &amp; Clear'],
+  ['followup', 'Follow-Up'],
+];
+document.querySelectorAll('.tpp-tabs[data-active]').forEach(el => {
+  const active = el.getAttribute('data-active');
+  el.innerHTML = TPP_TABS.map(t => '<button class="tpp-mode-btn' + (t[0] === active ? ' active' : '') + '" data-mode="' + t[0] + '" role="tab" onclick="setTppMode(\'' + t[0] + '\')">' + t[1] + '</button>').join('');
+});
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIGURATION — paste your Cloudflare Worker URL here after deploying worker.js
 // ─────────────────────────────────────────────────────────────────────────────
@@ -6205,11 +6215,10 @@ function tppKeyInfoHtml(patient) {
   const drawStatus = li ? (li.ready ? '<span class="tpp-ki-good">Results should be back</span>' : 'Day ' + li.days + ' of ' + TPP_LABS_RESULT_DAYS + ' &middot; results ~' + li.backLabel) : '';
   // Treatment plan
   const plan = tppPlanFile(patient);
-  const fileInput = '<input type="file" accept=".pdf,application/pdf" style="display:none" onchange="uploadTppTreatmentPlan(\'' + id + '\', this)">';
+  // Uploading and replacing happens in the Overview at the top of the panel.
   const planCtl = plan
-    ? '<div class="tpp-ki-inline"><a class="tpp-ki-file" href="' + WORKER_URL + '/tpp/files/' + plan.id + '" target="_blank" rel="noopener">' + escapeHtml(plan.name) + '</a>' +
-        '<label class="tpp-ki-link">Replace' + fileInput + '</label></div>'
-    : '<label class="tpp-ki-link">Attach PDF' + fileInput + '</label>';
+    ? '<a class="tpp-ki-file" href="' + WORKER_URL + '/tpp/files/' + plan.id + '" target="_blank" rel="noopener">' + escapeHtml(plan.name) + '</a>'
+    : '<span class="tpp-ki-status">Not attached. Upload it in the Overview above.</span>';
   // Payment
   const pay = patient.payment === 'paid' || patient.payment === 'plan' ? patient.payment : '';
   const payBtns = '<div class="tpp-ki-seg">' + ['paid', 'plan'].map(k =>
@@ -6664,51 +6673,31 @@ function tppTlLabBtnHtml(patient, info) {
   return '<button class="tpp-tl-labbtn' + (done ? ' done' : '') + '" aria-pressed="' + done + '" onclick="event.stopPropagation(); setTppTimelineProgress(\'' + patient.id + '\',' + info.week + ',\'' + cfg.key + '\',' + (done ? 0 : 1) + ')">' +
     (done ? '&#10003; ' : '') + cfg.label + '</button>';
 }
-function renderTppTimelineBoard() {
-  const container = document.getElementById('tpp-timeline-cols');
+// Phase One Timeline and Repair & Clear are the same board with a different clock,
+// so one renderer draws both. `cfg` says which patients, which week, and how a
+// tile, a column name and a to-do list look.
+function renderTppWeekBoard(cfg) {
+  const container = document.getElementById(cfg.containerId);
   if (!container) return;
-  const query = tppSearchQuery('tpp-tl-search');
-  const onTimeline = allTpp.filter(p => p.timeline && p.timeline.startedAt);
-  const summaryEl = document.getElementById('tpp-tl-summary');
+  const query = tppSearchQuery(cfg.searchId);
+  const here = allTpp.filter(cfg.include);
+  const summaryEl = document.getElementById(cfg.summaryId);
   if (summaryEl) {
-    summaryEl.style.display = onTimeline.length ? 'inline-block' : 'none';
-    summaryEl.textContent = onTimeline.length + (onTimeline.length === 1 ? ' patient' : ' patients');
+    summaryEl.style.display = here.length ? 'inline-block' : 'none';
+    summaryEl.textContent = here.length + (here.length === 1 ? ' patient' : ' patients');
   }
-  const matches = onTimeline.filter(p => tppMatchesSearch(p, query));
+  const matches = here.filter(p => tppMatchesSearch(p, query));
+  const auto = tppTlAutoOpen(matches.map(p => cfg.info(p).week), cfg.pastWeek, container);
   const cols = [];
-  const tlAuto = tppTlAutoOpen(matches.map(p => tppTlInfo(p).week), TPP_TL_PAST, container);
-  for (let w = 1; w <= TPP_TL_PAST; w++) {
-    const cards = matches.filter(p => tppTlInfo(p).week === w)
-      .sort((a, b) => String(tppTlInfo(a).startDate || '9999') < String(tppTlInfo(b).startDate || '9999') ? -1 : 1);
-    const cardsHtml = cards.map(patient => {
-      const info = tppTlInfo(patient);
-      const stage = tppDiscStage(patient);
-      const prog = info.started && info.week <= TPP_TL_WEEKS ? tppTlWeekProgress(patient, info.week) : null;
-      const showStage = stage !== TPP_SCHEDULED_STAGE && stage !== TPP_IN_PROGRESS_STAGE;
-      const due = tppTlFollowupDue(patient);
-      const dueAt = due ? tppTlFollowupAt(patient, due.week) : '';
-      const alert = !!due && !dueAt;
-      return '' +
-        '<div class="pep-card tpp-tl-card' + (alert ? ' tpp-tl-alert' : '') + '" onclick="openTppDetail(\'' + patient.id + '\')" title="Open ' + escapeHtml(patient.name) + '">' +
-          '<div class="pep-card-name">' + escapeHtml(patient.name) + tppDecisionTagHtml(patient) + '</div>' +
-          '<div class="tpp-tile-fact">' + tppStartLine(info, TPP_TL_WEEKS) + '</div>' +
-          (alert ? '<div class="tpp-tile-sub"><span class="tpp-tile-late">' + due.label + ' not scheduled</span></div>' : '') +
-          (due && dueAt ? '<div class="tpp-tile-sub">' + due.label + ': ' + escapeHtml(tppTlWhen(dueAt)) + '</div>' : '') +
-          (prog ? '<div class="tpp-tile-sub">' + prog.done + ' of ' + prog.need + ' done this week</div>' : '') +
-          (showStage ? '<div class="tpp-tile-sub">' + (stage === TPP_HANDOFF_STAGE ? 'Now on the Follow-Up board' : escapeHtml(tppStageLabel(stage))) + '</div>' : '') +
-          (!info.started ? '<button class="tpp-tl-start" onclick="event.stopPropagation(); startTppTimeline(\'' + patient.id + '\')">Start week 1 today</button>' : '') +
-          tppTlLabBtnHtml(patient, info) +
-          ((patient.timeline || {}).binder ? '<div class="tpp-tile-sub">On binder</div>' : '') +
-          tppPaymentTagHtml(patient) +
-          tppTileCommentHtml(patient) +
-        '</div>';
-    }).join('');
+  for (let w = 1; w <= cfg.pastWeek; w++) {
+    const cards = matches.filter(p => cfg.info(p).week === w)
+      .sort((a, b) => String(cfg.info(a).startDate || '9999') < String(cfg.info(b).startDate || '9999') ? -1 : 1);
     cols.push('' +
-      '<div class="kanban-col pep-col tpp-tl-col' + (cards.length || tppTlShowEmpty || tlAuto.has(w) || tppTlOpen.has('tl' + w) ? '' : ' pep-col-empty') + '" data-tl-key="tl' + w + '" onclick="tppTlToggleCol(this)">' +
-        '<div class="kanban-col-header"><span class="kanban-col-name">' + (w === TPP_TL_PAST ? 'Finished Phase One' : 'Week ' + w) + '</span>' +
+      '<div class="kanban-col pep-col tpp-tl-col' + (cards.length || tppTlShowEmpty || auto.has(w) || tppTlOpen.has(cfg.key + w) ? '' : ' pep-col-empty') + '" data-tl-key="' + cfg.key + w + '" onclick="tppTlToggleCol(this)">' +
+        '<div class="kanban-col-header"><span class="kanban-col-name">' + cfg.colName(w) + '</span>' +
           '<span class="kanban-col-count">' + cards.length + '</span></div>' +
-        tppTlTodoHtml(w) +
-        '<div class="kanban-cards">' + cardsHtml + '</div>' +
+        cfg.todo(w) +
+        '<div class="kanban-cards">' + cards.map(cfg.card).join('') + '</div>' +
       '</div>');
   }
   container.innerHTML = cols.join('');
@@ -6734,51 +6723,63 @@ function tppRcVisible(patient) {
   const main = tppTlInfo(patient);
   return main.started && main.week >= 3;
 }
+function tppTlCardHtml(patient) {
+  const info = tppTlInfo(patient);
+  const stage = tppDiscStage(patient);
+  const prog = info.started && info.week <= TPP_TL_WEEKS ? tppTlWeekProgress(patient, info.week) : null;
+  const showStage = stage !== TPP_SCHEDULED_STAGE && stage !== TPP_IN_PROGRESS_STAGE;
+  const due = tppTlFollowupDue(patient);
+  const dueAt = due ? tppTlFollowupAt(patient, due.week) : '';
+  const alert = !!due && !dueAt;
+  return '' +
+    '<div class="pep-card tpp-tl-card' + (alert ? ' tpp-tl-alert' : '') + '" onclick="openTppDetail(\'' + patient.id + '\')" title="Open ' + escapeHtml(patient.name) + '">' +
+      '<div class="pep-card-name">' + escapeHtml(patient.name) + tppDecisionTagHtml(patient) + '</div>' +
+      '<div class="tpp-tile-fact">' + tppStartLine(info, TPP_TL_WEEKS) + '</div>' +
+      (alert ? '<div class="tpp-tile-sub"><span class="tpp-tile-late">' + due.label + ' not scheduled</span></div>' : '') +
+      (due && dueAt ? '<div class="tpp-tile-sub">' + due.label + ': ' + escapeHtml(tppTlWhen(dueAt)) + '</div>' : '') +
+      (prog ? '<div class="tpp-tile-sub">' + prog.done + ' of ' + prog.need + ' done this week</div>' : '') +
+      (showStage ? '<div class="tpp-tile-sub">' + (stage === TPP_HANDOFF_STAGE ? 'Now on the Follow-Up board' : escapeHtml(tppStageLabel(stage))) + '</div>' : '') +
+      (!info.started ? '<button class="tpp-tl-start" onclick="event.stopPropagation(); startTppTimeline(\'' + patient.id + '\')">Start week 1 today</button>' : '') +
+      tppTlLabBtnHtml(patient, info) +
+      ((patient.timeline || {}).binder ? '<div class="tpp-tile-sub">On binder</div>' : '') +
+      tppPaymentTagHtml(patient) +
+      tppTileCommentHtml(patient) +
+    '</div>';
+}
+function renderTppTimelineBoard() {
+  renderTppWeekBoard({
+    key: 'tl', containerId: 'tpp-timeline-cols', searchId: 'tpp-tl-search', summaryId: 'tpp-tl-summary',
+    pastWeek: TPP_TL_PAST, include: p => p.timeline && p.timeline.startedAt, info: tppTlInfo,
+    colName: w => w === TPP_TL_PAST ? 'Finished Phase One' : 'Week ' + w,
+    todo: tppTlTodoHtml, card: tppTlCardHtml,
+  });
+}
+function tppRcCardHtml(patient) {
+  const info = tppRcInfo(patient);
+  const main = tppTlInfo(patient);
+  return '' +
+    '<div class="pep-card tpp-tl-card" onclick="openTppDetail(\'' + patient.id + '\')" title="Open ' + escapeHtml(patient.name) + '">' +
+      '<div class="pep-card-name">' + escapeHtml(patient.name) + '</div>' +
+      '<div class="tpp-tile-fact">' + tppStartLine(info, TPP_RC_WEEKS) + '</div>' +
+      (main.started ? '<div class="tpp-tile-sub">' + (main.week <= TPP_TL_WEEKS ? 'Phase One: week ' + main.week : 'Phase One: finished') + '</div>' : '') +
+      (!info.started ? '<button class="tpp-tl-start" onclick="event.stopPropagation(); startTppRepair(\'' + patient.id + '\')">Start Repair &amp; Clear today</button>' : '') +
+      tppTileCommentHtml(patient) +
+    '</div>';
+}
+function tppRcTodoHtml(w) {
+  if (w === TPP_RC_PAST) return '<div class="tpp-tl-todo"><div class="tpp-tl-todo-title">Repair &amp; Clear complete</div></div>';
+  const phase = TPP_RC_PHASES.find(ph => ph.weeks.includes(w));
+  return '<div class="tpp-tl-todo"><div class="tpp-tl-todo-title">Phase One week ' + (w + 2) + '</div>' +
+    '<div><strong>' + escapeHtml(phase.title) + '</strong></div>' +
+    (phase.note ? '<div class="tpp-tl-todo-note">' + escapeHtml(phase.note) + '</div>' : '') + '</div>';
+}
 function renderTppRepairBoard() {
-  const container = document.getElementById('tpp-repair-cols');
-  if (!container) return;
-  const query = tppSearchQuery('tpp-rc-search');
-  const here = allTpp.filter(tppRcVisible);
-  const summaryEl = document.getElementById('tpp-rc-summary');
-  if (summaryEl) {
-    summaryEl.style.display = here.length ? 'inline-block' : 'none';
-    summaryEl.textContent = here.length + (here.length === 1 ? ' patient' : ' patients');
-  }
-  const matches = here.filter(p => tppMatchesSearch(p, query));
-  const cols = [];
-  const rcAuto = tppTlAutoOpen(matches.map(p => tppRcInfo(p).week), TPP_RC_PAST, container);
-  for (let w = 1; w <= TPP_RC_PAST; w++) {
-    const past = w === TPP_RC_PAST;
-    const phase = TPP_RC_PHASES.find(ph => ph.weeks.includes(w));
-    const cards = matches.filter(p => tppRcInfo(p).week === w)
-      .sort((a, b) => String(tppRcInfo(a).startDate || '9999') < String(tppRcInfo(b).startDate || '9999') ? -1 : 1);
-    const cardsHtml = cards.map(patient => {
-      const info = tppRcInfo(patient);
-      const main = tppTlInfo(patient);
-      return '' +
-        '<div class="pep-card tpp-tl-card" onclick="openTppDetail(\'' + patient.id + '\')" title="Open ' + escapeHtml(patient.name) + '">' +
-          '<div class="pep-card-name">' + escapeHtml(patient.name) + '</div>' +
-          '<div class="tpp-tile-fact">' + tppStartLine(info, TPP_RC_WEEKS) + '</div>' +
-          (main.started ? '<div class="tpp-tile-sub">' + (main.week <= TPP_TL_WEEKS ? 'Phase One: week ' + main.week : 'Phase One: finished') + '</div>' : '') +
-          (!info.started ? '<button class="tpp-tl-start" onclick="event.stopPropagation(); startTppRepair(\'' + patient.id + '\')">Start Repair &amp; Clear today</button>' : '') +
-          tppTileCommentHtml(patient) +
-        '</div>';
-    }).join('');
-    const todo = past
-      ? '<div class="tpp-tl-todo"><div class="tpp-tl-todo-title">Repair &amp; Clear complete</div></div>'
-      : '<div class="tpp-tl-todo"><div class="tpp-tl-todo-title">Phase One week ' + (w + 2) + '</div>' +
-        '<div><strong>' + escapeHtml(phase.title) + '</strong></div>' +
-        (phase.note ? '<div class="tpp-tl-todo-note">' + escapeHtml(phase.note) + '</div>' : '') + '</div>';
-    cols.push('' +
-      '<div class="kanban-col pep-col tpp-tl-col' + (cards.length || tppTlShowEmpty || rcAuto.has(w) || tppTlOpen.has('rc' + w) ? '' : ' pep-col-empty') + '" data-tl-key="rc' + w + '" onclick="tppTlToggleCol(this)">' +
-        '<div class="kanban-col-header"><span class="kanban-col-name">' + (past ? 'Complete' : 'Week ' + w) + '</span>' +
-          '<span class="kanban-col-count">' + cards.length + '</span></div>' +
-        todo +
-        '<div class="kanban-cards">' + cardsHtml + '</div>' +
-      '</div>');
-  }
-  container.innerHTML = cols.join('');
-  tppTlSyncToggle();
+  renderTppWeekBoard({
+    key: 'rc', containerId: 'tpp-repair-cols', searchId: 'tpp-rc-search', summaryId: 'tpp-rc-summary',
+    pastWeek: TPP_RC_PAST, include: tppRcVisible, info: tppRcInfo,
+    colName: w => w === TPP_RC_PAST ? 'Complete' : 'Week ' + w,
+    todo: tppRcTodoHtml, card: tppRcCardHtml,
+  });
 }
 
 // -- Saving ---------------------------------------------------------------------
@@ -7727,29 +7728,18 @@ document.addEventListener('click', e => {
 });
 function renderTppOverview(patient) {
   const id = patient.id;
-  const row = (label, val) => '<div class="tpp-ov-row"><span class="tpp-ov-label">' + label + '</span><span class="tpp-ov-val' + (val ? '' : ' none') + '">' + (val || 'Not set') + '</span></div>';
-  const fmt = v => v ? escapeHtml(tppTlWhen(v)) : '';
-  const lab = patient.labProvider ? escapeHtml(TPP_LABS[patient.labProvider] || patient.labProvider) : '';
-  const pay = patient.payment === 'paid' ? 'Paid' : patient.payment === 'plan' ? 'Payment plan' : '';
   const plan = tppPlanFile(patient);
   const fileInput = '<input type="file" accept=".pdf,application/pdf" style="display:none" onchange="uploadTppTreatmentPlan(\'' + id + '\', this)">';
   const planHtml = plan
-    ? '<a class="tpp-ki-file" href="' + WORKER_URL + '/tpp/files/' + plan.id + '" target="_blank" rel="noopener" style="max-width:100%;display:inline-block">' + escapeHtml(plan.name) + '</a>' +
+    ? '<div style="font-weight:600;overflow-wrap:anywhere">' + escapeHtml(plan.name) + '</div>' +
       '<div class="tpp-ov-plan-actions"><a class="tpp-ov-btn" href="' + WORKER_URL + '/tpp/files/' + plan.id + '" target="_blank" rel="noopener">View PDF</a>' +
         '<label class="tpp-ov-btn">Replace PDF' + fileInput + '</label>' +
         '<button class="tpp-ov-btn danger" onclick="removeTppFile(\'' + id + '\',\'\',\'' + plan.id + '\')">Remove</button></div>'
     : '<div style="color:var(--text-muted);font-size:var(--fs-sm)">No treatment plan attached yet.</div>' +
-      '<div class="tpp-ov-plan-actions"><label class="tpp-ov-btn primary">Upload treatment plan PDF' + fileInput + '</label></div>';
+      '<div class="tpp-ov-plan-actions"><label class="tpp-ov-btn">Upload treatment plan PDF' + fileInput + '</label></div>';
   return '<div class="tpp-overview">' +
     '<div class="tpp-overview-head">Overview</div>' +
     tppWhereChipsHtml(patient) +
-    '<div style="margin-top:8px">' +
-      row('Lab', lab) +
-      row('Labs drawn', patient.labsDrawnAt ? escapeHtml(tppTlLabel(patient.labsDrawnAt)) : '') +
-      row('Payment', pay) +
-      row('Discovery consult', fmt(patient.discoveryConsultAt || '')) +
-      row('Deep dive', fmt(patient.deepDiveAt || '')) +
-    '</div>' +
     '<div class="tpp-ov-plan"><div class="tpp-ov-label" style="font-size:var(--fs-sm);margin-bottom:4px">Treatment plan</div>' + planHtml + '</div>' +
   '</div>';
 }
