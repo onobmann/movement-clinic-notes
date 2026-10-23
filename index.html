@@ -2952,12 +2952,25 @@
     <div class="modal-body">
       <div class="modal-field">
         <label class="modal-label">Patient name</label>
-        <input type="text" id="tpp-tl-new-name" class="modal-input" placeholder="Full name" onkeydown="if(event.key==='Enter') submitAddTppTimeline()">
+        <input type="text" id="tpp-tl-new-name" class="modal-input" placeholder="Full name" oninput="renderTppTlAddMatches()" onkeydown="if(event.key==='Enter') submitAddTppTimeline()" autocomplete="off">
+        <div id="tpp-tl-add-matches"></div>
       </div>
       <div class="modal-field">
         <label class="modal-label">Day they started Phase One</label>
-        <input type="date" id="tpp-tl-new-start" class="modal-input" style="width:auto">
+        <input type="date" id="tpp-tl-new-start" class="modal-input" style="width:auto" onchange="tppTlAddDateNote()">
         <div style="font-size:var(--fs-sm);color:var(--text-muted);margin-top:4px">Picks their week. Leave it empty if they have not started yet.</div>
+        <div id="tpp-tl-add-datenote" style="font-size:var(--fs-sm);color:var(--danger);margin-top:4px"></div>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Payment (optional)</label>
+        <div class="tpp-ki-seg" id="tpp-tl-add-pay">
+          <button type="button" class="tpp-ki-seg-btn" data-pay="paid" onclick="setTppTlAddPay('paid')">Paid</button>
+          <button type="button" class="tpp-ki-seg-btn" data-pay="plan" onclick="setTppTlAddPay('plan')">Payment plan</button>
+        </div>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Treatment plan PDF (optional)</label>
+        <input type="file" id="tpp-tl-new-plan" accept=".pdf,application/pdf" class="modal-input">
       </div>
     </div>
     <div class="modal-footer">
@@ -7535,9 +7548,58 @@ async function submitAddTpp() {
     btn.disabled = false; btn.textContent = 'Add Patient';
   }
 }
+let tppTlAddPay = '';
+function setTppTlAddPay(k) {
+  tppTlAddPay = tppTlAddPay === k ? '' : k;
+  document.querySelectorAll('#tpp-tl-add-pay .tpp-ki-seg-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-pay') === tppTlAddPay));
+}
+function tppTlAddDateNote() {
+  const el = document.getElementById('tpp-tl-add-datenote');
+  const v = document.getElementById('tpp-tl-new-start').value;
+  let msg = '';
+  if (v) {
+    const days = Math.round((new Date(tppTodayStr() + 'T00:00:00') - new Date(v + 'T00:00:00')) / 86400000);
+    if (days >= TPP_TL_WEEKS * 7) msg = 'That is more than 12 weeks ago. They would sit in "Past week 12" and not move on by themselves. If they are already in follow-up, add them from the Follow-Up tab instead.';
+  }
+  el.textContent = msg;
+}
+function renderTppTlAddMatches() {
+  const box = document.getElementById('tpp-tl-add-matches');
+  const q = document.getElementById('tpp-tl-new-name').value.trim();
+  if (q.length < 2) { box.innerHTML = ''; return; }
+  const hits = allTpp.filter(p => tppMatchesSearch(p, q)).slice(0, 5);
+  box.innerHTML = hits.length ? '<div style="margin-top:8px;font-size:var(--fs-sm);color:var(--text-muted)">Already in the system. Move them instead of adding a second record:</div>' +
+    hits.map(p => {
+      const on = p.timeline && p.timeline.startedAt;
+      return '<div class="tpp-ov-row" style="align-items:center"><span><strong>' + escapeHtml(p.name) + '</strong>' + tppWhereChipsHtml(p) + '</span>' +
+        '<button type="button" class="tpp-ov-btn" onclick="moveTppToTimeline(\'' + p.id + '\')">' + (on ? 'Set start date' : 'Move to Phase One') + '</button></div>';
+    }).join('') : '';
+}
+// Existing patient: use the normal stage move (which puts them on the Timeline)
+// and then the start date, so there is still only one record.
+async function moveTppToTimeline(id) {
+  const patient = allTpp.find(p => p.id === id);
+  if (!patient) return;
+  const startDate = document.getElementById('tpp-tl-new-start').value;
+  try {
+    if (!(patient.timeline && patient.timeline.startedAt)) {
+      await tppPatch(id, { setDiscoveryStage: { stage: TPP_IN_PROGRESS_STAGE, comment: 'Moved to Phase One Timeline' } });
+    }
+    if (startDate) await tppPatch(id, { setTimelineStart: { date: startDate } });
+    renderTppBoard();
+    closeAddTppTimelineModal();
+    showToast(patient.name + ' is on the Phase One Timeline');
+  } catch (err) {
+    showToast('Could not move: ' + err.message);
+  }
+}
 function openAddTppTimelineModal() {
   document.getElementById('tpp-tl-new-name').value = '';
   document.getElementById('tpp-tl-new-start').value = tppTodayStr();
+  document.getElementById('tpp-tl-new-plan').value = '';
+  document.getElementById('tpp-tl-add-matches').innerHTML = '';
+  tppTlAddPay = ''; setTppTlAddPay('');
+  tppTlAddDateNote();
   document.getElementById('tpp-tl-add-modal').classList.add('open');
   setTimeout(() => document.getElementById('tpp-tl-new-name').focus(), 50);
 }
@@ -7548,6 +7610,8 @@ async function submitAddTppTimeline() {
   const name = document.getElementById('tpp-tl-new-name').value.trim();
   if (!name) { document.getElementById('tpp-tl-new-name').focus(); return; }
   const startDate = document.getElementById('tpp-tl-new-start').value;
+  const planFile = (document.getElementById('tpp-tl-new-plan').files || [])[0];
+  if (planFile && !/\.pdf$/i.test(planFile.name) && planFile.type !== 'application/pdf') { showToast('Please choose a PDF'); return; }
   const btn = document.getElementById('tpp-tl-add-submit-btn');
   btn.disabled = true; btn.textContent = 'Saving…';
   try {
@@ -7556,9 +7620,18 @@ async function submitAddTppTimeline() {
       body: JSON.stringify({ name, startInTimeline: true, startDate: startDate || undefined }),
     });
     if (!res.ok) throw new Error('Server error ' + res.status);
-    const patient = await res.json();
+    let patient = await res.json();
     allTpp.unshift(patient);
     tppPushUndo({ type: 'add', patientId: patient.id, name: patient.name, label: 'add ' + patient.name, version: patient.updatedAt });
+    // An older worker ignores startInTimeline and returns an unplaced patient.
+    // Finish the job with operations it already knows so the order of deploys
+    // does not matter.
+    if (!(patient.timeline && patient.timeline.startedAt)) {
+      patient = await tppRawPatch(patient.id, { setDiscoveryStage: { stage: TPP_IN_PROGRESS_STAGE, comment: 'Added from Phase One Timeline' } });
+      if (startDate) patient = await tppRawPatch(patient.id, { setTimelineStart: { date: startDate } });
+    }
+    if (tppTlAddPay) patient = await tppRawPatch(patient.id, { payment: tppTlAddPay });
+    if (planFile) await uploadTppFileObject(patient.id, null, 'treatment_plan', planFile);
     renderTppBoard();
     closeAddTppTimelineModal();
     showToast('Patient added to Phase One Timeline');
