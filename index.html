@@ -2048,6 +2048,32 @@
   .tpp-mode-btn.active { color: var(--text); }
   .tpp-mode-btn.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--accent); }
   .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .tpp-lookup { padding: 10px 16px 0; flex: 0 0 auto; }
+  .tpp-lookup-wrap { position: relative; max-width: 520px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); background: var(--surface); border-radius: var(--r-sm); padding: 0 10px; color: var(--text-muted); }
+  .tpp-lookup-input { flex: 1; border: 0; background: transparent; color: var(--text); font: inherit; font-size: var(--fs-md); padding: 9px 0; outline: none; min-width: 0; }
+  .tpp-lookup-results { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 60; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); box-shadow: 0 8px 24px rgba(0,0,0,.18); max-height: 60vh; overflow-y: auto; }
+  .tpp-lookup-item { display: block; width: 100%; text-align: left; background: transparent; border: 0; border-bottom: 1px solid var(--border); padding: 10px 12px; cursor: pointer; color: var(--text); font: inherit; }
+  .tpp-lookup-item:last-child { border-bottom: 0; }
+  .tpp-lookup-item:hover { background: var(--surface2); }
+  .tpp-lookup-name { font-weight: 700; font-size: var(--fs-md); }
+  .tpp-lookup-empty { padding: 12px; font-size: var(--fs-sm); color: var(--text-muted); }
+  .tpp-where { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .tpp-where-chip { font-size: var(--fs-sm); border: 1px solid var(--border); border-radius: 999px; padding: 2px 9px; color: var(--text-muted); background: var(--surface2); }
+  .tpp-where-chip strong { color: var(--text); font-weight: 600; }
+  .tpp-where-chip.off { opacity: .6; }
+  .tpp-overview { border: 1px solid var(--border); border-radius: var(--r-sm); padding: 12px; margin: 12px 0; background: var(--surface); }
+  .tpp-overview-head { font-weight: 700; font-size: var(--fs-md); margin-bottom: 4px; }
+  .tpp-ov-row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-top: 1px solid var(--border); font-size: var(--fs-md); }
+  .tpp-ov-row:first-of-type { border-top: 0; }
+  .tpp-ov-label { color: var(--text-muted); flex: 0 0 auto; }
+  .tpp-ov-val { text-align: right; min-width: 0; }
+  .tpp-ov-val.none { color: var(--text-muted); }
+  .tpp-ov-plan { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .tpp-ov-plan-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 6px; }
+  .tpp-ov-btn { font-size: var(--fs-sm); font-weight: 600; padding: 7px 14px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--surface); color: var(--text); cursor: pointer; text-decoration: none; display: inline-block; }
+  .tpp-ov-btn:hover { background: var(--surface2); }
+  .tpp-ov-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .tpp-ov-btn.danger { color: var(--danger); border-color: var(--danger); }
   .tpp-board { display: none; flex-direction: column; overflow: hidden; flex: 1 1 0; min-height: 0; }
   .tpp-board.tpp-board-active { display: flex; }
   /* Treatment Plan Timeline page: one column per week */
@@ -2605,6 +2631,13 @@
 
 <!-- TREATMENT PLAN PIPELINE VIEW -->
 <div id="tpp-view" class="view">
+  <div class="tpp-lookup" id="tpp-lookup">
+    <div class="tpp-lookup-wrap">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <input type="text" id="tpp-lookup-input" class="tpp-lookup-input" placeholder="Look up a patient (shows every stage they are in)&hellip;" oninput="renderTppLookup()" onfocus="renderTppLookup()" autocomplete="off">
+      <div class="tpp-lookup-results" id="tpp-lookup-results" style="display:none"></div>
+    </div>
+  </div>
   <div class="tpp-board tpp-board-discovery tpp-board-active">
     <div class="tasks-topbar">
       <div>
@@ -6765,6 +6798,7 @@ function renderTppBoard() {
   renderTppFollowupBoard();
   renderTppTimelineBoard();
   renderTppRepairBoard();
+  renderTppLookup();
   if (tppCommentsPatientId) renderTppCommentsList();
 }
 // In Labs Drawn and still inside the ~3 week wait: expected, not stuck.
@@ -7425,6 +7459,86 @@ async function submitAddTppFollowup() {
   }
 }
 // -- Patient detail modal -----------------------------------------------------
+// -- Patient lookup + overview -------------------------------------------------
+// One line per pipeline the patient is in, read straight from the shared record.
+function tppWhere(patient) {
+  const out = [];
+  const st = tppDiscStage(patient);
+  if (patient.discoveryStage && st !== TPP_HANDOFF_STAGE) out.push({ tab: 'Discovery', text: tppStageLabel(st) });
+  const tl = patient.timeline;
+  if (tl && tl.startedAt) {
+    const i = tppTlInfo(patient);
+    out.push({ tab: 'Timeline', text: !i.started ? 'Not started' : (i.week > TPP_TL_WEEKS ? 'Past week ' + TPP_TL_WEEKS : 'Week ' + i.week + ' of ' + TPP_TL_WEEKS) });
+  }
+  if (tppRcVisible(patient)) {
+    const r = tppRcInfo(patient);
+    out.push({ tab: 'Repair & Clear', text: !r.started ? 'Not started' : (r.week > TPP_RC_WEEKS ? 'Complete' : 'Week ' + r.week + ' of ' + TPP_RC_WEEKS) });
+  }
+  const orders = patient.followupOrders || [];
+  if (orders.length) {
+    const act = tppActiveRound(patient);
+    out.push({ tab: 'Follow-Up', text: act ? 'Round ' + (orders.indexOf(act) + 1) + ': ' + tppFollowupStageLabel(act.stage) : orders.length + ' round' + (orders.length > 1 ? 's' : '') + ' done' });
+  }
+  return out;
+}
+function tppWhereChipsHtml(patient) {
+  const w = tppWhere(patient);
+  if (!w.length) return '<div class="tpp-where"><span class="tpp-where-chip off">Not placed in any stage</span></div>';
+  return '<div class="tpp-where">' + w.map(x => '<span class="tpp-where-chip">' + escapeHtml(x.tab) + ': <strong>' + escapeHtml(x.text) + '</strong></span>').join('') + '</div>';
+}
+function renderTppLookup() {
+  const input = document.getElementById('tpp-lookup-input');
+  const box = document.getElementById('tpp-lookup-results');
+  if (!input || !box) return;
+  const q = input.value.trim();
+  if (!q) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  const hits = allTpp.filter(p => tppMatchesSearch(p, q)).slice(0, 12);
+  box.innerHTML = hits.length ? hits.map(p =>
+    '<button class="tpp-lookup-item" onmousedown="event.preventDefault()" onclick="openTppLookupResult(\'' + p.id + '\')">' +
+      '<div class="tpp-lookup-name">' + escapeHtml(p.name) + '</div>' + tppWhereChipsHtml(p) + '</button>'
+  ).join('') : '<div class="tpp-lookup-empty">No patient matches &ldquo;' + escapeHtml(q) + '&rdquo;</div>';
+  box.style.display = 'block';
+}
+function openTppLookupResult(id) {
+  const input = document.getElementById('tpp-lookup-input');
+  const box = document.getElementById('tpp-lookup-results');
+  if (input) input.value = '';
+  if (box) { box.style.display = 'none'; box.innerHTML = ''; }
+  openTppDetail(id);
+}
+document.addEventListener('click', e => {
+  const wrap = document.querySelector('.tpp-lookup-wrap');
+  const box = document.getElementById('tpp-lookup-results');
+  if (wrap && box && !wrap.contains(e.target)) box.style.display = 'none';
+});
+function renderTppOverview(patient) {
+  const id = patient.id;
+  const row = (label, val) => '<div class="tpp-ov-row"><span class="tpp-ov-label">' + label + '</span><span class="tpp-ov-val' + (val ? '' : ' none') + '">' + (val || 'Not set') + '</span></div>';
+  const fmt = v => v ? escapeHtml(tppTlWhen(v)) : '';
+  const lab = patient.labProvider ? escapeHtml(TPP_LABS[patient.labProvider] || patient.labProvider) : '';
+  const pay = patient.payment === 'paid' ? 'Paid' : patient.payment === 'plan' ? 'Payment plan' : '';
+  const plan = tppPlanFile(patient);
+  const fileInput = '<input type="file" accept=".pdf,application/pdf" style="display:none" onchange="uploadTppTreatmentPlan(\'' + id + '\', this)">';
+  const planHtml = plan
+    ? '<a class="tpp-ki-file" href="' + WORKER_URL + '/tpp/files/' + plan.id + '" target="_blank" rel="noopener" style="max-width:100%;display:inline-block">' + escapeHtml(plan.name) + '</a>' +
+      '<div class="tpp-ov-plan-actions"><a class="tpp-ov-btn" href="' + WORKER_URL + '/tpp/files/' + plan.id + '" target="_blank" rel="noopener">View PDF</a>' +
+        '<label class="tpp-ov-btn">Replace PDF' + fileInput + '</label>' +
+        '<button class="tpp-ov-btn danger" onclick="removeTppFile(\'' + id + '\',\'\',\'' + plan.id + '\')">Remove</button></div>'
+    : '<div style="color:var(--text-muted);font-size:var(--fs-sm)">No treatment plan attached yet.</div>' +
+      '<div class="tpp-ov-plan-actions"><label class="tpp-ov-btn primary">Upload treatment plan PDF' + fileInput + '</label></div>';
+  return '<div class="tpp-overview">' +
+    '<div class="tpp-overview-head">Overview</div>' +
+    tppWhereChipsHtml(patient) +
+    '<div style="margin-top:8px">' +
+      row('Lab', lab) +
+      row('Labs drawn', patient.labsDrawnAt ? escapeHtml(tppTlLabel(patient.labsDrawnAt)) : '') +
+      row('Payment', pay) +
+      row('Discovery consult', fmt(patient.discoveryConsultAt || '')) +
+      row('Deep dive', fmt(patient.deepDiveAt || '')) +
+    '</div>' +
+    '<div class="tpp-ov-plan"><div class="tpp-ov-label" style="font-size:var(--fs-sm);margin-bottom:4px">Treatment plan</div>' + planHtml + '</div>' +
+  '</div>';
+}
 function openTppDetail(patientId) {
   tppDetailPatientId = patientId;
   renderTppDetail(patientId);
@@ -7635,6 +7749,7 @@ function renderTppDetail(patientId) {
         ((patient.comments || []).length ? 'Comments (' + patient.comments.length + ')' : 'Add a comment') + '</button>' +
       ((patient.comments || []).length ? '<div class="tpp-card-comment" style="-webkit-line-clamp:3">' + (patient.comments[patient.comments.length - 1].from ? '<strong>' + escapeHtml(patient.comments[patient.comments.length - 1].from) + ':</strong> ' : '') + escapeHtml(patient.comments[patient.comments.length - 1].message) + '</div>' : '') +
     '</div>' +
+    renderTppOverview(patient) +
     (patient.timeline && patient.timeline.startedAt ? renderTppTimelineSection(patient) : '') +
     (hasDiscovery ? renderTppDiscoverySection(patient) : '') +
     (canStartNew ? '<button class="modal-submit" style="width:100%;margin-top:14px" onclick="startNewTppFollowupOrder(\'' + patient.id + '\')">+ Start New Follow-Up Round</button>' : '') +
