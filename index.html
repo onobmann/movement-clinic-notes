@@ -7979,7 +7979,7 @@ function renderTppDetail(patientId) {
       '<div class="modal-field" style="margin-top:12px">' +
         '<button class="modal-cancel" style="align-self:flex-start;padding:7px 14px;font-size:var(--fs-sm)" onclick="openTppComments(\'' + patient.id + '\')">' +
           (cmts.length ? 'Comments (' + cmts.length + ')' : 'Add a comment') + '</button>' +
-        (last ? '<div class="tpp-card-comment" style="-webkit-line-clamp:3">' + (last.from ? '<strong>' + escapeHtml(last.from) + ':</strong> ' : '') + escapeHtml(last.text || '') + '</div>' : '') +
+        (last ? '<div class="tpp-card-comment" style="-webkit-line-clamp:3">' + (last.from ? '<strong>' + escapeHtml(last.from) + ':</strong> ' : '') + escapeHtml(last.message || '') + '</div>' : '') +
       '</div>' +
       (hasDiscovery ? renderTppDiscoverySection(patient, 'stage') : '');
   } else if (tppDetailTab === 'dates') {
