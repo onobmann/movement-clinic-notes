@@ -1835,11 +1835,9 @@
     order: 2; flex: 0 0 auto; writing-mode: vertical-rl;
     white-space: nowrap; font-size: var(--fs-md); line-height: 1.2; text-align: left;
   }
-  #peptides-view.pep-dragging .pep-col.pep-col-empty {
-    flex: 0 0 120px; width: 120px; min-width: 120px; max-width: 120px;
-    outline: 2px dashed var(--border); outline-offset: -4px;
-  }
-  #peptides-view.pep-dragging .pep-col.pep-col-empty .kanban-col-name { writing-mode: horizontal-tb; white-space: normal; text-align: center; }
+  /* While dragging, nothing changes size (same as the Pipeline boards): empty
+     stages get a dashed outline and the one under the cursor turns gold. */
+  #peptides-view.pep-dragging .pep-col.pep-col-empty { outline: 2px dashed var(--border); outline-offset: -4px; }
   #peptides-view.pep-dragging .pep-col.drag-over { outline-color: var(--accent); }
   .pep-col.pep-col-empty .kanban-cards { display: none; }
   .pep-card {
