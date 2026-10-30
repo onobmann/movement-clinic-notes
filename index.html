@@ -2061,6 +2061,19 @@
   .tpp-where-chip { font-size: var(--fs-sm); border: 1px solid var(--border); border-radius: 999px; padding: 2px 9px; color: var(--text-muted); background: var(--surface2); }
   .tpp-where-chip strong { color: var(--text); font-weight: 600; }
   .tpp-where-chip.off { opacity: .6; }
+  /* -- Patient panel tabs --------------------------------------------------- */
+  .tpp-dstrip { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 6px 12px; font-size: var(--fs-sm); color: var(--text-muted); }
+  .tpp-dstrip-lines { flex: 1 1 220px; min-width: 0; }
+  .tpp-dstrip-lines div { overflow-wrap: anywhere; }
+  .tpp-dlink { border: 0; background: none; padding: 0; font: inherit; font-size: var(--fs-sm); color: var(--text-muted); cursor: pointer; text-decoration: none; }
+  .tpp-dlink:hover { color: var(--text); }
+  .tpp-dalert { flex: 1 0 100%; text-align: left; border: 1px solid var(--alert-border); background: var(--alert-bg); color: var(--alert-text); border-radius: var(--r-sm); padding: 6px 10px; font: inherit; font-size: var(--fs-sm); font-weight: 600; cursor: pointer; }
+  .tpp-dtabs { display: flex; flex-wrap: wrap; gap: 2px 18px; border-bottom: 1px solid var(--border); margin: 12px 0 14px; }
+  .tpp-dtab { position: relative; border: 0; background: none; padding: 8px 0; font: inherit; font-size: var(--fs-md); font-weight: 600; color: var(--text-muted); cursor: pointer; white-space: nowrap; }
+  .tpp-dtab:hover { color: var(--text); }
+  .tpp-dtab.active { color: var(--text); }
+  .tpp-dtab.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; background: var(--accent); }
+  .tpp-dgroup + .tpp-dgroup { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
   .tpp-overview { border: 1px solid var(--border); border-radius: var(--r-sm); padding: 12px; margin: 12px 0; background: var(--surface); }
   .tpp-overview-head { font-weight: 700; font-size: var(--fs-md); margin-bottom: 4px; }
   .tpp-ov-row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-top: 1px solid var(--border); font-size: var(--fs-md); }
@@ -6218,7 +6231,7 @@ function tppKeyInfoHtml(patient) {
   // Uploading and replacing happens in the Overview at the top of the panel.
   const planCtl = plan
     ? '<a class="tpp-ki-file" href="' + WORKER_URL + '/tpp/files/' + plan.id + '" target="_blank" rel="noopener">' + escapeHtml(plan.name) + '</a>'
-    : '<span class="tpp-ki-status">Not attached. Upload it in the Overview above.</span>';
+    : '<span class="tpp-ki-status">Not attached. Upload it on the Plan &amp; files tab.</span>';
   // Payment
   const pay = patient.payment === 'paid' || patient.payment === 'plan' ? patient.payment : '';
   const payBtns = '<div class="tpp-ki-seg">' + ['paid', 'plan'].map(k =>
@@ -6732,7 +6745,7 @@ function tppTlCardHtml(patient) {
   const dueAt = due ? tppTlFollowupAt(patient, due.week) : '';
   const alert = !!due && !dueAt;
   return '' +
-    '<div class="pep-card tpp-tl-card' + (alert ? ' tpp-tl-alert' : '') + '" onclick="openTppDetail(\'' + patient.id + '\')" title="Open ' + escapeHtml(patient.name) + '">' +
+    '<div class="pep-card tpp-tl-card' + (alert ? ' tpp-tl-alert' : '') + '" onclick="openTppDetail(\'' + patient.id + '\',\'tl\')" title="Open ' + escapeHtml(patient.name) + '">' +
       '<div class="pep-card-name">' + escapeHtml(patient.name) + tppDecisionTagHtml(patient) + '</div>' +
       '<div class="tpp-tile-fact">' + tppStartLine(info, TPP_TL_WEEKS) + '</div>' +
       (alert ? '<div class="tpp-tile-sub"><span class="tpp-tile-late">' + due.label + ' not scheduled</span></div>' : '') +
@@ -6758,7 +6771,7 @@ function tppRcCardHtml(patient) {
   const info = tppRcInfo(patient);
   const main = tppTlInfo(patient);
   return '' +
-    '<div class="pep-card tpp-tl-card" onclick="openTppDetail(\'' + patient.id + '\')" title="Open ' + escapeHtml(patient.name) + '">' +
+    '<div class="pep-card tpp-tl-card" onclick="openTppDetail(\'' + patient.id + '\',\'rc\')" title="Open ' + escapeHtml(patient.name) + '">' +
       '<div class="pep-card-name">' + escapeHtml(patient.name) + '</div>' +
       '<div class="tpp-tile-fact">' + tppStartLine(info, TPP_RC_WEEKS) + '</div>' +
       (main.started ? '<div class="tpp-tile-sub">' + (main.week <= TPP_TL_WEEKS ? 'Phase One: week ' + main.week : 'Phase One: finished') + '</div>' : '') +
@@ -6822,86 +6835,43 @@ function setTppTimelineFollowup(patientId, week, at) {
 function setTppTimelineBinder(patientId, on) {
   return tppTlSave(patientId, { setTimelineBinder: { on: !!on } });
 }
-const tppTlDetailWeek = {};
-function setTppTlDetailWeek(patientId, week) {
-  tppTlDetailWeek[patientId] = parseInt(week, 10);
-  renderTppDetail(patientId);
+// -- Detail panel: Dates tab ----------------------------------------------------
+// Start dates (save the moment a date is picked), the three follow-up
+// appointments, the binder toggle, and the Repair & Clear clock. The per-week
+// checklist is no longer in the panel; the week columns show what is due.
+function tppStatusText(info, weeks, doneLabel, fmt) {
+  if (info.started && info.week <= weeks) return 'week ' + info.week + ', day ' + info.day + ' of ' + (weeks * 7);
+  if (info.started) return doneLabel + ' (started ' + fmt(info.startDate) + ')';
+  if (info.startDate) return 'starts ' + fmt(info.startDate);
+  return 'not started';
 }
-// -- Detail panel ---------------------------------------------------------------
-// Start date (saves the moment a date is picked), the checklist for one week at a
-// time (defaulting to the patient's current week), the three follow-up dates, the
-// binder toggle, and the Repair & Clear clock.
-function renderTppTimelineSection(patient) {
-  const info = tppTlInfo(patient);
+function tppDatesGroupHtml(title, inputId, info, statusText, setFn, startFn, id) {
+  const btn = 'style="padding:7px 14px;font-size:var(--fs-sm)"';
+  return '<div class="tpp-dgroup"><div class="modal-label" style="margin-bottom:8px">' + title + '</div>' +
+    '<div class="modal-field"><label class="modal-label" for="' + inputId + '">Start date</label>' +
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+        '<input type="date" class="modal-input" id="' + inputId + '" style="width:auto" value="' + escapeHtml(info.startDate) + '" onchange="' + setFn + '(\'' + id + '\', this.value)">' +
+        (info.startDate ? '<button class="modal-cancel" ' + btn + ' onclick="' + setFn + '(\'' + id + '\', \'\')">Clear</button>' : '') +
+        (!info.started ? '<button class="modal-cancel" ' + btn + ' onclick="' + startFn + '(\'' + id + '\')">Start today</button>' : '') +
+      '</div>' +
+      '<p style="font-size:var(--fs-sm);color:var(--text-muted);margin:6px 0 0">' + statusText.charAt(0).toUpperCase() + statusText.slice(1) + '</p>' +
+    '</div></div>';
+}
+function renderTppDatesTab(patient, ctx) {
   const id = patient.id;
   const tl = patient.timeline || {};
-  const week = tppTlDetailWeek[id] || Math.min(info.week, TPP_TL_WEEKS);
-  const weekOptions = [];
-  for (let w = 1; w <= TPP_TL_WEEKS; w++) {
-    weekOptions.push('<option value="' + w + '"' + (w === week ? ' selected' : '') + '>Week ' + w + (info.started && info.week === w ? ' (current)' : '') + '</option>');
-  }
-  const rows = tppTlItemsForWeek(week).map(it => {
-    const note = it.note ? '<div class="tpp-tl-todo-note">' + escapeHtml(it.note) + '</div>' : '';
-    if (it.info) {
-      return '<div class="tpp-tl-row"><span><strong>' + escapeHtml(it.label) + '</strong>' + note + '</span></div>';
-    }
-    const n = tppTlCount(patient, week, it.key);
-    if (it.max === 1) {
-      return '<label class="tpp-tl-row"><input type="checkbox"' + (n >= 1 ? ' checked' : '') +
-        ' onchange="setTppTimelineProgress(\'' + id + '\',' + week + ',\'' + it.key + '\',this.checked?1:0)">' +
-        '<span><strong>' + escapeHtml(it.label) + '</strong>' + note + '</span></label>';
-    }
-    return '<div class="tpp-tl-row"><span class="tpp-tl-row-main"><strong>' + escapeHtml(it.label) + '</strong> <span class="tpp-tl-todo-note-inline">' + tppTlTarget(it) + '</span>' + note + '</span>' +
-      '<span class="tpp-tl-stepper">' +
-        '<button class="modal-cancel" onclick="setTppTimelineProgress(\'' + id + '\',' + week + ',\'' + it.key + '\',' + Math.max(0, n - 1) + ')"' + (n <= 0 ? ' disabled' : '') + ' aria-label="One fewer">&minus;</button>' +
-        '<span class="tpp-tl-count">' + n + '</span>' +
-        '<button class="modal-cancel" onclick="setTppTimelineProgress(\'' + id + '\',' + week + ',\'' + it.key + '\',' + (n + 1) + ')"' + (n >= it.max ? ' disabled' : '') + ' aria-label="One more">+</button>' +
-      '</span></div>';
-  }).join('');
-  let status;
-  if (info.started && info.week <= TPP_TL_WEEKS) status = 'Week ' + info.week + ', day ' + info.day + ' of ' + (TPP_TL_WEEKS * 7);
-  else if (info.started) status = 'Finished Phase One (started ' + tppTlLabel(info.startDate) + ')';
-  else if (info.startDate) status = 'Starts ' + tppTlLabel(info.startDate);
-  else status = 'Not started';
+  const info = tppTlInfo(patient);
   const rc = tppRcInfo(patient);
-  let rcStatus;
-  if (rc.started && rc.week <= TPP_RC_WEEKS) rcStatus = 'Week ' + rc.week + ', day ' + rc.day + ' of ' + (TPP_RC_WEEKS * 7);
-  else if (rc.started) rcStatus = 'Complete (started ' + tppTlLabel(rc.startDate) + ')';
-  else if (rc.startDate) rcStatus = 'Starts ' + tppTlLabel(rc.startDate);
-  else rcStatus = 'Not started';
-  const btn = 'style="padding:7px 14px;font-size:var(--fs-sm)"';
+  const p1 = tppDatesGroupHtml('Phase One', 'tpp-tl-start-date', info, tppStatusText(info, TPP_TL_WEEKS, 'Finished Phase One', tppTlLabel), 'setTppTimelineStart', 'startTppTimeline', id);
+  const rcHtml = tppDatesGroupHtml('Repair &amp; Clear', 'tpp-rc-start-date', rc, tppStatusText(rc, TPP_RC_WEEKS, 'Complete', tppTlLabel), 'setTppRepairStart', 'startTppRepair', id);
   const followupRows = TPP_TL_FOLLOWUPS.map(f =>
     '<div class="modal-field"><label class="modal-label" for="tpp-tl-fu-' + f.week + '">' + f.label + '</label>' +
       '<input type="datetime-local" class="modal-input" id="tpp-tl-fu-' + f.week + '" style="width:auto" value="' + escapeHtml(tppTlFollowupAt(patient, f.week).length > 10 ? tppTlFollowupAt(patient, f.week) : '') + '" ' +
         'onchange="setTppTimelineFollowup(\'' + id + '\',' + f.week + ', this.value)"></div>').join('');
-  return '<div class="pep-order-block">' +
-    '<div class="modal-label" style="margin-bottom:8px">Phase One Timeline</div>' +
-    '<div class="modal-field"><label class="modal-label" for="tpp-tl-start-date">Start date</label>' +
-      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
-        '<input type="date" class="modal-input" id="tpp-tl-start-date" style="width:auto" value="' + escapeHtml(info.startDate) + '" onchange="setTppTimelineStart(\'' + id + '\', this.value)">' +
-        (info.startDate ? '<button class="modal-cancel" ' + btn + ' onclick="setTppTimelineStart(\'' + id + '\', \'\')">Clear</button>' : '') +
-        (!info.started ? '<button class="modal-cancel" ' + btn + ' onclick="startTppTimeline(\'' + id + '\')">Start today</button>' : '') +
-      '</div>' +
-      '<p style="font-size:var(--fs-sm);color:var(--text-muted);margin:6px 0 14px">' + status + '</p>' +
-    '</div>' +
-    '<div class="modal-field"><label class="modal-label" for="tpp-tl-week-select">Checklist for</label>' +
-      '<select id="tpp-tl-week-select" class="modal-select" style="width:auto" onchange="setTppTlDetailWeek(\'' + id + '\', this.value)">' + weekOptions.join('') + '</select>' +
-    '</div>' +
-    '<div class="tpp-tl-rows">' + rows + '</div>' +
-    '<div class="modal-label" style="margin:18px 0 8px">Follow-up appointments</div>' +
-    followupRows +
+  const fu = '<div class="tpp-dgroup"><div class="modal-label" style="margin-bottom:8px">Follow-up appointments</div>' + followupRows +
     '<label class="tpp-tl-row" style="margin-top:6px"><input type="checkbox"' + (tl.binder ? ' checked' : '') + ' onchange="setTppTimelineBinder(\'' + id + '\', this.checked)">' +
-      '<span><strong>On binder</strong><div class="tpp-tl-todo-note">CSM</div></span></label>' +
-    '<div class="modal-label" style="margin:18px 0 8px">Repair &amp; Clear</div>' +
-    '<div class="modal-field"><label class="modal-label" for="tpp-rc-start-date">Start date</label>' +
-      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
-        '<input type="date" class="modal-input" id="tpp-rc-start-date" style="width:auto" value="' + escapeHtml(rc.startDate) + '" onchange="setTppRepairStart(\'' + id + '\', this.value)">' +
-        (rc.startDate ? '<button class="modal-cancel" ' + btn + ' onclick="setTppRepairStart(\'' + id + '\', \'\')">Clear</button>' : '') +
-        (!rc.started ? '<button class="modal-cancel" ' + btn + ' onclick="startTppRepair(\'' + id + '\')">Start today</button>' : '') +
-      '</div>' +
-      '<p style="font-size:var(--fs-sm);color:var(--text-muted);margin:6px 0 0">' + rcStatus + '</p>' +
-    '</div>' +
-  '</div>';
+      '<span><strong>On binder</strong><div class="tpp-tl-todo-note">CSM</div></span></label></div>';
+  return ctx === 'rc' ? rcHtml + p1 + fu : p1 + fu + rcHtml;
 }
 // -- Drag helpers (shared) ----------------------------------------------------
 function tppMarkDragging(e) {
@@ -7191,7 +7161,7 @@ function renderTppFollowupBoard() {
   const betweenHtml = between.map(patient => {
     const due = tppDueInfo(patient);
     return '' +
-      '<div class="pep-card' + (due.status === 'over' ? ' tpp-card-overdue' : '') + '" onclick="openTppDetail(\'' + patient.id + '\')" title="Open ' + escapeHtml(patient.name) + '">' +
+      '<div class="pep-card' + (due.status === 'over' ? ' tpp-card-overdue' : '') + '" onclick="openTppDetail(\'' + patient.id + '\',\'fu\')" title="Open ' + escapeHtml(patient.name) + '">' +
         '<div class="pep-card-name">' + escapeHtml(patient.name) + ' <span class="pep-order-badge">' + (patient.followupOrders || []).length + ' round' + ((patient.followupOrders || []).length === 1 ? '' : 's') + ' done</span></div>' +
         '<div><span class="tpp-due-badge ' + due.cls + '">' + due.label + '</span></div>' +
         tppTileCommentHtml(patient) +
@@ -7244,7 +7214,7 @@ function renderTppFollowupBoard() {
       return '' +
         '<div class="pep-card' + (order.completedAt ? ' completed' : '') + '"' + (order.completedAt ? '' : ' draggable="true" ') +
           (order.completedAt ? '' : 'ondragstart="tppFuCardDragStart(event,\'' + patient.id + '\',\'' + order.id + '\')" ondragend="tppDragEnd()" ') +
-          'onclick="openTppDetail(\'' + patient.id + '\')" title="Open ' + escapeHtml(patient.name) + '">' +
+          'onclick="openTppDetail(\'' + patient.id + '\',\'fu\')" title="Open ' + escapeHtml(patient.name) + '">' +
           '<div class="pep-card-name">' + escapeHtml(patient.name) + (multiOrder ? ' <span class="pep-order-badge">Round ' + (orderIndex + 1) + '</span>' : '') +
             (order.completedAt ? '<span class="tpp-decision-tag accepted">Finished</span>' : '') + '</div>' +
           (isUnplaced ? '<div class="pep-card-meta">Added ' + formatTime(order.startedAt) + '</div>'
@@ -7738,13 +7708,16 @@ function renderTppOverview(patient) {
     : '<div style="color:var(--text-muted);font-size:var(--fs-sm)">No treatment plan attached yet.</div>' +
       '<div class="tpp-ov-plan-actions"><label class="tpp-ov-btn">Upload treatment plan PDF' + fileInput + '</label></div>';
   return '<div class="tpp-overview">' +
-    '<div class="tpp-overview-head">Overview</div>' +
-    tppWhereChipsHtml(patient) +
-    '<div class="tpp-ov-plan"><div class="tpp-ov-label" style="font-size:var(--fs-sm);margin-bottom:4px">Treatment plan</div>' + planHtml + '</div>' +
+    '<div class="tpp-ov-plan" style="margin-top:0;padding-top:0;border-top:0"><div class="tpp-ov-label" style="font-size:var(--fs-sm);margin-bottom:4px">Treatment plan</div>' + planHtml + '</div>' +
   '</div>';
 }
-function openTppDetail(patientId) {
+let tppDetailTab = 'overview';
+let tppDetailCtx = '';
+function openTppDetail(patientId, ctx) {
   tppDetailPatientId = patientId;
+  tppDetailCtx = ctx || '';
+  const pt = allTpp.find(x => x.id === patientId);
+  tppDetailTab = (ctx === 'fu' && pt && (pt.followupOrders || []).length) ? 'followup' : 'overview';
   renderTppDetail(patientId);
   document.getElementById('tpp-detail-modal').classList.add('open');
 }
@@ -7780,7 +7753,7 @@ function tppHistoryRowsHtml(patient, orderId, hist, stagesAll, kind) {
       '</div>';
   }).join('');
 }
-function renderTppDiscoverySection(patient) {
+function renderTppDiscoverySection(patient, part) {
   const hist = patient.discoveryHistory || [];
   const historyHtml = tppHistoryRowsHtml(patient, null, hist, TPP_ALL_DISCOVERY_STAGES, 'discovery');
   const addRowId = 'tpp-addhist-' + patient.id;
@@ -7812,7 +7785,7 @@ function renderTppDiscoverySection(patient) {
     .map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('');
   return '' +
     '<div class="pep-order-block" style="border-top:none;padding-top:0;margin-top:0">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
+      (part === 'stage' ?       '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
         '<span class="pep-section-title">Discovery &rarr; Treatment Plan</span>' +
         '<select class="modal-select" style="width:auto;font-size:var(--fs-sm);padding:6px 10px" onchange="moveTppDiscoveryStage(\'' + patient.id + '\', this.value); this.selectedIndex=0;">' +
           '<option value="">Move to&hellip;</option>' + moveOptions + '</select>' +
@@ -7822,10 +7795,10 @@ function renderTppDiscoverySection(patient) {
       '</p>' +
       // The decision is the whole point of this stage, so it goes first.
       (isPending ? '<div class="tpp-decision-block"><div class="tpp-decision-q">Did they accept the treatment plan?</div><div class="tpp-decision-row">' + tppDecisionButtonsHtml(patient.id) + '</div></div>' : '') +
-      keyInfoHtml +
-      '<div class="pep-section-title" style="margin-top:12px">History</div>' +
-      historyHtml + addHistoryHtml +
-      '<div class="pep-section-title" style="margin-top:12px">Files</div>' +
+      '' : '') +
+      (part === 'details' ? keyInfoHtml : '') +
+      (part === 'history' ? '<div class="pep-section-title" style="margin-top:12px">History</div>' + historyHtml + addHistoryHtml : '') +
+      (part === 'files' ? '<div class="pep-section-title">Files</div>' +
       filesHtml +
       '<div class="pep-file-drop" ondragover="pepFileDragOver(event)" ondragleave="pepFileDragLeave(event)" ondrop="tppDiscoveryFileDrop(event,\'' + patient.id + '\')">' +
         '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
@@ -7835,7 +7808,7 @@ function renderTppDiscoverySection(patient) {
           '<label class="modal-cancel" style="padding:6px 14px;font-size:var(--fs-sm);cursor:pointer">Choose File<input type="file" multiple style="display:none" onchange="uploadTppDiscoveryFile(\'' + patient.id + '\', this)"></label>' +
           '<span style="font-size:var(--fs-xs);color:var(--text-muted)">or drop file(s) here</span>' +
         '</div>' +
-      '</div>' +
+      '</div>' : '') +
     '</div>';
 }
 function renderTppFollowupOrderBlock(patient, order, orderIndex, isActive) {
@@ -7925,6 +7898,50 @@ function saveTppMetaFromDetail(patientId) {
   if (!dueEl.value && patient && patient.followupDue === 'done') { showToast('Nothing to change'); return; }
   saveTppMeta(patientId);
 }
+function setTppDetailTab(tab) {
+  tppDetailTab = tab;
+  if (tppDetailPatientId) renderTppDetail(tppDetailPatientId);
+  const el = document.getElementById('tpp-detail-body');
+  if (el) el.scrollTop = 0;
+}
+function toggleTppRename() {
+  const row = document.getElementById('tpp-rename-row');
+  if (!row) return;
+  row.style.display = row.style.display === 'none' ? 'flex' : 'none';
+  const inp = document.getElementById('tpp-detail-name');
+  if (inp && row.style.display !== 'none') inp.focus();
+}
+// The one line staff see on every tab: where the patient is, and anything missing.
+function renderTppDetailStrip(patient) {
+  const lines = [];
+  const tl = patient.timeline;
+  let alertHtml = '';
+  if (tl && tl.startedAt) {
+    lines.push('Phase One: ' + tppStatusText(tppTlInfo(patient), TPP_TL_WEEKS, 'finished', tppTlLabel));
+    if (tppRcVisible(patient)) {
+      const rc = tppRcInfo(patient);
+      let t = 'Repair & Clear: ' + tppStatusText(rc, TPP_RC_WEEKS, 'complete', tppTlLabel);
+      if (rc.started && rc.week <= TPP_RC_WEEKS) {
+        const ph = TPP_RC_PHASES.find(x => x.weeks.includes(rc.week));
+        if (ph) t += ' \u00b7 ' + ph.title;
+      }
+      lines.push(t);
+    }
+    const due = tppTlFollowupDue(patient);
+    if (due && !tppTlFollowupAt(patient, due.week)) {
+      alertHtml = '<button type="button" class="tpp-dalert" onclick="setTppDetailTab(\'dates\')">' + escapeHtml(due.label) + ' date not set. Set it</button>';
+    }
+  }
+  return '<div class="tpp-dstrip">' +
+    '<div class="tpp-dstrip-lines">' + lines.map(l => '<div>' + escapeHtml(l) + '</div>').join('') + '</div>' +
+    alertHtml +
+    '<button type="button" class="tpp-dlink" onclick="toggleTppRename()">Rename</button>' +
+  '</div>' +
+  '<div class="modal-field" id="tpp-rename-row" style="display:none;flex-direction:row;gap:8px;margin-top:8px">' +
+    '<input type="text" class="modal-input" id="tpp-detail-name" value="' + escapeHtml(patient.name) + '" aria-label="Patient name">' +
+    '<button class="modal-submit" style="padding:8px 16px;font-size:var(--fs-sm)" onclick="saveTppName(\'' + patient.id + '\')">Save</button>' +
+  '</div>';
+}
 function renderTppDetail(patientId) {
   const patient = allTpp.find(p => p.id === patientId);
   const body = document.getElementById('tpp-detail-body');
@@ -7935,30 +7952,52 @@ function renderTppDetail(patientId) {
   for (let i = orders.length - 1; i >= 0; i--) { if (!orders[i].completedAt) { activeOrder = orders[i]; break; } }
   if (!activeOrder && orders.length) activeOrder = orders[orders.length - 1];
   const canStartNew = orders.length > 0 && !!orders[orders.length - 1].completedAt;
-  const followupHtml = orders.length ? orders.slice().reverse()
-    .map(o => renderTppFollowupOrderBlock(patient, o, orders.indexOf(o), activeOrder && o.id === activeOrder.id))
-    .join('') : '<p style="color:var(--text-muted);font-size:var(--fs-sm)">Not in the Follow-Up pipeline yet.</p>';
   const hasDiscovery = !!patient.discoveryStage;
-  body.innerHTML = '' +
-    '<div class="modal-field">' +
-      '<label class="modal-label">Patient name</label>' +
-      '<div style="display:flex;gap:8px">' +
-        '<input type="text" class="modal-input" id="tpp-detail-name" value="' + escapeHtml(patient.name) + '">' +
-        '<button class="modal-submit" style="padding:8px 16px;font-size:var(--fs-sm)" onclick="saveTppName(\'' + patient.id + '\')">Save</button>' +
+  const hasTimeline = !!(patient.timeline && patient.timeline.startedAt);
+  const tabs = [{ key: 'overview', label: 'Overview' }];
+  if (hasTimeline || hasDiscovery) tabs.push({ key: 'dates', label: 'Details' });
+  if (orders.length) tabs.push({ key: 'followup', label: 'Follow-Up' });
+  tabs.push({ key: 'files', label: 'Plan & files' }, { key: 'history', label: 'History' });
+  if (!tabs.some(t => t.key === tppDetailTab)) tppDetailTab = 'overview';
+  const tabBar = '<div class="tpp-dtabs" role="tablist">' + tabs.map(t =>
+    '<button type="button" role="tab" aria-selected="' + (t.key === tppDetailTab) + '" class="tpp-dtab' + (t.key === tppDetailTab ? ' active' : '') + '" onclick="setTppDetailTab(\'' + t.key + '\')">' + t.label + '</button>').join('') + '</div>';
+
+  let content = '';
+  if (tppDetailTab === 'overview') {
+    // Start buttons only appear while a clock has not started.
+    let starts = '';
+    if (hasTimeline) {
+      const rows = [];
+      if (!tppTlInfo(patient).started) rows.push('<div class="tpp-ov-row" style="align-items:center"><span>Phase One has not started</span><button type="button" class="tpp-ov-btn" onclick="startTppTimeline(\'' + patient.id + '\')">Start today</button></div>');
+      if (tppRcVisible(patient) && !tppRcInfo(patient).started) rows.push('<div class="tpp-ov-row" style="align-items:center"><span>Repair &amp; Clear has not started</span><button type="button" class="tpp-ov-btn" onclick="startTppRepair(\'' + patient.id + '\')">Start today</button></div>');
+      if (tppDetailCtx === 'rc') rows.reverse();
+      starts = rows.length ? '<div class="tpp-overview">' + rows.join('') + '</div>' : '';
+    }
+    const cmts = patient.comments || [];
+    const last = cmts.length ? cmts[cmts.length - 1] : null;
+    content = tppWhereChipsHtml(patient) + starts +
+      '<div class="modal-field" style="margin-top:12px">' +
+        '<button class="modal-cancel" style="align-self:flex-start;padding:7px 14px;font-size:var(--fs-sm)" onclick="openTppComments(\'' + patient.id + '\')">' +
+          (cmts.length ? 'Comments (' + cmts.length + ')' : 'Add a comment') + '</button>' +
+        (last ? '<div class="tpp-card-comment" style="-webkit-line-clamp:3">' + (last.from ? '<strong>' + escapeHtml(last.from) + ':</strong> ' : '') + escapeHtml(last.text || '') + '</div>' : '') +
       '</div>' +
-    '</div>' +
-    renderTppMetaRow(patient) +
-    '<div class="modal-field">' +
-      '<button class="modal-cancel" style="align-self:flex-start;padding:7px 14px;font-size:var(--fs-sm)" onclick="openTppComments(\'' + patient.id + '\')">' +
-        ((patient.comments || []).length ? 'Comments (' + patient.comments.length + ')' : 'Add a comment') + '</button>' +
-      ((patient.comments || []).length ? '<div class="tpp-card-comment" style="-webkit-line-clamp:3">' + (patient.comments[patient.comments.length - 1].from ? '<strong>' + escapeHtml(patient.comments[patient.comments.length - 1].from) + ':</strong> ' : '') + escapeHtml(patient.comments[patient.comments.length - 1].message) + '</div>' : '') +
-    '</div>' +
-    renderTppOverview(patient) +
-    (patient.timeline && patient.timeline.startedAt ? renderTppTimelineSection(patient) : '') +
-    (hasDiscovery ? renderTppDiscoverySection(patient) : '') +
-    (canStartNew ? '<button class="modal-submit" style="width:100%;margin-top:14px" onclick="startNewTppFollowupOrder(\'' + patient.id + '\')">+ Start New Follow-Up Round</button>' : '') +
-    '<div class="pep-order-block">' + followupHtml + '</div>' +
-    '<button class="modal-cancel" style="border-color:var(--danger);color:var(--danger);width:100%;margin-top:14px" onclick="deleteTppPatient(\'' + patient.id + '\')">Delete Patient</button>';
+      (hasDiscovery ? renderTppDiscoverySection(patient, 'stage') : '');
+  } else if (tppDetailTab === 'dates') {
+    content = (hasTimeline ? renderTppDatesTab(patient, tppDetailCtx) : '') +
+      (hasDiscovery ? '<div class="tpp-dgroup">' + renderTppDiscoverySection(patient, 'details') + '</div>' : '');
+  } else if (tppDetailTab === 'followup') {
+    const rounds = orders.slice().reverse()
+      .map(o => renderTppFollowupOrderBlock(patient, o, orders.indexOf(o), activeOrder && o.id === activeOrder.id)).join('');
+    content = renderTppMetaRow(patient) +
+      (canStartNew ? '<button class="modal-submit" style="width:100%;margin-top:14px" onclick="startNewTppFollowupOrder(\'' + patient.id + '\')">+ Start New Follow-Up Round</button>' : '') +
+      '<div class="pep-order-block">' + rounds + '</div>';
+  } else if (tppDetailTab === 'files') {
+    content = renderTppOverview(patient) + (hasDiscovery ? renderTppDiscoverySection(patient, 'files') : '');
+  } else if (tppDetailTab === 'history') {
+    content = (hasDiscovery ? renderTppDiscoverySection(patient, 'history') : '<p style="color:var(--text-muted);font-size:var(--fs-sm)">No Discovery history for this patient.</p>') +
+      '<button class="modal-cancel" style="border-color:var(--danger);color:var(--danger);width:100%;margin-top:24px" onclick="deleteTppPatient(\'' + patient.id + '\')">Delete Patient</button>';
+  }
+  body.innerHTML = renderTppDetailStrip(patient) + tabBar + '<div class="tpp-dpane">' + content + '</div>';
 }
 async function saveTppName(patientId) {
   const name = document.getElementById('tpp-detail-name').value.trim();
