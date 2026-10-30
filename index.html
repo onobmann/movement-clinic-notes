@@ -3065,29 +3065,16 @@ let knownNoteIds = null;
 let pollInterval = null;
 let searchQuery = '';
 // ── Read / Complete state (server-synced) ────────────────────────────────────
-async function markAsRead(id) {
+async function setNoteRead(id, isRead) {
   const note = appointments.find(n => n.id === id);
   if (!note) return;
-  note.isRead = true;
+  note.isRead = isRead;
   renderPatientList();
   if (selectedIndex !== null && appointments[selectedIndex]?.id === id) renderMainPanel(appointments[selectedIndex]);
   try {
     await fetch(WORKER_URL + '/notes/' + id, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isRead: true }),
-    });
-  } catch(e) {}
-}
-async function markAsUnread(id) {
-  const note = appointments.find(n => n.id === id);
-  if (!note) return;
-  note.isRead = false;
-  renderPatientList();
-  if (selectedIndex !== null && appointments[selectedIndex]?.id === id) renderMainPanel(appointments[selectedIndex]);
-  try {
-    await fetch(WORKER_URL + '/notes/' + id, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isRead: false }),
+      body: JSON.stringify({ isRead }),
     });
   } catch(e) {}
 }
@@ -3154,22 +3141,25 @@ function stopPolling() {
 // This is what's missing without it: a kickback reply sitting in KV is
 // invisible to anyone who already had the Tasks tab open, until they
 // manually switch away and back.
-function startTaskPolling() {
-  if (taskPollInterval) return;
-  let lastTaskMetaKey = null;
-  taskPollInterval = setInterval(async () => {
+// Checks <path>/meta every `ms` and reloads only when something changed. The
+// first check just records where things stand.
+function startMetaPoller(path, reload, ms) {
+  let lastKey = null;
+  return setInterval(async () => {
     try {
-      const metaRes = await fetch(WORKER_URL + '/tasks/meta');
+      const metaRes = await fetch(WORKER_URL + path + '/meta');
       if (!metaRes.ok) return;
       const meta = await metaRes.json();
       const metaKey = meta.count + ':' + (meta.savedAt || '');
-      if (metaKey === lastTaskMetaKey) return;
-      const isFirst = lastTaskMetaKey === null;
-      lastTaskMetaKey = metaKey;
-      if (isFirst) return; // first check just seeds the baseline, no need to refetch what we just loaded
-      await loadTasks();
+      if (metaKey === lastKey) return;
+      const isFirst = lastKey === null;
+      lastKey = metaKey;
+      if (!isFirst) await reload();
     } catch (e) {}
-  }, 20000); // 20s — tasks change more often than notes, so poll a bit faster
+  }, ms);
+}
+function startTaskPolling() {
+  if (!taskPollInterval) taskPollInterval = startMetaPoller('/tasks', loadTasks, 20000); // tasks change more often than notes
 }
 function stopTaskPolling() {
   clearInterval(taskPollInterval);
@@ -3447,7 +3437,7 @@ function renderPatientList() {
         <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap">
           <span class="p-name">${nameHtml}</span>
           <div style="display:flex;gap:4px;flex-wrap:wrap">
-            ${isUnread ? `<span class="unread-badge" onclick="event.stopPropagation();markAsRead('${a.id}')">UNREAD</span>` : ''}
+            ${isUnread ? `<span class="unread-badge" onclick="event.stopPropagation();setNoteRead('${a.id}', true)">UNREAD</span>` : ''}
             ${isCompleted ? '<span class="completed-badge">✓ Done</span>' : ''}
           </div>
         </div>
@@ -3557,7 +3547,7 @@ function renderMainPanel(appt) {
           ${isCompleted ? '↩ Mark Incomplete' : '✓ Mark Complete'}
         </button>
         <button class="mark-unread-btn" onclick="editNote()">✏ Edit Note</button>
-        ${!isUnread ? `<button class="mark-unread-btn" onclick="markAsUnread('${appt.id}')">◎ Mark as Unread</button>` : ''}
+        ${!isUnread ? `<button class="mark-unread-btn" onclick="setNoteRead('${appt.id}', false)">◎ Mark as Unread</button>` : ''}
         <button class="delete-note-btn" style="margin-top:0" onclick="deleteNote('${appt.id}')">
           🗑 Delete
         </button>
@@ -3679,7 +3669,6 @@ function staffColor(s) { return isDarkTheme() ? s.color : s.colorLight; }
 function staffBg(s) { return isDarkTheme() ? s.bg : s.bgLight; }
 
 let allTasks = [];
-let taskModalAssignee = null;
 let editingTaskId = null;
 const completedOpenCols = new Set();
 // ── Task board filters (priority / due date / sort) ─────────────────────────
@@ -4928,21 +4917,7 @@ async function loadPeptides() {
   }
 }
 function startPeptidePolling() {
-  if (peptidePollInterval) return;
-  let lastKey = null;
-  peptidePollInterval = setInterval(async () => {
-    try {
-      const metaRes = await fetch(WORKER_URL + '/peptides/meta');
-      if (!metaRes.ok) return;
-      const meta = await metaRes.json();
-      const metaKey = meta.count + ':' + (meta.savedAt || '');
-      if (metaKey === lastKey) return;
-      const isFirst = lastKey === null;
-      lastKey = metaKey;
-      if (isFirst) return;
-      await loadPeptides();
-    } catch (e) {}
-  }, 20000);
+  if (!peptidePollInterval) peptidePollInterval = startMetaPoller('/peptides', loadPeptides, 20000);
 }
 function stopPeptidePolling() {
   clearInterval(peptidePollInterval);
@@ -5067,19 +5042,35 @@ async function pepColDrop(e, stageKey) {
 async function movePeptideStage(patientId, orderId, stageKey) {
   if (!stageKey) return;
   try {
-    const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ setStage: { orderId, stage: stageKey } }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allPeptides.findIndex(p => p.id === patientId);
-    if (idx !== -1) allPeptides[idx] = updated;
+    await pepPatch(patientId, { setStage: { orderId, stage: stageKey } });
     renderPeptideBoard();
     if (pepDetailPatientId === patientId) renderPeptideDetail(patientId);
     showToast('Moved to ' + stageLabel(stageKey));
   } catch (err) {
     showToast('Could not move: ' + err.message);
+  }
+}
+// Every peptide change: PATCH the patient and keep the local copy in step.
+async function pepPatch(patientId, body) {
+  const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error('Server error ' + res.status);
+  const updated = await res.json();
+  const idx = allPeptides.findIndex(p => p.id === patientId);
+  if (idx !== -1) allPeptides[idx] = updated;
+  return updated;
+}
+// Save, redraw the open patient and the board, and say how it went.
+async function pepSave(patientId, body, okMsg, failMsg) {
+  try {
+    await pepPatch(patientId, body);
+    renderPeptideDetail(patientId);
+    renderPeptideBoard();
+    showToast(okMsg);
+  } catch (err) {
+    showToast((failMsg || 'Could not save') + ': ' + err.message);
   }
 }
 // -- Add patient --------------------------------------------------------------
@@ -5308,79 +5299,30 @@ function renderPeptideDetail(patientId) {
     '<button class="modal-submit" id="pep-detail-ok-btn" style="width:100%;margin-top:14px;font-weight:600" onclick="saveAndClosePeptideDetail(\'' + patient.id + '\')">\u2713 Save & Close</button>' +
     '<button class="modal-cancel" style="border-color:var(--danger);color:var(--danger);width:100%;margin-top:10px" onclick="deletePeptidePatient(\'' + patient.id + '\')">Delete Patient</button>';
 }
-async function saveHistoryEdit(patientId, orderId, historyId, rowId) {
+function saveHistoryEdit(patientId, orderId, historyId, rowId) {
   const atLocal = document.getElementById(rowId + '-at').value;
   const comment = document.getElementById(rowId + '-comment').value;
   const stageEl = document.getElementById(rowId + '-stage');
   const stage = stageEl ? stageEl.value : undefined;
   if (!atLocal) return;
-  try {
-    const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ editHistory: { orderId, historyId, at: new Date(atLocal).toISOString(), comment, stage } }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allPeptides.findIndex(p => p.id === patientId);
-    if (idx !== -1) allPeptides[idx] = updated;
-    renderPeptideDetail(patientId);
-    renderPeptideBoard();
-    showToast('History updated');
-  } catch (err) {
-    showToast('Could not save: ' + err.message);
-  }
+  return pepSave(patientId, { editHistory: { orderId, historyId, at: new Date(atLocal).toISOString(), comment, stage } }, 'History updated');
 }
-async function deletePepHistoryEntry(patientId, orderId, historyId) {
+function deletePepHistoryEntry(patientId, orderId, historyId) {
   if (!confirm('Delete this timeline entry? This cannot be undone.')) return;
-  try {
-    const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ deleteHistoryEntry: { orderId, historyId } }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allPeptides.findIndex(p => p.id === patientId);
-    if (idx !== -1) allPeptides[idx] = updated;
-    renderPeptideDetail(patientId);
-    renderPeptideBoard();
-    showToast('Entry deleted');
-  } catch (err) {
-    showToast('Could not delete: ' + err.message);
-  }
+  return pepSave(patientId, { deleteHistoryEntry: { orderId, historyId } }, 'Entry deleted', 'Could not delete');
 }
-async function addPepHistoryEntry(patientId, orderId, rowId) {
+function addPepHistoryEntry(patientId, orderId, rowId) {
   const stage = document.getElementById(rowId + '-stage').value;
   const atLocal = document.getElementById(rowId + '-at').value;
   const comment = document.getElementById(rowId + '-comment').value;
   if (!atLocal) return;
-  try {
-    const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ addHistoryEntry: { orderId, stage, at: new Date(atLocal).toISOString(), comment } }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allPeptides.findIndex(p => p.id === patientId);
-    if (idx !== -1) allPeptides[idx] = updated;
-    renderPeptideDetail(patientId);
-    renderPeptideBoard();
-    showToast('Entry added');
-  } catch (err) {
-    showToast('Could not add entry: ' + err.message);
-  }
+  return pepSave(patientId, { addHistoryEntry: { orderId, stage, at: new Date(atLocal).toISOString(), comment } }, 'Entry added', 'Could not add entry');
 }
 async function savePeptideName(patientId) {
   const name = document.getElementById('pep-detail-name').value.trim();
   if (!name) return;
   try {
-    const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allPeptides.findIndex(p => p.id === patientId);
-    if (idx !== -1) allPeptides[idx] = updated;
+    const updated = await pepPatch(patientId, { name });
     renderPeptideBoard();
     document.getElementById('pep-detail-title').textContent = updated.name;
     showToast('Name updated');
@@ -5388,63 +5330,21 @@ async function savePeptideName(patientId) {
     showToast('Could not save: ' + err.message);
   }
 }
-async function saveOrderMeta(patientId, orderId, rowId) {
+function saveOrderMeta(patientId, orderId, rowId) {
   const orderNumber = document.getElementById(rowId + '-num').value.trim();
   const orderDate = document.getElementById(rowId + '-date').value;
-  try {
-    const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ updateOrderMeta: { orderId, orderNumber, orderDate } }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allPeptides.findIndex(p => p.id === patientId);
-    if (idx !== -1) allPeptides[idx] = updated;
-    renderPeptideDetail(patientId);
-    renderPeptideBoard();
-    showToast('Order info saved');
-  } catch (err) {
-    showToast('Could not save: ' + err.message);
-  }
+  return pepSave(patientId, { updateOrderMeta: { orderId, orderNumber, orderDate } }, 'Order info saved');
 }
-async function saveConsultInfo(patientId, orderId, rowId) {
+function saveConsultInfo(patientId, orderId, rowId) {
   const atLocal = document.getElementById(rowId + '-consultat').value;
   const consultDoctor = document.getElementById(rowId + '-consultdoc').value;
   const consultDate = atLocal ? new Date(atLocal).toISOString() : '';
-  try {
-    const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ updateConsult: { orderId, consultDate, consultDoctor } }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allPeptides.findIndex(p => p.id === patientId);
-    if (idx !== -1) allPeptides[idx] = updated;
-    renderPeptideDetail(patientId);
-    renderPeptideBoard();
-    showToast('Consult info saved');
-  } catch (err) {
-    showToast('Could not save: ' + err.message);
-  }
+  return pepSave(patientId, { updateConsult: { orderId, consultDate, consultDoctor } }, 'Consult info saved');
 }
-async function saveTracking(patientId, orderId, rowId) {
+function saveTracking(patientId, orderId, rowId) {
   const trackingPeptides = document.getElementById(rowId + '-trackpep').value.trim();
   const trackingRecon = document.getElementById(rowId + '-tracktrecon').value.trim();
-  try {
-    const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ updateTracking: { orderId, trackingPeptides, trackingRecon } }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allPeptides.findIndex(p => p.id === patientId);
-    if (idx !== -1) allPeptides[idx] = updated;
-    renderPeptideDetail(patientId);
-    renderPeptideBoard();
-    showToast('Tracking numbers saved');
-  } catch (err) {
-    showToast('Could not save: ' + err.message);
-  }
+  return pepSave(patientId, { updateTracking: { orderId, trackingPeptides, trackingRecon } }, 'Tracking numbers saved');
 }
 function toggleShipAddress(orderMetaId) {
   const sel = document.getElementById(orderMetaId + '-shipto');
@@ -5452,24 +5352,10 @@ function toggleShipAddress(orderMetaId) {
   if (!sel || !wrap) return;
   wrap.style.display = sel.value === 'house' ? '' : 'none';
 }
-async function saveShipping(patientId, orderId, rowId) {
+function saveShipping(patientId, orderId, rowId) {
   const shippingTo = document.getElementById(rowId + '-shipto').value;
   const shippingAddress = document.getElementById(rowId + '-shipaddr') ? document.getElementById(rowId + '-shipaddr').value.trim() : '';
-  try {
-    const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ updateShipping: { orderId, shippingTo, shippingAddress } }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allPeptides.findIndex(p => p.id === patientId);
-    if (idx !== -1) allPeptides[idx] = updated;
-    renderPeptideDetail(patientId);
-    renderPeptideBoard();
-    showToast('Shipping info saved');
-  } catch (err) {
-    showToast('Could not save: ' + err.message);
-  }
+  return pepSave(patientId, { updateShipping: { orderId, shippingTo, shippingAddress } }, 'Shipping info saved');
 }
 // Gathers every editable field for one order (consult, order meta, tracking,
 // shipping) and saves them in a single PATCH — used by the "Save & Close"
@@ -5503,14 +5389,7 @@ async function saveOrderFields(patientId, orderId, rowId) {
     body.updateShipping = { orderId, shippingTo: shipToEl.value, shippingAddress: shipAddrEl ? shipAddrEl.value.trim() : '' };
   }
   if (Object.keys(body).length === 0) return;
-  const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
-    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error('Server error ' + res.status);
-  const updated = await res.json();
-  const idx = allPeptides.findIndex(p => p.id === patientId);
-  if (idx !== -1) allPeptides[idx] = updated;
+  await pepPatch(patientId, body);
 }
 // The OK / "Save & Close" button on the peptide tile: saves the patient
 // name (if edited) plus every order's fields, then closes the modal and
@@ -5567,22 +5446,8 @@ function finishOrder(patientId, orderId) {
     showToast(missing.length ? 'Order finished (' + missing.length + ' item' + (missing.length === 1 ? '' : 's') + ' missing)' : 'Order finished — everything done');
   });
 }
-async function startNewOrder(patientId) {
-  try {
-    const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ newOrder: true }),
-    });
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    const updated = await res.json();
-    const idx = allPeptides.findIndex(p => p.id === patientId);
-    if (idx !== -1) allPeptides[idx] = updated;
-    renderPeptideBoard();
-    renderPeptideDetail(patientId);
-    showToast('New order started');
-  } catch (err) {
-    showToast('Could not start new order: ' + err.message);
-  }
+function startNewOrder(patientId) {
+  return pepSave(patientId, { newOrder: true }, 'New order started', 'Could not start new order');
 }
 async function deletePeptidePatient(patientId) {
   if (!confirm('Delete this patient and all their peptide history? This cannot be undone.')) return;
@@ -5633,9 +5498,8 @@ function guessPeptideFileCategory(fileName, orderId) {
   const catEl = document.getElementById('pep-file-cat-' + orderId);
   return catEl ? catEl.value : 'other';
 }
-async function uploadPeptideFile(patientId, orderId, input) {
-  const files = Array.from(input.files || []);
-  input.value = '';
+// Picker and drag-and-drop both end up here. PDFs only.
+async function pepUploadList(patientId, orderId, files) {
   if (!files.length) return;
   const pdfFiles = files.filter(f => f.type === 'application/pdf');
   if (pdfFiles.length < files.length) showToast('Skipped non-PDF file' + (files.length - pdfFiles.length === 1 ? '' : 's'));
@@ -5648,23 +5512,17 @@ async function uploadPeptideFile(patientId, orderId, input) {
   renderPeptideDetail(patientId);
   showToast(pdfFiles.length === 1 ? 'File attached' : pdfFiles.length + ' files attached');
 }
+function uploadPeptideFile(patientId, orderId, input) {
+  const files = Array.from(input.files || []);
+  input.value = '';
+  return pepUploadList(patientId, orderId, files);
+}
 function pepFileDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
 function pepFileDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
-async function pepFileDrop(e, patientId, orderId) {
+function pepFileDrop(e, patientId, orderId) {
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
-  const files = Array.from(e.dataTransfer.files || []);
-  if (!files.length) return;
-  const pdfFiles = files.filter(f => f.type === 'application/pdf');
-  if (pdfFiles.length < files.length) showToast('Skipped non-PDF file' + (files.length - pdfFiles.length === 1 ? '' : 's'));
-  if (!pdfFiles.length) return;
-  for (const file of pdfFiles) {
-    const category = guessPeptideFileCategory(file.name, orderId);
-    await uploadPeptideFileObject(patientId, orderId, category, file);
-  }
-  renderPeptideBoard();
-  renderPeptideDetail(patientId);
-  showToast(pdfFiles.length === 1 ? 'File attached' : pdfFiles.length + ' files attached');
+  return pepUploadList(patientId, orderId, Array.from(e.dataTransfer.files || []));
 }
 async function removePeptideFile(patientId, orderId, fileId) {
   if (!confirm('Remove this file?')) return;
@@ -5802,21 +5660,7 @@ async function tppMigrateStrandedHandoffs() {
   }
 }
 function startTppPolling() {
-  if (tppPollInterval) return;
-  let lastKey = null;
-  tppPollInterval = setInterval(async () => {
-    try {
-      const metaRes = await fetch(WORKER_URL + '/tpp/meta');
-      if (!metaRes.ok) return;
-      const meta = await metaRes.json();
-      const metaKey = meta.count + ':' + (meta.savedAt || '');
-      if (metaKey === lastKey) return;
-      const isFirst = lastKey === null;
-      lastKey = metaKey;
-      if (isFirst) return;
-      await loadTpp();
-    } catch (e) {}
-  }, 20000);
+  if (!tppPollInterval) tppPollInterval = startMetaPoller('/tpp', loadTpp, 20000);
 }
 function stopTppPolling() {
   clearInterval(tppPollInterval);
@@ -5944,8 +5788,7 @@ async function editTppLabsDrawnDate(patientId, value, orderId) {
   if (!date || date === target.labsDrawnAt) return;
   try {
     await tppSaveLabFields(patientId, orderId, { labsDrawnAt: date });
-    renderTppBoard();
-    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    tppRefresh(patientId);
     showToast('Draw date set to ' + tppLabsDrawnInfo({ labsDrawnAt: date }).drawnLabel);
   } catch (err) {
     showToast('Could not save: ' + err.message);
@@ -5982,8 +5825,7 @@ async function editTppApptDate(patientId, stageKey, value) {
     const body = { _baseUpdatedAt: patient.updatedAt };
     body[cfg.field] = value;
     await tppPatch(patientId, body);
-    renderTppBoard();
-    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    tppRefresh(patientId);
     showToast(value ? cfg.label + ' set for ' + tppApptInfo(value).label : cfg.label + ' date cleared');
   } catch (err) {
     showToast('Could not save: ' + err.message);
@@ -6001,8 +5843,7 @@ async function setTppPayment(patientId, key) {
   const next = patient.payment === key ? '' : key;
   try {
     await tppPatch(patientId, { payment: next, _baseUpdatedAt: patient.updatedAt });
-    renderTppBoard();
-    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    tppRefresh(patientId);
     showToast(next ? patient.name + ': ' + TPP_PAYMENT_LABELS[next] : patient.name + ': payment status cleared');
   } catch (err) {
     showToast('Could not save: ' + err.message);
@@ -6011,11 +5852,6 @@ async function setTppPayment(patientId, key) {
 function tppLabMatches(patient, want) {
   if (!want) return true;
   return patient.labProvider === want;
-}
-function tppShowsLab(stageKey) {
-  const order = TPP_DISCOVERY_STAGES.map(s => s.key);
-  const at = order.indexOf(stageKey);
-  return at !== -1 && at >= order.indexOf(TPP_LAB_FROM);
 }
 // Lab picker popup. Resolves 'labcorp' | 'evexia', { skip: true }, or null if closed.
 let tppLabResolve = null;
@@ -6046,8 +5882,7 @@ async function editTppLab(patientId, value, orderId) {
   if (value === (TPP_LABS[target.labProvider] ? target.labProvider : '')) return;
   try {
     await tppSaveLabFields(patientId, orderId, { labProvider: value });
-    renderTppBoard();
-    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    tppRefresh(patientId);
     showToast(value ? patient.name + ': ' + TPP_LABS[value] : patient.name + ': lab cleared');
   } catch (err) {
     showToast('Could not save: ' + err.message);
@@ -6174,6 +6009,11 @@ function tppActiveRound(patient) {
 // automatically, so nobody in that stage is shown on the Discovery side. The
 // column stays only as a drop target.
 const TPP_HANDOFF_STAGE = 'followup_labs_ordered';
+// Redraw every board, and the patient panel if this patient is open in it.
+function tppRefresh(patientId) {
+  renderTppBoard();
+  if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+}
 function tppReplacePatient(updated) {
   const idx = allTpp.findIndex(p => p.id === updated.id);
   if (idx !== -1) allTpp[idx] = updated;
@@ -6268,7 +6108,6 @@ function tppChainVersion(stack, patientId, version) {
     if (stack[i].patientId === patientId) { stack[i].version = version; return; }
   }
 }
-function tppCap(str) { return str.charAt(0).toUpperCase() + str.slice(1); }
 function tppUpdateUndoButtons() {
   const u = tppUndoStack[tppUndoStack.length - 1];
   const r = tppRedoStack[tppRedoStack.length - 1];
@@ -6909,8 +6748,7 @@ async function moveTppDiscoveryStage(patientId, stageKey, comment) {
       renderTppBoard();
       throw new Error('the server needs updating first (deploy the new worker.js)');
     }
-    renderTppBoard();
-    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    tppRefresh(patientId);
     if (handoff) { showToast(updated.name + ' sent to Follow-Up'); return; }
     // Moves stay one-click; the note is offered, never forced.
     const hist = updated.discoveryHistory || [];
@@ -6928,8 +6766,7 @@ async function moveTppDiscoveryStage(patientId, stageKey, comment) {
 async function acceptTppTreatmentPlan(patientId) {
   try {
     await tppPatch(patientId, { acceptTreatmentPlan: true });
-    renderTppBoard();
-    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    tppRefresh(patientId);
     showToast('Treatment plan accepted');
   } catch (err) {
     showToast('Could not save: ' + err.message);
@@ -6940,8 +6777,7 @@ async function declineTppTreatmentPlan(patientId) {
   if (comment === null) return; // Cancel means cancel, not "decline with no note"
   try {
     await tppPatch(patientId, { declineTreatmentPlan: { comment } });
-    renderTppBoard();
-    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    tppRefresh(patientId);
     showToast('Moved to Declined');
   } catch (err) {
     showToast('Could not save: ' + err.message);
@@ -6953,21 +6789,10 @@ async function holdTppTreatmentPlan(patientId) {
   try {
     const updated = await tppPatch(patientId, { holdTreatmentPlan: { comment } });
     if (updated.discoveryStage !== 'on_hold') throw new Error('the server needs updating first');
-    renderTppBoard();
-    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    tppRefresh(patientId);
     showToast('Moved to On Hold');
   } catch (err) {
     showToast('Could not save: ' + err.message);
-  }
-}
-async function sendTppToFollowUp(patientId) {
-  try {
-    await tppPatch(patientId, { sendToFollowUp: true, followupDue: '' });
-    renderTppBoard();
-    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
-    showToast('Sent to Follow-Up');
-  } catch (err) {
-    showToast('Could not send to follow-up: ' + err.message);
   }
 }
 // -- Follow-Up board rendering ------------------------------------------------
@@ -7143,8 +6968,7 @@ async function moveTppFollowupStage(patientId, orderId, stageKey, comment) {
         return;
       }
     }
-    renderTppBoard();
-    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    tppRefresh(patientId);
     const order = (updated.followupOrders || []).find(o => o.id === orderId);
     const entry = order && (order.history || []).slice().reverse().find(h => h.stage === stageKey);
     if (!comment && entry) {
@@ -7161,8 +6985,7 @@ async function startNewTppFollowupOrder(patientId) {
   try {
     // Clearing followupDue: the round it was waiting for has now started.
     await tppPatch(patientId, { newFollowupOrder: true, followupDue: '' });
-    renderTppBoard();
-    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    tppRefresh(patientId);
     showToast('New follow-up round started');
   } catch (err) {
     showToast('Could not start new round: ' + err.message);
@@ -7217,8 +7040,7 @@ async function submitTppFinish() {
   try {
     await tppPatch(patientId, body);
     closeTppFinishModal();
-    renderTppBoard();
-    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    tppRefresh(patientId);
     showToast(noMore ? 'Round finished — no more rounds planned' : 'Round finished — next due ' + new Date(due + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
   } catch (err) {
     btn.disabled = false; btn.textContent = 'Finish Round';
@@ -7277,8 +7099,7 @@ async function submitTppComment() {
     const updated = await tppPatch(patientId, { addComment: { from, message } });
     if (!(updated.comments || []).length) throw new Error('the server needs updating first');
     textEl.value = '';
-    renderTppBoard();
-    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    tppRefresh(patientId);
     showToast('Comment posted');
   } catch (err) {
     showToast('Could not post comment: ' + err.message);
@@ -7290,8 +7111,7 @@ async function deleteTppComment(patientId, commentId) {
   if (!confirm('Delete this comment?')) return;
   try {
     await tppPatch(patientId, { deleteComment: { commentId } });
-    renderTppBoard();
-    if (tppDetailPatientId === patientId) renderTppDetail(patientId);
+    tppRefresh(patientId);
   } catch (err) {
     showToast('Could not delete: ' + err.message);
   }
@@ -7503,7 +7323,6 @@ async function submitAddTppFollowup() {
     btn.disabled = false; btn.textContent = 'Add Patient';
   }
 }
-// -- Patient detail modal -----------------------------------------------------
 // -- Patient lookup + overview -------------------------------------------------
 // One line per pipeline the patient is in, read straight from the shared record.
 function tppWhere(patient) {
@@ -7585,13 +7404,14 @@ function closeTppDetail() {
   document.getElementById('tpp-detail-modal').classList.remove('open');
   tppDetailPatientId = null;
 }
-function tppHistoryRowsHtml(patient, orderId, hist, stagesAll, kind) {
-  // kind: 'discovery' or 'followup' -- selects which PATCH ops / id prefixes to use
-  const prefix = kind === 'discovery' ? 'tpp-hist' : 'tppfu-hist';
-  const editFn = kind === 'discovery' ? 'saveTppHistoryEdit' : 'saveTppFollowupHistoryEdit';
-  const delFn = kind === 'discovery' ? 'deleteTppHistoryEntry' : 'deleteTppFollowupHistoryEntry';
-  const stageLabelFn = kind === 'discovery' ? tppStageLabel : tppFollowupStageLabel;
-  const orderArg = kind === 'discovery' ? '' : "'" + orderId + "',";
+const TPP_X_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+// The history, "add a step" and files parts below serve both the Discovery
+// timeline (orderId null) and each Follow-Up round (orderId set).
+const tppOrderArg = orderId => orderId ? '\'' + orderId + '\'' : 'null';
+function tppHistoryRowsHtml(patient, orderId, hist, stagesAll) {
+  const prefix = orderId ? 'tppfu-hist' : 'tpp-hist';
+  const stageLabelFn = orderId ? tppFollowupStageLabel : tppStageLabel;
+  const args = '\'' + patient.id + '\',' + tppOrderArg(orderId) + ',';
   return hist.slice().reverse().map(h => {
     const rowId = prefix + '-' + h.id;
     const stageOptions = stagesAll.map(s => '<option value="' + s.key + '"' + (s.key === h.stage ? ' selected' : '') + '>' + s.label + '</option>').join('');
@@ -7606,19 +7426,17 @@ function tppHistoryRowsHtml(patient, orderId, hist, stagesAll, kind) {
           '<div class="modal-field"><label class="modal-label">Timestamp</label><input type="datetime-local" class="modal-input" id="' + rowId + '-at" value="' + toLocalInputValue(h.at) + '"></div>' +
           '<div class="modal-field"><label class="modal-label">Comment / note</label><textarea class="modal-textarea" id="' + rowId + '-comment" style="min-height:50px">' + escapeHtml(h.comment || '') + '</textarea></div>' +
           '<div style="display:flex;justify-content:space-between;gap:8px">' +
-            '<button class="modal-cancel" style="border-color:var(--danger);color:var(--danger);padding:6px 14px;font-size:var(--fs-sm)" onclick="' + delFn + '(\'' + patient.id + '\',' + orderArg + '\'' + h.id + '\')">Delete entry</button>' +
-            '<button class="modal-submit" style="padding:6px 16px;font-size:var(--fs-sm)" onclick="' + editFn + '(\'' + patient.id + '\',' + orderArg + '\'' + h.id + '\',\'' + rowId + '\')">Save</button>' +
+            '<button class="modal-cancel" style="border-color:var(--danger);color:var(--danger);padding:6px 14px;font-size:var(--fs-sm)" onclick="deleteTppHistoryEntry(' + args + '\'' + h.id + '\')">Delete entry</button>' +
+            '<button class="modal-submit" style="padding:6px 16px;font-size:var(--fs-sm)" onclick="saveTppHistoryEdit(' + args + '\'' + h.id + '\',\'' + rowId + '\')">Save</button>' +
           '</div>' +
         '</div>' +
       '</div>';
   }).join('');
 }
-function renderTppDiscoverySection(patient, part) {
-  const hist = patient.discoveryHistory || [];
-  const historyHtml = tppHistoryRowsHtml(patient, null, hist, TPP_ALL_DISCOVERY_STAGES, 'discovery');
-  const addRowId = 'tpp-addhist-' + patient.id;
-  const stageOptionsAll = TPP_ALL_DISCOVERY_STAGES.map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('');
-  const addHistoryHtml = '' +
+function tppAddHistoryHtml(patient, orderId, stagesAll) {
+  const addRowId = orderId ? 'tppfu-addhist-' + orderId : 'tpp-addhist-' + patient.id;
+  const stageOptionsAll = stagesAll.map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('');
+  return '' +
     '<div class="pep-history-row">' +
       '<div class="pep-history-summary" onclick="toggleHistoryRow(\'' + addRowId + '\')">' +
         '<span style="color:var(--accent-dark)">+ Add a step that was missed or happened out of order</span>' +
@@ -7628,75 +7446,50 @@ function renderTppDiscoverySection(patient, part) {
         '<div class="modal-field"><label class="modal-label">Stage</label><select class="modal-select" id="' + addRowId + '-stage">' + stageOptionsAll + '</select></div>' +
         '<div class="modal-field"><label class="modal-label">Timestamp</label><input type="datetime-local" class="modal-input" id="' + addRowId + '-at" value="' + toLocalInputValue(new Date().toISOString()) + '"></div>' +
         '<div class="modal-field"><label class="modal-label">Comment / note</label><textarea class="modal-textarea" id="' + addRowId + '-comment" style="min-height:50px" placeholder="Optional note"></textarea></div>' +
-        '<button class="modal-submit" style="align-self:flex-end;padding:6px 16px;font-size:var(--fs-sm)" onclick="addTppHistoryEntry(\'' + patient.id + '\',\'' + addRowId + '\')">Add to timeline</button>' +
+        '<button class="modal-submit" style="align-self:flex-end;padding:6px 16px;font-size:var(--fs-sm)" onclick="addTppHistoryEntry(\'' + patient.id + '\',' + tppOrderArg(orderId) + ',\'' + addRowId + '\')">Add to timeline</button>' +
       '</div>' +
-    '</div>';
-  const files = patient.discoveryFiles || [];
-  const filesHtml = files.length ? files.map(f => '' +
-    '<div class="pep-file-row">' +
-      '<a href="' + WORKER_URL + '/tpp/files/' + f.id + '" target="_blank" rel="noopener">' + escapeHtml(f.name) + ' <span style="color:var(--text-muted);font-weight:400">(' + escapeHtml(f.category || 'other') + ')</span></a>' +
-      '<button class="modal-close" onclick="removeTppFile(\'' + patient.id + '\',null,\'' + f.id + '\')" title="Remove file">' +
-        '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
-      '</button>' +
-    '</div>').join('') : '<p style="color:var(--text-muted);font-size:var(--fs-sm)">No files yet.</p>';
-  const isPending = tppDiscStage(patient) === TPP_DECISION_STAGE;
-  const keyInfoHtml = tppKeyInfoHtml(patient);
-  const moveOptions = TPP_ALL_DISCOVERY_STAGES.filter(s => s.key !== tppDiscStage(patient))
-    .map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('');
-  return '' +
-    '<div class="pep-order-block" style="border-top:none;padding-top:0;margin-top:0">' +
-      (part === 'stage' ?       '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
-        '<span class="pep-section-title">Discovery &rarr; Treatment Plan</span>' +
-        '<select class="modal-select" style="width:auto;font-size:var(--fs-sm);padding:6px 10px" onchange="moveTppDiscoveryStage(\'' + patient.id + '\', this.value); this.selectedIndex=0;">' +
-          '<option value="">Move to&hellip;</option>' + moveOptions + '</select>' +
-      '</div>' +
-      '<p style="font-size:var(--fs-sm);color:var(--text-muted);margin:8px 0">Current stage: <strong style="color:var(--text)">' + escapeHtml(tppStageLabel(tppDiscStage(patient))) + '</strong>' +
-        ' ' + tppDecisionTagHtml(patient) +
-      '</p>' +
-      // The decision is the whole point of this stage, so it goes first.
-      (isPending ? '<div class="tpp-decision-block"><div class="tpp-decision-q">Did they accept the treatment plan?</div><div class="tpp-decision-row">' + tppDecisionButtonsHtml(patient.id) + '</div></div>' : '') +
-      '' : '') +
-      (part === 'details' ? keyInfoHtml : '') +
-      (part === 'history' ? '<div class="pep-section-title" style="margin-top:12px">History</div>' + historyHtml + addHistoryHtml : '') +
-      (part === 'files' ? '<div class="pep-section-title">Files</div>' +
-      filesHtml +
-      '<div class="pep-file-drop" ondragover="pepFileDragOver(event)" ondragleave="pepFileDragLeave(event)" ondrop="tppDiscoveryFileDrop(event,\'' + patient.id + '\')">' +
-        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
-          '<select class="modal-select" id="tpp-file-cat-' + patient.id + '" style="width:auto;font-size:var(--fs-sm);padding:6px 10px">' +
-            '<option value="labs">Labs</option><option value="deep_dive_notes">Deep Dive Notes</option><option value="treatment_plan">Treatment Plan</option><option value="other">Other</option>' +
-          '</select>' +
-          '<label class="modal-cancel" style="padding:6px 14px;font-size:var(--fs-sm);cursor:pointer">Choose File<input type="file" multiple style="display:none" onchange="uploadTppDiscoveryFile(\'' + patient.id + '\', this)"></label>' +
-          '<span style="font-size:var(--fs-xs);color:var(--text-muted)">or drop file(s) here</span>' +
-        '</div>' +
-      '</div>' : '') +
     '</div>';
 }
-function renderTppFollowupOrderBlock(patient, order, orderIndex, isActive) {
-  const hist = order.history || [];
-  const historyHtml = tppHistoryRowsHtml(patient, order.id, hist, TPP_FOLLOWUP_STAGES, 'followup');
-  const addRowId = 'tppfu-addhist-' + order.id;
-  const stageOptionsAll = TPP_FOLLOWUP_STAGES.map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('');
-  const addHistoryHtml = '' +
-    '<div class="pep-history-row">' +
-      '<div class="pep-history-summary" onclick="toggleHistoryRow(\'' + addRowId + '\')">' +
-        '<span style="color:var(--accent-dark)">+ Add a step that was missed or happened out of order</span>' +
-        '<span style="color:var(--text-muted)">▾</span>' +
-      '</div>' +
-      '<div class="pep-history-detail" id="' + addRowId + '">' +
-        '<div class="modal-field"><label class="modal-label">Stage</label><select class="modal-select" id="' + addRowId + '-stage">' + stageOptionsAll + '</select></div>' +
-        '<div class="modal-field"><label class="modal-label">Timestamp</label><input type="datetime-local" class="modal-input" id="' + addRowId + '-at" value="' + toLocalInputValue(new Date().toISOString()) + '"></div>' +
-        '<div class="modal-field"><label class="modal-label">Comment / note</label><textarea class="modal-textarea" id="' + addRowId + '-comment" style="min-height:50px" placeholder="Optional note"></textarea></div>' +
-        '<button class="modal-submit" style="align-self:flex-end;padding:6px 16px;font-size:var(--fs-sm)" onclick="addTppFollowupHistoryEntry(\'' + patient.id + '\',\'' + order.id + '\',\'' + addRowId + '\')">Add to timeline</button>' +
-      '</div>' +
-    '</div>';
-  const files = order.files || [];
-  const filesHtml = files.length ? files.map(f => '' +
+const tppFileCatId = (patientId, orderId) => orderId ? 'tppfu-file-cat-' + orderId : 'tpp-file-cat-' + patientId;
+function tppFilesHtml(patient, orderId, files, categoryOptions) {
+  const list = files.length ? files.map(f => '' +
     '<div class="pep-file-row">' +
       '<a href="' + WORKER_URL + '/tpp/files/' + f.id + '" target="_blank" rel="noopener">' + escapeHtml(f.name) + ' <span style="color:var(--text-muted);font-weight:400">(' + escapeHtml(f.category || 'other') + ')</span></a>' +
-      '<button class="modal-close" onclick="removeTppFile(\'' + patient.id + '\',\'' + order.id + '\',\'' + f.id + '\')" title="Remove file">' +
-        '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
-      '</button>' +
+      '<button class="modal-close" onclick="removeTppFile(\'' + patient.id + '\',' + tppOrderArg(orderId) + ',\'' + f.id + '\')" title="Remove file">' + TPP_X_ICON + '</button>' +
     '</div>').join('') : '<p style="color:var(--text-muted);font-size:var(--fs-sm)">No files yet.</p>';
+  return list +
+    '<div class="pep-file-drop" ondragover="pepFileDragOver(event)" ondragleave="pepFileDragLeave(event)" ondrop="tppFileDrop(event,\'' + patient.id + '\',' + tppOrderArg(orderId) + ')">' +
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+        '<select class="modal-select" id="' + tppFileCatId(patient.id, orderId) + '" style="width:auto;font-size:var(--fs-sm);padding:6px 10px">' + categoryOptions + '</select>' +
+        '<label class="modal-cancel" style="padding:6px 14px;font-size:var(--fs-sm);cursor:pointer">Choose File<input type="file" multiple style="display:none" onchange="uploadTppFiles(\'' + patient.id + '\',' + tppOrderArg(orderId) + ', this)"></label>' +
+        '<span style="font-size:var(--fs-xs);color:var(--text-muted)">or drop file(s) here</span>' +
+      '</div>' +
+    '</div>';
+}
+function renderTppDiscoverySection(patient, part) {
+  const isPending = tppDiscStage(patient) === TPP_DECISION_STAGE;
+  const moveOptions = TPP_ALL_DISCOVERY_STAGES.filter(s => s.key !== tppDiscStage(patient))
+    .map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('');
+  let html = '';
+  if (part === 'stage') html =
+    '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
+      '<span class="pep-section-title">Discovery &rarr; Treatment Plan</span>' +
+      '<select class="modal-select" style="width:auto;font-size:var(--fs-sm);padding:6px 10px" onchange="moveTppDiscoveryStage(\'' + patient.id + '\', this.value); this.selectedIndex=0;">' +
+        '<option value="">Move to&hellip;</option>' + moveOptions + '</select>' +
+    '</div>' +
+    '<p style="font-size:var(--fs-sm);color:var(--text-muted);margin:8px 0">Current stage: <strong style="color:var(--text)">' + escapeHtml(tppStageLabel(tppDiscStage(patient))) + '</strong>' +
+      ' ' + tppDecisionTagHtml(patient) +
+    '</p>' +
+    // The decision is the whole point of this stage, so it goes first.
+    (isPending ? '<div class="tpp-decision-block"><div class="tpp-decision-q">Did they accept the treatment plan?</div><div class="tpp-decision-row">' + tppDecisionButtonsHtml(patient.id) + '</div></div>' : '');
+  else if (part === 'details') html = tppKeyInfoHtml(patient);
+  else if (part === 'history') html = '<div class="pep-section-title" style="margin-top:12px">History</div>' +
+    tppHistoryRowsHtml(patient, null, patient.discoveryHistory || [], TPP_ALL_DISCOVERY_STAGES) + tppAddHistoryHtml(patient, null, TPP_ALL_DISCOVERY_STAGES);
+  else if (part === 'files') html = '<div class="pep-section-title">Files</div>' +
+    tppFilesHtml(patient, null, patient.discoveryFiles || [], '<option value="labs">Labs</option><option value="deep_dive_notes">Deep Dive Notes</option><option value="treatment_plan">Treatment Plan</option><option value="other">Other</option>');
+  return '<div class="pep-order-block" style="border-top:none;padding-top:0;margin-top:0">' + html + '</div>';
+}
+function renderTppFollowupOrderBlock(patient, order, orderIndex, isActive) {
   const moveOptions = isActive ? TPP_FOLLOWUP_STAGES.filter(s => s.key !== order.stage)
     .map(s => '<option value="' + s.key + '">' + s.label + '</option>').join('') : '';
   return '' +
@@ -7709,18 +7502,9 @@ function renderTppFollowupOrderBlock(patient, order, orderIndex, isActive) {
       '<p style="font-size:var(--fs-sm);color:var(--text-muted);margin:8px 0">Current stage: <strong style="color:var(--text)">' + escapeHtml(tppFollowupStageLabel(order.stage)) + '</strong></p>' +
       tppRoundLabRowsHtml(patient, order) +
       '<div class="pep-section-title">History</div>' +
-      historyHtml + addHistoryHtml +
+      tppHistoryRowsHtml(patient, order.id, order.history || [], TPP_FOLLOWUP_STAGES) + tppAddHistoryHtml(patient, order.id, TPP_FOLLOWUP_STAGES) +
       '<div class="pep-section-title" style="margin-top:12px">Files</div>' +
-      filesHtml +
-      '<div class="pep-file-drop" ondragover="pepFileDragOver(event)" ondragleave="pepFileDragLeave(event)" ondrop="tppFollowupFileDrop(event,\'' + patient.id + '\',\'' + order.id + '\')">' +
-        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
-          '<select class="modal-select" id="tppfu-file-cat-' + order.id + '" style="width:auto;font-size:var(--fs-sm);padding:6px 10px">' +
-            '<option value="labs">Labs</option><option value="treatment_plan">Treatment Plan</option><option value="other">Other</option>' +
-          '</select>' +
-          '<label class="modal-cancel" style="padding:6px 14px;font-size:var(--fs-sm);cursor:pointer">Choose File<input type="file" multiple style="display:none" onchange="uploadTppFollowupFile(\'' + patient.id + '\',\'' + order.id + '\', this)"></label>' +
-          '<span style="font-size:var(--fs-xs);color:var(--text-muted)">or drop file(s) here</span>' +
-        '</div>' +
-      '</div>' +
+      tppFilesHtml(patient, order.id, order.files || [], '<option value="labs">Labs</option><option value="treatment_plan">Treatment Plan</option><option value="other">Other</option>') +
       (isActive && !order.completedAt ? '<button class="modal-submit" style="width:100%;margin-top:14px" onclick="finishTppFollowupOrder(\'' + patient.id + '\',\'' + order.id + '\')">Finish Round</button>' : '') +
     '</div>';
 }
@@ -7886,87 +7670,38 @@ async function deleteTppPatient(patientId) {
     showToast('Could not delete: ' + err.message);
   }
 }
-// -- Discovery history edit/add/delete ---------------------------------------
-async function saveTppHistoryEdit(patientId, historyId, rowId) {
+// -- History edit/add/delete ----------------------------------------------------
+// orderId null = the Discovery timeline, otherwise that Follow-Up round.
+async function tppHistoryChange(patientId, orderId, op, fields, okMsg, failVerb) {
+  const body = {};
+  body[op + (orderId ? 'FollowupHistory' : 'DiscoveryHistory')] = orderId ? Object.assign({ orderId }, fields) : fields;
+  try {
+    await tppPatch(patientId, body);
+    renderTppDetail(patientId);
+    renderTppBoard();
+    showToast(okMsg);
+  } catch (err) {
+    showToast('Could not ' + failVerb + ': ' + err.message);
+  }
+}
+function saveTppHistoryEdit(patientId, orderId, historyId, rowId) {
   const atLocal = document.getElementById(rowId + '-at').value;
   const comment = document.getElementById(rowId + '-comment').value;
   const stageEl = document.getElementById(rowId + '-stage');
   const stage = stageEl ? stageEl.value : undefined;
   if (!atLocal) return;
-  try {
-    const updated = await tppPatch(patientId, { editDiscoveryHistory: { historyId, at: new Date(atLocal).toISOString(), comment, stage } });
-    renderTppDetail(patientId);
-    renderTppBoard();
-    showToast('History updated');
-  } catch (err) {
-    showToast('Could not save: ' + err.message);
-  }
+  return tppHistoryChange(patientId, orderId, 'edit', { historyId, at: new Date(atLocal).toISOString(), comment, stage }, 'History updated', 'save');
 }
-async function deleteTppHistoryEntry(patientId, historyId) {
+function deleteTppHistoryEntry(patientId, orderId, historyId) {
   if (!confirm('Delete this timeline entry?')) return;
-  try {
-    const updated = await tppPatch(patientId, { deleteDiscoveryHistory: { historyId } });
-    renderTppDetail(patientId);
-    renderTppBoard();
-    showToast('Entry deleted');
-  } catch (err) {
-    showToast('Could not delete: ' + err.message);
-  }
+  return tppHistoryChange(patientId, orderId, 'delete', { historyId }, 'Entry deleted', 'delete');
 }
-async function addTppHistoryEntry(patientId, rowId) {
+function addTppHistoryEntry(patientId, orderId, rowId) {
   const stage = document.getElementById(rowId + '-stage').value;
   const atLocal = document.getElementById(rowId + '-at').value;
   const comment = document.getElementById(rowId + '-comment').value;
   if (!atLocal) return;
-  try {
-    const updated = await tppPatch(patientId, { addDiscoveryHistory: { stage, at: new Date(atLocal).toISOString(), comment } });
-    renderTppDetail(patientId);
-    renderTppBoard();
-    showToast('Entry added');
-  } catch (err) {
-    showToast('Could not add entry: ' + err.message);
-  }
-}
-// -- Follow-up history edit/add/delete ---------------------------------------
-async function saveTppFollowupHistoryEdit(patientId, orderId, historyId, rowId) {
-  const atLocal = document.getElementById(rowId + '-at').value;
-  const comment = document.getElementById(rowId + '-comment').value;
-  const stageEl = document.getElementById(rowId + '-stage');
-  const stage = stageEl ? stageEl.value : undefined;
-  if (!atLocal) return;
-  try {
-    const updated = await tppPatch(patientId, { editFollowupHistory: { orderId, historyId, at: new Date(atLocal).toISOString(), comment, stage } });
-    renderTppDetail(patientId);
-    renderTppBoard();
-    showToast('History updated');
-  } catch (err) {
-    showToast('Could not save: ' + err.message);
-  }
-}
-async function deleteTppFollowupHistoryEntry(patientId, orderId, historyId) {
-  if (!confirm('Delete this timeline entry?')) return;
-  try {
-    const updated = await tppPatch(patientId, { deleteFollowupHistory: { orderId, historyId } });
-    renderTppDetail(patientId);
-    renderTppBoard();
-    showToast('Entry deleted');
-  } catch (err) {
-    showToast('Could not delete: ' + err.message);
-  }
-}
-async function addTppFollowupHistoryEntry(patientId, orderId, rowId) {
-  const stage = document.getElementById(rowId + '-stage').value;
-  const atLocal = document.getElementById(rowId + '-at').value;
-  const comment = document.getElementById(rowId + '-comment').value;
-  if (!atLocal) return;
-  try {
-    const updated = await tppPatch(patientId, { addFollowupHistory: { orderId, stage, at: new Date(atLocal).toISOString(), comment } });
-    renderTppDetail(patientId);
-    renderTppBoard();
-    showToast('Entry added');
-  } catch (err) {
-    showToast('Could not add entry: ' + err.message);
-  }
+  return tppHistoryChange(patientId, orderId, 'add', { stage, at: new Date(atLocal).toISOString(), comment }, 'Entry added', 'add entry');
 }
 // -- Files ---------------------------------------------------------------------
 function uploadTppFileObject(patientId, orderId, category, file) {
@@ -7981,9 +7716,7 @@ function uploadTppFileObject(patientId, orderId, category, file) {
           body: JSON.stringify({ orderId: orderId || undefined, name: file.name, mimeType: file.type, category, dataBase64: base64 }),
         });
         if (!res.ok) throw new Error('Server error ' + res.status);
-        const updated = await res.json();
-        const idx = allTpp.findIndex(p => p.id === patientId);
-        if (idx !== -1) allTpp[idx] = updated;
+        tppReplacePatient(await res.json());
       } catch (err) {
         showToast('Could not upload ' + file.name + ': ' + err.message);
       }
@@ -7992,51 +7725,25 @@ function uploadTppFileObject(patientId, orderId, category, file) {
     reader.readAsDataURL(file);
   });
 }
-async function uploadTppDiscoveryFile(patientId, input) {
-  const files = Array.from(input.files || []);
-  input.value = '';
+// Picker and drag-and-drop both end up here.
+async function tppUploadList(patientId, orderId, files) {
   if (!files.length) return;
-  const catEl = document.getElementById('tpp-file-cat-' + patientId);
-  const category = catEl ? catEl.value : 'other';
-  for (const file of files) await uploadTppFileObject(patientId, null, category, file);
-  renderTppBoard();
-  renderTppDetail(patientId);
-  showToast(files.length === 1 ? 'File attached' : files.length + ' files attached');
-}
-async function tppDiscoveryFileDrop(e, patientId) {
-  e.preventDefault();
-  e.currentTarget.classList.remove('drag-over');
-  const files = Array.from(e.dataTransfer.files || []);
-  if (!files.length) return;
-  const catEl = document.getElementById('tpp-file-cat-' + patientId);
-  const category = catEl ? catEl.value : 'other';
-  for (const file of files) await uploadTppFileObject(patientId, null, category, file);
-  renderTppBoard();
-  renderTppDetail(patientId);
-  showToast(files.length === 1 ? 'File attached' : files.length + ' files attached');
-}
-async function uploadTppFollowupFile(patientId, orderId, input) {
-  const files = Array.from(input.files || []);
-  input.value = '';
-  if (!files.length) return;
-  const catEl = document.getElementById('tppfu-file-cat-' + orderId);
+  const catEl = document.getElementById(tppFileCatId(patientId, orderId));
   const category = catEl ? catEl.value : 'other';
   for (const file of files) await uploadTppFileObject(patientId, orderId, category, file);
   renderTppBoard();
   renderTppDetail(patientId);
   showToast(files.length === 1 ? 'File attached' : files.length + ' files attached');
 }
-async function tppFollowupFileDrop(e, patientId, orderId) {
+function uploadTppFiles(patientId, orderId, input) {
+  const files = Array.from(input.files || []);
+  input.value = '';
+  return tppUploadList(patientId, orderId, files);
+}
+function tppFileDrop(e, patientId, orderId) {
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
-  const files = Array.from(e.dataTransfer.files || []);
-  if (!files.length) return;
-  const catEl = document.getElementById('tppfu-file-cat-' + orderId);
-  const category = catEl ? catEl.value : 'other';
-  for (const file of files) await uploadTppFileObject(patientId, orderId, category, file);
-  renderTppBoard();
-  renderTppDetail(patientId);
-  showToast(files.length === 1 ? 'File attached' : files.length + ' files attached');
+  return tppUploadList(patientId, orderId, Array.from(e.dataTransfer.files || []));
 }
 async function removeTppFile(patientId, orderId, fileId) {
   if (!confirm('Remove this file?')) return;
@@ -8047,10 +7754,7 @@ async function removeTppFile(patientId, orderId, fileId) {
     });
     if (res.ok) {
       const updated = await res.json();
-      if (updated && updated.id) {
-        const idx = allTpp.findIndex(p => p.id === patientId);
-        if (idx !== -1) allTpp[idx] = updated;
-      }
+      if (updated && updated.id) tppReplacePatient(updated);
     }
     renderTppBoard();
     renderTppDetail(patientId);
