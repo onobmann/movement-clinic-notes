@@ -429,6 +429,9 @@
   .refresh-btn:hover { color: var(--accent); }
   .patient-list .refresh-btn { color: var(--text-muted); }
   .refresh-btn.spinning svg { animation: spin 0.7s linear infinite; }
+  .refresh-btn:disabled { opacity: 0.35; cursor: default; }
+  .refresh-btn:disabled:hover { color: var(--text-muted); }
+  .patient-list .refresh-btn:disabled:hover { color: var(--text-muted); }
   .delete-note-btn {
     margin-top: 16px;
     padding: 9px 20px;
@@ -2366,12 +2369,20 @@
         <h3>Appointments</h3>
         <p>Select to view details</p>
       </div>
-      <button class="refresh-btn" id="refresh-btn" onclick="loadNotes()" title="Refresh">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="23 4 23 10 17 10"></polyline>
-          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-        </svg>
-      </button>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="refresh-btn note-undo-btn" onclick="noteUndo.step('undo')" title="Nothing to undo" disabled style="padding:4px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"></polyline><path d="M20 20v-7a4 4 0 0 0-4-4H4"></path></svg>
+        </button>
+        <button class="refresh-btn note-redo-btn" onclick="noteUndo.step('redo')" title="Nothing to redo" disabled style="padding:4px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 14 20 9 15 4"></polyline><path d="M4 20v-7a4 4 0 0 1 4-4h12"></path></svg>
+        </button>
+        <button class="refresh-btn" id="refresh-btn" onclick="loadNotes()" title="Refresh">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+        </button>
+      </div>
     </div>
     <div class="search-wrap">
       <div class="search-input-row">
@@ -2409,6 +2420,12 @@
         <p class="tasks-sub">Tasks assigned to each team member</p>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
+        <button class="refresh-btn task-undo-btn" onclick="taskUndo.step('undo')" title="Nothing to undo" disabled style="color:var(--text-muted);padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"></polyline><path d="M20 20v-7a4 4 0 0 0-4-4H4"></path></svg>
+        </button>
+        <button class="refresh-btn task-redo-btn" onclick="taskUndo.step('redo')" title="Nothing to redo" disabled style="color:var(--text-muted);padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 14 20 9 15 4"></polyline><path d="M4 20v-7a4 4 0 0 1 4-4h12"></path></svg>
+        </button>
         <button class="refresh-btn" id="tasks-refresh-btn" onclick="reloadTasks()" title="Refresh tasks" style="color:var(--text-muted);padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 4 23 10 17 10"></polyline>
@@ -2479,6 +2496,12 @@
       </div>
       <span class="pep-stuck-summary" id="pep-stuck-summary" style="display:none"></span>
       <div style="display:flex;align-items:center;gap:10px">
+        <button class="refresh-btn pep-undo-btn" onclick="pepUndo.step('undo')" title="Nothing to undo" disabled style="color:var(--text-muted);padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"></polyline><path d="M20 20v-7a4 4 0 0 0-4-4H4"></path></svg>
+        </button>
+        <button class="refresh-btn pep-redo-btn" onclick="pepUndo.step('redo')" title="Nothing to redo" disabled style="color:var(--text-muted);padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 14 20 9 15 4"></polyline><path d="M4 20v-7a4 4 0 0 1 4-4h12"></path></svg>
+        </button>
         <button class="refresh-btn" id="peptides-refresh-btn" onclick="loadPeptides()" title="Refresh" style="color:var(--text-muted);padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 4 23 10 17 10"></polyline>
@@ -3053,6 +3076,7 @@ const WORKER_URL = 'https://odd-mode-138a.oshynnobmann.workers.dev';
 let appointments = [];
 let isRecording = false;
 let selectedIndex = null;
+let selectedId = null;
 let recognition = null;
 let finalTranscript = '';
 let selectedDoctor = null;
@@ -3063,28 +3087,32 @@ let searchQuery = '';
 async function setNoteRead(id, isRead) {
   const note = appointments.find(n => n.id === id);
   if (!note) return;
+  const done = noteUndo.track(id, 'mark ' + (note.patientName || 'note') + (isRead ? ' read' : ' unread'));
   note.isRead = isRead;
   renderPatientList();
   if (selectedIndex !== null && appointments[selectedIndex]?.id === id) renderMainPanel(appointments[selectedIndex]);
   try {
-    await fetch(WORKER_URL + '/notes/' + id, {
+    const res = await fetch(WORKER_URL + '/notes/' + id, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isRead }),
     });
+    if (res.ok) done(await res.json());
   } catch(e) {}
 }
 async function toggleComplete(id) {
   const note = appointments.find(n => n.id === id);
   if (!note) return;
   const newVal = !note.isCompleted;
+  const done = noteUndo.track(id, 'mark ' + (note.patientName || 'note') + (newVal ? ' complete' : ' incomplete'));
   note.isCompleted = newVal;
   renderPatientList();
   if (selectedIndex !== null && appointments[selectedIndex]?.id === id) renderMainPanel(appointments[selectedIndex]);
   try {
-    await fetch(WORKER_URL + '/notes/' + id, {
+    const res = await fetch(WORKER_URL + '/notes/' + id, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isCompleted: newVal }),
     });
+    if (res.ok) done(await res.json());
   } catch(e) { note.isCompleted = !newVal; renderPatientList(); }
 }
 // ── Notifications ─────────────────────────────────────────────────────────────
@@ -3444,6 +3472,7 @@ function renderPatientList() {
 }
 function selectAppointment(index) {
   selectedIndex = index;
+  selectedId = appointments[index] ? appointments[index].id : null;
   renderPatientList();
   renderMainPanel(appointments[index]);
 }
@@ -3562,6 +3591,7 @@ async function saveNoteEdit(id) {
   const newTranscript = document.getElementById('edit-transcript').value.trim();
   const appt = appointments.find(a => a.id === id);
   if (!appt) return;
+  const done = noteUndo.track(id, 'edit ' + (appt.patientName || 'note'));
   const payload = { patientName: newPatientName, transcript: newTranscript };
   if (appt.summary) {
     payload.summary = Object.assign({}, appt.summary, {
@@ -3580,6 +3610,7 @@ async function saveNoteEdit(id) {
     const updated = await res.json();
     const idx = appointments.findIndex(a => a.id === id);
     if (idx !== -1) appointments[idx] = updated;
+    done(updated);
     isEditingNote = false;
     renderPatientList();
     renderMainPanel(appointments[idx !== -1 ? idx : selectedIndex]);
@@ -3592,9 +3623,11 @@ async function saveNoteEdit(id) {
 async function deleteNote(id) {
   if (!confirm('Delete this appointment? This cannot be undone.')) return;
   try {
+    const gone = appointments.find(a => a.id === id);
     const res = await fetch(WORKER_URL + '/notes/' + id, { method: 'DELETE' });
     if (!res.ok) throw new Error('Server error ' + res.status);
     appointments = appointments.filter(function(a) { return a.id !== id; });
+    if (gone) noteUndo.deleted(id, 'delete ' + (gone.patientName || 'note'));
     selectedIndex = -1;
     renderPatientList();
     document.getElementById('main-panel').innerHTML = '<div class="empty-state"><p>Select a patient from the list</p></div>';
@@ -3639,6 +3672,126 @@ function showToastAction(msg, actionLabel, onAction) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 7000);
 }
+
+// -- Undo / redo for Care Team, Tasks and Peptides -----------------------------------
+// Same rules as the Pipeline's undo: each change keeps a copy of the record's
+// fields from before and after it. Undo puts "before" back, redo puts "after"
+// back. The server refuses (409) if anyone changed the record since, so undo
+// never overwrites a colleague's work. Deleted records come back from the
+// server's 30-day trash. File uploads and removals can't be undone, and they
+// clear that record's undo history. The history lives in this tab only.
+function makeUndo(cfg) {
+  const u = { undo: [], redo: [], busy: false };
+  const version = r => r.updatedAt || r.createdAt || r.timestamp || '';
+  const find = id => cfg.list().find(r => r.id === id);
+  const snap = r => { const o = {}; cfg.fields.forEach(k => { o[k] = r[k] === undefined ? null : JSON.parse(JSON.stringify(r[k])); }); return o; };
+  u.buttons = () => {
+    const a = u.undo[u.undo.length - 1], b = u.redo[u.redo.length - 1];
+    document.querySelectorAll('.' + cfg.key + '-undo-btn').forEach(x => { x.disabled = !a || u.busy; x.title = a ? 'Undo: ' + a.label + ' (Ctrl+Z)' : 'Nothing to undo'; });
+    document.querySelectorAll('.' + cfg.key + '-redo-btn').forEach(x => { x.disabled = !b || u.busy; x.title = b ? 'Redo: ' + b.label + ' (Ctrl+Shift+Z)' : 'Nothing to redo'; });
+  };
+  const push = e => { u.undo.push(e); if (u.undo.length > 50) u.undo.shift(); u.redo = []; u.buttons(); };
+  // Call before changing a record; call what it returns with the saved record.
+  u.track = (id, label) => {
+    const r = find(id);
+    const before = r ? snap(r) : null;
+    return updated => { if (before && updated && updated.id) push({ type: 'patch', id, label, before, after: snap(updated), version: version(updated) }); };
+  };
+  u.added = (rec, label) => push({ type: 'add', id: rec.id, label, version: version(rec) });
+  u.deleted = (id, label) => push({ type: 'delete', id, label });
+  u.forget = id => { u.undo = u.undo.filter(e => e.id !== id); u.redo = u.redo.filter(e => e.id !== id); u.buttons(); };
+  async function apply(e, dir) {
+    const back = dir === 'undo';
+    if (e.type === 'patch') {
+      const res = await fetch(WORKER_URL + cfg.path + e.id, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.assign({}, back ? e.before : e.after, { _baseUpdatedAt: e.version })),
+      });
+      if (res.status === 409) { const err = new Error('conflict'); err.conflict = true; throw err; }
+      if (!res.ok) throw new Error('Server error ' + res.status);
+      const updated = await res.json();
+      cfg.replace(updated);
+      return version(updated);
+    }
+    const remove = (e.type === 'add') === back;
+    if (remove) {
+      const cur = find(e.id);
+      if (cur && e.version && version(cur) !== e.version && !confirm('This has been changed since. Remove it anyway?')) {
+        const err = new Error('cancelled'); err.cancelled = true; throw err;
+      }
+      const res = await fetch(WORKER_URL + cfg.path + e.id, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Server error ' + res.status);
+      cfg.drop(e.id);
+      return null;
+    }
+    const res = await fetch(WORKER_URL + '/trash/' + cfg.coll + '/' + e.id + '/restore', { method: 'POST' });
+    if (res.status === 404) throw new Error('it is no longer in the trash');
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const data = await res.json();
+    if (data.restored && !find(e.id)) cfg.add(data.restored);
+    return data.restored ? version(data.restored) : null;
+  }
+  u.step = async dir => {
+    if (u.busy) return;
+    const from = dir === 'undo' ? u.undo : u.redo;
+    const to = dir === 'undo' ? u.redo : u.undo;
+    const e = from[from.length - 1];
+    if (!e) return;
+    u.busy = true; u.buttons();
+    try {
+      const v = await apply(e, dir);
+      from.pop(); e.version = v; to.push(e);
+      // The next step for the same record now starts from the server's new version.
+      if (v) for (let i = from.length - 1; i >= 0; i--) if (from[i].id === e.id) { from[i].version = v; break; }
+      cfg.render(e.id);
+      showToast((dir === 'undo' ? 'Undid: ' : 'Redid: ') + e.label);
+    } catch (err) {
+      if (err.cancelled) { /* left as is */ }
+      else if (err.conflict) {
+        from.pop();
+        showToast('Can’t ' + dir + ' — this was changed since (by someone else, or a file was added). Refreshing.');
+        cfg.reload();
+      } else showToast('Could not ' + dir + ': ' + err.message);
+    } finally {
+      u.busy = false; u.buttons();
+    }
+  };
+  return u;
+}
+const shortLabel = t => '“' + (t.length > 28 ? t.slice(0, 27) + '…' : t) + '”';
+const noteUndo = makeUndo({
+  key: 'note', coll: 'notes', path: '/notes/', fields: ['patientName', 'transcript', 'summary', 'isRead', 'isCompleted'],
+  list: () => appointments,
+  replace: r => { const i = appointments.findIndex(n => n.id === r.id); if (i !== -1) appointments[i] = r; },
+  add: r => { appointments.push(r); appointments.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); },
+  drop: id => { appointments = appointments.filter(n => n.id !== id); },
+  render: () => {
+    const sel = selectedId && appointments.findIndex(n => n.id === selectedId);
+    selectedIndex = sel === null || sel === -1 ? null : sel;
+    renderPatientList();
+    if (selectedIndex !== null) renderMainPanel(appointments[selectedIndex]);
+  },
+  reload: () => loadNotes(),
+});
+const taskUndo = makeUndo({
+  key: 'task', coll: 'tasks', path: '/tasks/',
+  fields: ['assignee', 'assignees', 'assignedBy', 'description', 'patientInitials', 'dueDate', 'priority', 'completed', 'pinned', 'thread', 'resolved', 'comments'],
+  list: () => allTasks,
+  replace: r => { const i = allTasks.findIndex(t => t.id === r.id); if (i !== -1) allTasks[i] = r; },
+  add: r => { allTasks.unshift(r); },
+  drop: id => { allTasks = allTasks.filter(t => t.id !== id); },
+  render: () => renderKanban(),
+  reload: () => loadTasks(),
+});
+const pepUndo = makeUndo({
+  key: 'pep', coll: 'peptides', path: '/peptides/', fields: ['name', 'orders'],
+  list: () => allPeptides,
+  replace: r => { const i = allPeptides.findIndex(p => p.id === r.id); if (i !== -1) allPeptides[i] = r; },
+  add: r => { allPeptides.unshift(r); },
+  drop: id => { allPeptides = allPeptides.filter(p => p.id !== id); if (pepDetailPatientId === id) closePeptideDetail(); },
+  render: id => { renderPeptideBoard(); if (pepDetailPatientId === id) renderPeptideDetail(id); },
+  reload: () => loadPeptides(),
+});
 
 // ── Tasks ─────────────────────────────────────────────────────────────────────
 const STAFF = [
@@ -4498,6 +4651,7 @@ async function submitComment(taskId, actingAs) {
   if (!task) return;
 
   input.disabled = true;
+  const done = taskUndo.track(taskId, 'comment on ' + shortLabel(task.description || 'task'));
   try {
     const res = await fetch(WORKER_URL + '/tasks/' + taskId, {
       method: 'PATCH',
@@ -4510,6 +4664,7 @@ async function submitComment(taskId, actingAs) {
     const updated = await res.json();
     const idx = allTasks.findIndex(t => t.id === taskId);
     if (idx !== -1) allTasks[idx] = updated;
+    done(updated);
     rememberCommentAuthor(from); // remember for next comment on any task
     openComments.add(taskId); // keep it expanded so the new comment is visible
     renderKanban();
@@ -4591,6 +4746,7 @@ async function toggleTaskComplete(id, actingAs) {
   // thread — the person who completed it was the one it had been handed
   // to, so there's nothing left to resolve separately.
   const shouldAutoResolve = newVal && hasUnresolvedKickback(task);
+  const done = taskUndo.track(id, (newVal ? 'complete ' : 'reopen ') + shortLabel(task.description || 'task'));
   const prevResolved = task.resolved;
   const prevThread = task.thread;
   task.completed = newVal;
@@ -4606,8 +4762,9 @@ async function toggleTaskComplete(id, actingAs) {
       body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error('Server error ' + res.status);
+    const updated = await res.json();
+    done(updated);
     if (shouldAutoResolve) {
-      const updated = await res.json();
       const idx = allTasks.findIndex(t => t.id === id);
       if (idx !== -1) allTasks[idx] = updated; // picks up the audit-trail entry
       renderKanban();
@@ -4625,6 +4782,7 @@ async function togglePin(id) {
   const task = allTasks.find(t => t.id === id);
   if (!task) return;
   const newVal = !task.pinned;
+  const done = taskUndo.track(id, (newVal ? 'pin ' : 'unpin ') + shortLabel(task.description || 'task'));
   task.pinned = newVal;
   renderKanban();
   try {
@@ -4634,6 +4792,7 @@ async function togglePin(id) {
       body: JSON.stringify({ pinned: newVal }),
     });
     if (!res.ok) throw new Error('Server error ' + res.status);
+    done(await res.json());
     showToast(newVal ? 'Bumped to top' : 'Unpinned');
   } catch (err) {
     task.pinned = !newVal; // revert
@@ -4644,10 +4803,12 @@ async function togglePin(id) {
 
 async function deleteTask(id) {
   if (!confirm('Delete this task?')) return;
+  const task = allTasks.find(t => t.id === id);
   allTasks = allTasks.filter(t => t.id !== id);
   renderKanban();
   try {
-    await fetch(WORKER_URL + '/tasks/' + id, { method: 'DELETE' });
+    const res = await fetch(WORKER_URL + '/tasks/' + id, { method: 'DELETE' });
+    if (res.ok && task) taskUndo.deleted(id, 'delete ' + shortLabel(task.description || 'task'));
     showToast('Task deleted');
   } catch (err) {
     showToast('Could not delete task');
@@ -4800,6 +4961,7 @@ async function submitKickBack() {
   const btn = document.getElementById('kickback-submit-btn');
   btn.disabled = true;
   btn.textContent = isResolve ? 'Resolving…' : 'Sending…';
+  const done = taskUndo.track(task.id, (isResolve ? 'resolve ' : 'kick back ') + shortLabel(task.description || 'task'));
   try {
     const res = await fetch(WORKER_URL + '/tasks/' + task.id, {
       method: 'PATCH',
@@ -4812,6 +4974,7 @@ async function submitKickBack() {
     const updated = await res.json();
     const idx = allTasks.findIndex(t => t.id === task.id);
     if (idx !== -1) allTasks[idx] = updated;
+    done(updated);
     collapsedThreads.delete(task.id); // make sure it's expanded now that there's fresh activity
     renderKanban();
     closeKickBackModal();
@@ -4862,6 +5025,7 @@ async function submitTask() {
     if (editingTaskId) {
       // Update existing task
       const payload = { assignee, assignees, assignedBy, description: desc, patientInitials: patient, dueDate: due, priority };
+      const done = taskUndo.track(editingTaskId, 'edit ' + shortLabel(desc));
       const res = await fetch(WORKER_URL + '/tasks/' + editingTaskId, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -4871,6 +5035,7 @@ async function submitTask() {
       const updated = await res.json();
       const idx = allTasks.findIndex(t => t.id === editingTaskId);
       if (idx !== -1) allTasks[idx] = updated;
+      done(updated);
       renderKanban();
       closeTaskModal();
       showToast('Task updated');
@@ -4884,6 +5049,7 @@ async function submitTask() {
       if (!res.ok) throw new Error('Server error ' + res.status);
       const task = await res.json();
       allTasks.unshift(task);
+      taskUndo.added(task, 'add ' + shortLabel(task.description || desc));
       renderKanban();
       closeTaskModal();
       showToast('Task added');
@@ -5046,7 +5212,10 @@ async function movePeptideStage(patientId, orderId, stageKey) {
   }
 }
 // Every peptide change: PATCH the patient and keep the local copy in step.
+// Each one is also recorded for undo.
 async function pepPatch(patientId, body) {
+  const p = allPeptides.find(x => x.id === patientId);
+  const done = pepUndo.track(patientId, 'change ' + (p ? p.name : 'patient') + pepChangeLabel(body));
   const res = await fetch(WORKER_URL + '/peptides/' + patientId, {
     method: 'PATCH', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -5055,7 +5224,15 @@ async function pepPatch(patientId, body) {
   const updated = await res.json();
   const idx = allPeptides.findIndex(p => p.id === patientId);
   if (idx !== -1) allPeptides[idx] = updated;
+  done(updated);
   return updated;
+}
+function pepChangeLabel(body) {
+  if (body.setStage) return ' (moved to ' + stageLabel(body.setStage.stage) + ')';
+  if (body.name !== undefined) return ' (name)';
+  if (body.newOrder) return ' (new order)';
+  if (body.editHistory || body.addHistoryEntry || body.deleteHistoryEntry) return ' (timeline)';
+  return '';
 }
 // Save, redraw the open patient and the board, and say how it went.
 async function pepSave(patientId, body, okMsg, failMsg) {
@@ -5090,6 +5267,7 @@ async function submitAddPeptide() {
     if (!res.ok) throw new Error('Server error ' + res.status);
     const patient = await res.json();
     allPeptides.unshift(patient);
+    pepUndo.added(patient, 'add ' + patient.name);
     renderPeptideBoard();
     closeAddPeptideModal();
     showToast('Patient added');
@@ -5445,9 +5623,11 @@ function startNewOrder(patientId) {
   return pepSave(patientId, { newOrder: true }, 'New order started', 'Could not start new order');
 }
 async function deletePeptidePatient(patientId) {
-  if (!confirm('Delete this patient and all their peptide history? This cannot be undone.')) return;
+  if (!confirm('Delete this patient and all their peptide history? (You can undo this.)')) return;
   try {
-    await fetch(WORKER_URL + '/peptides/' + patientId, { method: 'DELETE' });
+    const gone = allPeptides.find(p => p.id === patientId);
+    const res = await fetch(WORKER_URL + '/peptides/' + patientId, { method: 'DELETE' });
+    if (res.ok && gone) pepUndo.deleted(patientId, 'delete ' + gone.name);
     allPeptides = allPeptides.filter(p => p.id !== patientId);
     renderPeptideBoard();
     closePeptideDetail();
@@ -5475,6 +5655,7 @@ function uploadPeptideFileObject(patientId, orderId, category, file) {
         const updated = await res.json();
         const idx = allPeptides.findIndex(p => p.id === patientId);
         if (idx !== -1) allPeptides[idx] = updated;
+        pepUndo.forget(patientId);
       } catch (err) {
         showToast('Could not upload ' + file.name + ': ' + err.message);
       }
@@ -5526,6 +5707,7 @@ async function removePeptideFile(patientId, orderId, fileId) {
       method: 'DELETE', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ patientId, orderId }),
     });
+    pepUndo.forget(patientId);
     if (res.ok) {
       const updated = await res.json();
       if (updated && updated.id) {
@@ -6090,6 +6272,14 @@ function tppDescribe(body, before, updated) {
   if (body.labProvider !== undefined) return 'change ' + name + '\u2019s lab';
   return 'change ' + name;
 }
+// Adding or removing a file isn't undoable and doesn't change the patient's
+// version, so older undo steps for that patient could bring back a link to a
+// removed file. Drop them instead.
+function tppForgetUndo(patientId) {
+  tppUndoStack = tppUndoStack.filter(e => e.patientId !== patientId);
+  tppRedoStack = tppRedoStack.filter(e => e.patientId !== patientId);
+  tppUpdateUndoButtons();
+}
 function tppPushUndo(entry) {
   tppUndoStack.push(entry);
   if (tppUndoStack.length > TPP_UNDO_LIMIT) tppUndoStack.shift();
@@ -6198,14 +6388,21 @@ function tppUndo() { return tppStep('undo'); }
 function tppRedo() { return tppStep('redo'); }
 document.addEventListener('keydown', e => {
   if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
-  const view = document.getElementById('tpp-view');
-  if (!view || !view.classList.contains('active')) return;
   const t = e.target;
   if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
   if (document.querySelector('.modal-overlay.open')) return;
+  const view = document.querySelector('.view.active');
+  const pages = {
+    'tpp-view': { undo: tppUndo, redo: tppRedo },
+    'tasks-view': { undo: () => taskUndo.step('undo'), redo: () => taskUndo.step('redo') },
+    'peptides-view': { undo: () => pepUndo.step('undo'), redo: () => pepUndo.step('redo') },
+    'sec-view': { undo: () => noteUndo.step('undo'), redo: () => noteUndo.step('redo') },
+  };
+  const page = view && pages[view.id];
+  if (!page) return;
   const k = e.key.toLowerCase();
-  if (k === 'z' && !e.shiftKey) { e.preventDefault(); tppUndo(); }
-  else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); tppRedo(); }
+  if (k === 'z' && !e.shiftKey) { e.preventDefault(); page.undo(); }
+  else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); page.redo(); }
 });
 async function reloadTpp(btn) {
   if (btn) btn.classList.add('spinning');
@@ -7712,6 +7909,7 @@ function uploadTppFileObject(patientId, orderId, category, file) {
         });
         if (!res.ok) throw new Error('Server error ' + res.status);
         tppReplacePatient(await res.json());
+        tppForgetUndo(patientId);
       } catch (err) {
         showToast('Could not upload ' + file.name + ': ' + err.message);
       }
@@ -7747,6 +7945,7 @@ async function removeTppFile(patientId, orderId, fileId) {
       method: 'DELETE', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ patientId, orderId: orderId || undefined }),
     });
+    tppForgetUndo(patientId);
     if (res.ok) {
       const updated = await res.json();
       if (updated && updated.id) tppReplacePatient(updated);
