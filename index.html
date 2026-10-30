@@ -2134,13 +2134,10 @@
   .tpp-board .kanban-col.tpp-nextdue-col { border-style: dashed; }
   .tpp-board .kanban-col.tpp-nextdue-col .kanban-col-header { background: none; }
   .tpp-col-hint { font-size: var(--fs-xs); color: var(--text-muted); font-weight: 600; width: 100%; }
-  /* While a card is being dragged, collapsed empty stages widen so they're
-     easy to hit as drop targets instead of 46px slivers. */
-  .tpp-board.tpp-dragging .kanban-col.pep-col-empty {
-    flex: 0 0 120px; width: 120px; min-width: 120px; max-width: 120px;
-    outline: 2px dashed var(--border); outline-offset: -4px;
-  }
-  .tpp-board.tpp-dragging .kanban-col.pep-col-empty .kanban-col-name { writing-mode: horizontal-tb; white-space: normal; text-align: center; }
+  /* While a card is being dragged, nothing changes size (a moving layout made
+     it easy to lose your place). Empty stages get a dashed outline so they read
+     as drop targets, and the one under the cursor turns gold. */
+  .tpp-board.tpp-dragging .kanban-col.pep-col-empty { outline: 2px dashed var(--border); outline-offset: -4px; }
   .tpp-board.tpp-dragging .kanban-col.drag-over { outline-color: var(--accent); background: var(--gold-tint); }
   /* Toast with an inline action (e.g. "Add note") */
   #toast .toast-action {
