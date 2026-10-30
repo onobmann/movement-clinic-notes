@@ -44,7 +44,7 @@
     --alert-text: #f0897a;
     --info-bg: rgba(96,165,224,0.16);
     --info-border: rgba(96,165,224,0.42);
-    --info-text: #8dc4f2;
+    --info-text: #8dc4f2; --tpp-gold: var(--accent);
   }
   :root[data-theme="light"] {
     --bg: #f4f4f2;
@@ -71,7 +71,7 @@
     --alert-text: #9a4a2c;
     --info-bg: #e9f3fb;
     --info-border: #bcdcf2;
-    --info-text: #1c5c84;
+    --info-text: #1c5c84; --tpp-gold: var(--accent-dark);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html { overflow-x: hidden; }
@@ -99,17 +99,6 @@
   }
   .logo-wrap { display: flex; align-items: center; gap: 14px; cursor: pointer; }
   .brand-logo-img { height: 36px; width: auto; display: block; }
-  .logo-text { display: flex; flex-direction: column; line-height: 1; }
-  .logo-text .sub {
-    font-size: var(--fs-xs);
-    font-weight: 500;
-    color: var(--accent);
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    margin-top: 1px;
-    padding-left: 14px;
-    border-left: 1px solid rgba(255,255,255,0.22);
-  }
   /* TOGGLE */
   /* Header nav: plain text, active page marked by a gold bar along the
      bottom edge of the header. No pill, no glow. */
@@ -325,53 +314,6 @@
     letter-spacing: 0.03em;
   }
   .mic-status.recording { color: var(--danger); }
-  /* Doctor selector */
-  .doctor-selector {
-    width: 100%;
-    max-width: 560px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .doctor-selector-label {
-    font-size: var(--fs-xs);
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-  }
-  .doctor-btns { display: flex; gap: 12px; }
-  .doctor-btn {
-    flex: 1;
-    padding: 14px 16px;
-    border: 2px solid var(--border);
-    border-radius: var(--r-md);
-    background: var(--surface);
-    font-family: 'Inter', sans-serif;
-    font-size: var(--fs-md);
-    font-weight: 600;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.2s;
-    text-align: center;
-  }
-  .doctor-btn:hover { border-color: var(--accent); color: var(--text); }
-  .doctor-btn.selected {
-    border-color: var(--accent);
-    background: var(--gold-tint);
-    color: var(--text);
-    box-shadow: none;
-  }
-  .doctor-btn .dr-title {
-    font-size: var(--fs-xs);
-    font-weight: 500;
-    color: var(--text-muted);
-    display: block;
-    margin-bottom: 3px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-  .doctor-btn.selected .dr-title { color: var(--accent-dark); }
   /* OR divider */
   .or-divider {
     display: flex;
@@ -1161,7 +1103,6 @@
     background: var(--gold-tint);
   }
   .kanban-col.dragging { opacity: 0.4; }
-  .kanban-cards { cursor: default; }
   .kanban-col-name {
     font-size: var(--fs-md);
     font-weight: 700;
@@ -1270,7 +1211,7 @@
     margin-top: 0;
     order: 2;
   }
-  .kanban-cards {
+  .kanban-cards { cursor: default;
     flex: 1;
     overflow-y: auto;
     padding: 10px 10px 6px;
@@ -1310,8 +1251,6 @@
   }
   .task-check:hover { border-color: var(--accent); }
   .task-check.checked { background: var(--success); border-color: var(--success); }
-  .task-check.readonly { cursor: default; opacity: 0.5; }
-  .task-check.readonly:hover { border-color: var(--border); }
   .task-check.checked::after {
     content: '';
     display: block;
@@ -1322,16 +1261,6 @@
     border-left: none;
     transform: rotate(45deg) translate(-1px, -1px);
   }
-  .task-priority-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    margin-top: 5px;
-  }
-  .pri-high { background: var(--danger); }
-  .pri-medium { background: var(--accent); }
-  .pri-low { background: var(--success); }
   /* Urgency reads from the card's left-edge stripe alone — no inline badge,
      so card width/height stays driven by the description text only. */
   .task-card.card-pri-high { border-left: 4px solid var(--danger); }
@@ -1876,8 +1805,6 @@
     .summary-grid { grid-template-columns: 1fr; }
     .patient-list { width: 190px; }
     .main-panel { padding: 18px; }
-    header { padding: 0 12px; }
-    .toggle-btn { padding: 8px 10px; font-size: var(--fs-sm); }
     #doctor-select { font-size: var(--fs-sm); padding: 8px 28px 8px 10px; }
   }
   /* Below 480px the 190px sidebar next to the main panel gets too cramped to
@@ -1887,7 +1814,6 @@
     .patient-list { width: 100%; max-height: 220px; }
     .kanban-col:not(.minimized) { flex-basis: 240px; min-width: 240px; }
     .modal-row { flex-direction: column; gap: 14px; }
-    .doctor-btns { flex-direction: column; }
   }
 
   /* ── Task-complete celebration ─────────────────────────────────────────── */
@@ -1960,14 +1886,12 @@
   }
   .tpp-board .pep-col.pep-col-compact .tpp-decision-row { margin-top: 4px; gap: 4px; }
   .tpp-board .pep-col.pep-col-compact .tpp-decision-btn { padding: 3px 6px; font-size: var(--fs-xs); }
-  
   .tpp-board .pep-col.pep-col-compact .pep-card-meta {
     font-size: var(--fs-xs);
     margin-top: 2px;
   }
   .tpp-board .pep-col.pep-col-compact .pep-card-age {
     font-size: var(--fs-xs);
-    padding: 1px 6px;
     margin-top: 3px;
   }
   /* New-patient strip: docked under the filter bar so it never covers the
@@ -2075,12 +1999,9 @@
   .tpp-dtab.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; background: var(--accent); }
   .tpp-dgroup + .tpp-dgroup { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
   .tpp-overview { border: 1px solid var(--border); border-radius: var(--r-sm); padding: 12px; margin: 12px 0; background: var(--surface); }
-  .tpp-overview-head { font-weight: 700; font-size: var(--fs-md); margin-bottom: 4px; }
   .tpp-ov-row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-top: 1px solid var(--border); font-size: var(--fs-md); }
   .tpp-ov-row:first-of-type { border-top: 0; }
   .tpp-ov-label { color: var(--text-muted); flex: 0 0 auto; }
-  .tpp-ov-val { text-align: right; min-width: 0; }
-  .tpp-ov-val.none { color: var(--text-muted); }
   .tpp-ov-plan { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
   .tpp-ov-plan-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 6px; }
   .tpp-ov-btn { font-size: var(--fs-sm); font-weight: 600; padding: 7px 14px; border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--surface); color: var(--text); cursor: pointer; text-decoration: none; display: inline-block; }
@@ -2102,20 +2023,15 @@
   .tpp-tl-todo li { font-size: var(--fs-sm); overflow-wrap: break-word; word-break: normal; }
   .tpp-tl-todo li span { color: var(--text-muted); }
   .tpp-tl-todo-note { font-size: var(--fs-xs); color: var(--text-muted); font-weight: 400; overflow-wrap: break-word; word-break: normal; }
-  .tpp-tl-todo-note-inline { font-size: var(--fs-xs); color: var(--text-muted); }
   .tpp-tl-card.tpp-tl-alert { background: color-mix(in srgb, var(--danger) 14%, var(--surface)); border-color: color-mix(in srgb, var(--danger) 55%, var(--border)); }
   .tpp-tl-start { margin-top: 8px; padding: 6px 10px; font-size: var(--fs-sm); font-family: inherit; color: var(--text); background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); cursor: pointer; }
   .tpp-tl-labbtn { margin-top: 8px; padding: 6px 12px; font-size: var(--fs-sm); font-weight: 600; font-family: inherit; color: var(--text); background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); cursor: pointer; display: block; }
   .tpp-tl-labbtn:hover { border-color: var(--text-muted); }
   .tpp-tl-labbtn.done { background: var(--accent); border-color: var(--accent); color: #fff; }
   .tpp-tl-start:hover { border-color: var(--text-muted); }
-  .tpp-tl-rows { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
   .tpp-tl-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; font-size: var(--fs-sm); cursor: pointer; overflow-wrap: break-word; word-break: normal; }
   .tpp-tl-row input[type="checkbox"] { margin-top: 3px; flex: 0 0 auto; }
   .tpp-tl-row > span:not(.tpp-tl-stepper) { flex: 1 1 auto; min-width: 0; }
-  .tpp-tl-stepper { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
-  .tpp-tl-stepper .modal-cancel { padding: 2px 10px; min-width: 32px; }
-  .tpp-tl-count { min-width: 1.2em; text-align: center; font-weight: 600; }
   .tpp-board .kanban-scroll { overflow-y: hidden; }
   /* Slimmer title + filter strips on the pipeline boards */
   .tpp-board .tasks-topbar { padding: 6px 28px; }
@@ -2123,7 +2039,6 @@
   /* Stage name and count share one line; long names wrap under themselves. */
   .pep-col:not(.pep-col-empty) .kanban-col-header { flex-direction: row; align-items: flex-start; gap: 8px; }
   .pep-col:not(.pep-col-empty) .kanban-col-count { margin-top: 1px; }
-  .tpp-board .kanban-col.tpp-nextdue-col .kanban-col-header { flex-wrap: wrap; row-gap: 2px; }
   .tpp-board .tasks-heading { font-size: 1.25rem; margin-bottom: 0; line-height: 1.1; }
   .tpp-board .tasks-sub { font-size: var(--fs-xs); }
   .tpp-board .task-add-btn { padding: 5px 14px; font-size: var(--fs-sm); white-space: nowrap; flex-shrink: 0; }
@@ -2155,8 +2070,6 @@
   .tpp-declined-col .kanban-col-header { background: var(--alert-bg); }
   .tpp-onhold-col { border-color: var(--warn-border) !important; }
   .tpp-onhold-col .kanban-col-header { background: var(--warn-bg); }
-  .tpp-hold-btn { background: var(--surface); color: var(--warn-text); border-color: var(--warn-border); }
-  .tpp-decision-row { flex-wrap: wrap; }
   .tpp-decision-tag.onhold { background: var(--warn-bg); color: var(--warn-text); border: 1px solid var(--warn-border); }
   /* Tile comments */
   .tpp-card-comment {
@@ -2167,36 +2080,22 @@
 
   .tpp-comment-del { margin-left: 6px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: var(--fs-sm); padding: 0 2px; }
   .tpp-comment-del:hover { color: var(--danger); }
-  .tpp-decision-row { display: flex; gap: 6px; margin-top: 8px; }
-  .tpp-col-sub { font-size: var(--fs-xs); font-weight: 600; color: var(--warn-text); background: var(--warn-bg); line-height: 1.3; padding: 5px 12px; border-bottom: 1px solid var(--border); }
+  .tpp-decision-row { flex-wrap: wrap; display: flex; gap: 6px; margin-top: 8px; }
 
   .tpp-labs-bar { display: block; height: 4px; border-radius: var(--r-sm); background: var(--border); margin-top: 4px; overflow: hidden; }
   .tpp-labs-bar span { display: block; height: 100%; background: var(--accent); }
 
   /* Patient details card in the detail panel */
-  .tpp-ki { border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; margin: 10px 0 14px; background: var(--surface); text-align: left; }
-  .tpp-ki-head { font-size: var(--fs-sm); font-weight: 800; padding: 10px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); color: var(--text); }
-  .tpp-ki-row { display: grid; grid-template-columns: 140px 1fr; gap: 12px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .tpp-ki-row { grid-template-columns: 140px 1fr; gap: 12px; border-bottom: 1px solid var(--border); }
   .tpp-ki-row:last-child { border-bottom: none; }
-  .tpp-ki-row.current { background: var(--gold-tint); box-shadow: inset 3px 0 0 var(--accent); }
-  .tpp-ki-label { font-size: var(--fs-md); font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  
   .tpp-ki-value { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
   .tpp-ki-status { font-size: var(--fs-sm); color: var(--text-muted); font-weight: 500; }
   .tpp-ki-warn { color: var(--warn-text); font-weight: 700; }
-  .tpp-ki-good { color: var(--accent-dark); font-weight: 700; }
-  .tpp-ki-input { font: inherit; font-size: var(--fs-md); font-weight: 600; padding: 6px 9px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text); max-width: 100%; }
-  .tpp-ki-seg { display: inline-flex; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; }
-  .tpp-ki-seg-btn { font: inherit; font-size: var(--fs-sm); font-weight: 700; padding: 6px 12px; border: none; background: var(--surface); color: var(--text-muted); cursor: pointer; }
+  .tpp-ki-seg-btn { background: var(--surface); color: var(--text-muted); }
   .tpp-ki-seg-btn + .tpp-ki-seg-btn { border-left: 1px solid var(--border); }
   .tpp-ki-seg-btn:hover { color: var(--text); background: var(--surface2); }
   .tpp-ki-seg-btn.active { background: var(--accent); color: white; }
   .tpp-ki-seg-btn.tpp-ki-pay-plan.active { background: var(--warn-text); color: white; }
-
-  .tpp-ki-inline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; max-width: 100%; }
-  .tpp-ki-file { font-size: var(--fs-md); font-weight: 700; color: var(--accent-dark); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
-  .tpp-ki-file:hover { text-decoration: underline; }
-  .tpp-ki-link { font-size: var(--fs-sm); font-weight: 600; color: var(--text-muted); cursor: pointer; text-decoration: underline; }
   @media (max-width: 520px) {
     .tpp-ki-row { grid-template-columns: 1fr; gap: 6px; }
   }
@@ -2213,14 +2112,8 @@
   .tpp-lab-choice:hover, .tpp-lab-choice.active { border-color: var(--accent); background: var(--gold-tint); }
 
   .tpp-board .pep-col.pep-col-compact .tpp-labs-bar { display: none; }
-  
-  .tpp-decision-btn {
-    flex: 1; font-size: var(--fs-xs); font-weight: 700; padding: 6px 8px;
-    border-radius: var(--r-sm); cursor: pointer; border: 1px solid var(--border);
-  }
   .tpp-accept-btn { background: var(--accent); color: white; border-color: var(--accent); }
   .tpp-decline-btn { background: var(--surface); color: var(--danger); border-color: var(--danger); }
-  
   .tpp-decision-tag {
     display: inline-block; font-size: var(--fs-xs); font-weight: 700; padding: 2px 7px;
     border-radius: var(--r-md); margin-left: 4px;
@@ -2239,7 +2132,7 @@
   .pep-card.tpp-card-overdue { border-color: var(--alert-border); box-shadow: inset 3px 0 0 var(--danger); }
   /* "Next Round Due" holding column on the Follow-Up board */
   .tpp-board .kanban-col.tpp-nextdue-col { border-style: dashed; }
-  .tpp-board .kanban-col.tpp-nextdue-col .kanban-col-header { background: none; box-shadow: inset 3px 0 0 var(--tpp-gold); }
+  .tpp-board .kanban-col.tpp-nextdue-col .kanban-col-header { background: none; }
   .tpp-col-hint { font-size: var(--fs-xs); color: var(--text-muted); font-weight: 600; width: 100%; }
   /* While a card is being dragged, collapsed empty stages widen so they're
      easy to hit as drop targets instead of 46px slivers. */
@@ -2260,44 +2153,20 @@
      something late, everything else is plain text in the site's grays. */
   .tpp-board .pep-card-age { background: none !important; border: none !important; padding: 0; font-weight: 500; font-size: var(--fs-xs); color: var(--text-muted); }
   .tpp-board .pep-card-age.age-warn, .tpp-board .pep-card-age.age-alert { color: var(--warn-text); font-weight: 600; }
-  .tpp-col-sub { background: none; color: var(--text-muted); font-weight: 500; font-style: italic; border-bottom: 1px solid var(--border); }
 
-  .tpp-board .tpp-labs-bar { height: 3px; background: var(--border); }
-  .tpp-board .tpp-labs-bar span { background: var(--text-muted); }
-
-  .tpp-decision-btn { border-radius: var(--r-sm); font-weight: 600; }
-  .tpp-hold-btn { color: var(--text) !important; border-color: var(--border) !important; }
+  .tpp-decision-btn {
+    flex: 1; font-size: var(--fs-xs); padding: 6px 8px; cursor: pointer; border: 1px solid var(--border); border-radius: var(--r-sm); font-weight: 600; }
+  .tpp-hold-btn { background: var(--surface); color: var(--text) !important; border-color: var(--border) !important; }
   /* Details card */
-  .tpp-ki { border-radius: var(--r-sm); }
-  .tpp-ki-head { background: none; font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); padding: 10px 14px 6px; border-bottom: 1px solid var(--border); }
-  .tpp-ki-row { padding: 9px 14px; }
+  .tpp-ki { border: 1px solid var(--border); overflow: hidden; margin: 10px 0 14px; background: var(--surface); text-align: left; border-radius: var(--r-sm); }
+  .tpp-ki-row { display: grid; align-items: center; padding: 9px 14px; }
   .tpp-ki-row.current { background: none; box-shadow: inset 3px 0 0 var(--accent); }
-  .tpp-ki-label { font-size: var(--fs-md); font-weight: 600; }
-  .tpp-ki-row.current .tpp-ki-label { font-weight: 700; }
-  .tpp-ki-input { font-weight: 500; border-radius: var(--r-sm); }
-  .tpp-ki-seg { border-radius: var(--r-sm); }
-  .tpp-ki-seg-btn { font-weight: 500; }
-  .tpp-ki-seg-btn.active, .tpp-ki-seg-btn.tpp-ki-pay-plan.active { background: var(--surface2); color: var(--text); font-weight: 700; }
-  .tpp-ki-file { color: var(--text); text-decoration: underline; text-underline-offset: 2px; font-weight: 600; }
-  .tpp-ki-link { font-size: var(--fs-sm); font-weight: 500; text-underline-offset: 2px; }
+  .tpp-ki-label { color: var(--text); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: var(--fs-md); font-weight: 600; }
+  .tpp-ki-input { font: inherit; font-size: var(--fs-md); padding: 6px 9px; border: 1px solid var(--border); background: var(--surface); color: var(--text); max-width: 100%; font-weight: 500; border-radius: var(--r-sm); }
+  .tpp-ki-seg { display: inline-flex; border: 1px solid var(--border); overflow: hidden; border-radius: var(--r-sm); }
+  .tpp-ki-seg-btn { font: inherit; font-size: var(--fs-sm); padding: 6px 12px; border: none; cursor: pointer; font-weight: 500; }
   .tpp-ki-good { color: var(--text); font-weight: 600; }
-  /* Gold accents: links, selected states and the current step, in a gold
-     that stays readable on both themes. */
-  :root { --tpp-gold: var(--accent); }
-  :root[data-theme="light"] { --tpp-gold: var(--accent-dark); }
-
-  .tpp-board .tpp-labs-bar span { background: var(--tpp-gold); }
-
-  .tpp-col-sub { box-shadow: inset 3px 0 0 var(--tpp-gold); }
-  .tpp-ki-head { color: var(--tpp-gold); }
-  .tpp-ki-seg-btn.active, .tpp-ki-seg-btn.tpp-ki-pay-plan.active { color: var(--tpp-gold); box-shadow: inset 0 -2px 0 var(--tpp-gold); }
-  .tpp-ki-file, .tpp-ki-link { text-decoration-color: var(--tpp-gold); }
-  .tpp-ki-link { color: var(--tpp-gold); font-weight: 600; }
-  .tpp-ki-row.current .tpp-ki-label { color: var(--tpp-gold); }
-  /* One line for lab + countdown */
-
   .tpp-board .tpp-labs-bar { display: block; height: 3px; border-radius: var(--r-sm); background: var(--border); margin-top: 4px; overflow: hidden; }
-  .tpp-pay-tag { margin-top: 5px; font-size: var(--fs-xs); font-weight: 600; color: var(--tpp-gold); }
   /* Follow-Up board: same plain look */
   .tpp-board .pep-order-badge { background: none; border: none; padding: 0; color: var(--text-muted); font-weight: 600; font-size: var(--fs-xs); }
   .tpp-board .tpp-decision-tag { background: none !important; border: none !important; padding: 0; color: var(--text-muted) !important; font-weight: 600; }
@@ -2308,29 +2177,20 @@
   .tpp-board .tpp-due-badge.due-soon { color: var(--warn-text); }
   .tpp-board .tpp-due-badge.due-over { color: var(--alert-text); }
 
-  /* Each text link on a tile gets its own line */
-  
   /* -- Pipeline v3: no underlined links, gold only for the current step -----
      Tile actions are small gray buttons; gold is kept for the current-step
      marker, finished lab countdowns and the main buttons (Add Patient, Accepted). */
 
   .tpp-board .tpp-labs-bar span { background: var(--text-muted); }
   .tpp-board .tpp-labs-bar.ready span { background: var(--tpp-gold); }
-  .tpp-pay-tag { color: var(--text-muted); }
-  
-  .tpp-col-sub { box-shadow: none; }
-  .tpp-board .kanban-col.tpp-nextdue-col .kanban-col-header { box-shadow: none; }
+  .tpp-col-sub { font-size: var(--fs-xs); line-height: 1.3; padding: 5px 12px; background: none; color: var(--text-muted); font-weight: 500; font-style: italic; border-bottom: 1px solid var(--border); box-shadow: none; }
+  .tpp-board .kanban-col.tpp-nextdue-col .kanban-col-header { flex-wrap: wrap; row-gap: 2px; box-shadow: none; }
 
   /* Details card */
-  .tpp-ki-head { color: var(--text-muted); }
-  .tpp-ki-row.current .tpp-ki-label { color: var(--text); }
-  .tpp-ki-seg-btn.active, .tpp-ki-seg-btn.tpp-ki-pay-plan.active { color: var(--text); box-shadow: none; background: var(--surface2); }
-  .tpp-ki-link {
-    display: inline-flex; align-items: center; padding: 4px 10px; border: 1px solid var(--border); border-radius: var(--r-sm);
-    background: var(--surface); color: var(--text); font-size: var(--fs-sm); font-weight: 600; text-decoration: none; cursor: pointer;
-  }
-  .tpp-ki-link:hover { background: var(--surface2); }
-  .tpp-ki-file { text-decoration: none; }
+  .tpp-ki-head { background: none; font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 14px 6px; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+  .tpp-ki-row.current .tpp-ki-label { font-weight: 700; color: var(--text); }
+  .tpp-ki-seg-btn.active, .tpp-ki-seg-btn.tpp-ki-pay-plan.active { font-weight: 700; color: var(--text); box-shadow: none; background: var(--surface2); }
+  .tpp-ki-file { font-size: var(--fs-md); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; color: var(--text); text-underline-offset: 2px; font-weight: 600; text-decoration: none; }
   .tpp-ki-file:hover { text-decoration: underline; text-decoration-color: var(--text-muted); }
   /* Accept / Decline / On hold are actions, not a state: all three neutral
      until hovered, so nothing looks already decided. */
