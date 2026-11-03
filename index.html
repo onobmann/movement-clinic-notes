@@ -2306,12 +2306,12 @@
     </div>
   <div class="header-right">
     <div class="toggle-wrap" id="nav-toggle-wrap" style="display:none">
-      <button class="toggle-btn" onclick="setView('dr', this)">Doctor</button>
-      <button class="toggle-btn" onclick="setView('sec', this)">Care Team</button>
-      <button class="toggle-btn" onclick="setView('tasks', this)">Tasks</button>
-      <button class="toggle-btn" onclick="setView('peptides', this)">Peptides</button>
-      <button class="toggle-btn" onclick="setView('tpp', this)">Pipeline</button>
-      <button class="toggle-btn" onclick="setView('detox', this)">Detox</button>
+      <button class="toggle-btn" data-view="tasks" onclick="setView('tasks', this)">Tasks</button>
+      <button class="toggle-btn" data-view="tpp" onclick="setView('tpp', this)">Pipeline</button>
+      <button class="toggle-btn" data-view="detox" onclick="setView('detox', this)">Detox</button>
+      <button class="toggle-btn" data-view="peptides" onclick="setView('peptides', this)">Peptides</button>
+      <button class="toggle-btn" data-view="dr" onclick="setView('dr', this)">Doctor</button>
+      <button class="toggle-btn" data-view="sec" onclick="setView('sec', this)">Care Team</button>
     </div>
     <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle light / dark mode">
       <svg id="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 1020.354 15.354z"/></svg>
@@ -2325,46 +2325,46 @@
   <h1 class="home-title">Movement Clinic</h1>
   <div class="home-title-rule"></div>
   <div class="home-menu-list">
-    <div class="home-menu-item" onclick="setView(&#39;dr&#39;, document.querySelectorAll(&#39;.toggle-btn&#39;)[0])">
+    <div class="home-menu-item" onclick="setView(&#39;tasks&#39;, document.querySelector(&#39;.toggle-btn[data-view=tasks]&#39;))">
       <span class="home-menu-index">01</span>
-      <span class="home-menu-text">
-        <span class="home-menu-label">Doctor</span>
-        <span class="home-menu-desc">Record a post-appointment note</span>
-      </span>
-    </div>
-    <div class="home-menu-item" onclick="setView(&#39;sec&#39;, document.querySelectorAll(&#39;.toggle-btn&#39;)[1])">
-      <span class="home-menu-index">02</span>
-      <span class="home-menu-text">
-        <span class="home-menu-label">Care Team</span>
-        <span class="home-menu-desc">Review appointment notes</span>
-      </span>
-    </div>
-    <div class="home-menu-item" onclick="setView(&#39;tasks&#39;, document.querySelectorAll(&#39;.toggle-btn&#39;)[2])">
-      <span class="home-menu-index">03</span>
       <span class="home-menu-text">
         <span class="home-menu-label">Tasks</span>
         <span class="home-menu-desc">Team task board</span>
       </span>
     </div>
-    <div class="home-menu-item" onclick="setView(&#39;peptides&#39;, document.querySelectorAll(&#39;.toggle-btn&#39;)[3])">
+    <div class="home-menu-item" onclick="setView(&#39;tpp&#39;, document.querySelector(&#39;.toggle-btn[data-view=tpp]&#39;))">
+      <span class="home-menu-index">02</span>
+      <span class="home-menu-text">
+        <span class="home-menu-label">Treatment Plan Pipeline</span>
+        <span class="home-menu-desc">Track patients from discovery through treatment plan, then follow-up</span>
+      </span>
+    </div>
+    <div class="home-menu-item" onclick="setView(&#39;detox&#39;, document.querySelector(&#39;.toggle-btn[data-view=detox]&#39;))">
+      <span class="home-menu-index">03</span>
+      <span class="home-menu-text">
+        <span class="home-menu-label">Detox Case Study Tracker</span>
+        <span class="home-menu-desc">Track case study patients from invite to protocol sent</span>
+      </span>
+    </div>
+    <div class="home-menu-item" onclick="setView(&#39;peptides&#39;, document.querySelector(&#39;.toggle-btn[data-view=peptides]&#39;))">
       <span class="home-menu-index">04</span>
       <span class="home-menu-text">
         <span class="home-menu-label">Peptides</span>
         <span class="home-menu-desc">Track patients through the peptide pipeline</span>
       </span>
     </div>
-    <div class="home-menu-item" onclick="setView(&#39;tpp&#39;, document.querySelectorAll(&#39;.toggle-btn&#39;)[4])">
+    <div class="home-menu-item" onclick="setView(&#39;dr&#39;, document.querySelector(&#39;.toggle-btn[data-view=dr]&#39;))">
       <span class="home-menu-index">05</span>
       <span class="home-menu-text">
-        <span class="home-menu-label">Treatment Plan Pipeline</span>
-        <span class="home-menu-desc">Track patients from discovery through treatment plan, then follow-up</span>
+        <span class="home-menu-label">Doctor</span>
+        <span class="home-menu-desc">Record a post-appointment note</span>
       </span>
     </div>
-    <div class="home-menu-item" onclick="setView(&#39;detox&#39;, document.querySelectorAll(&#39;.toggle-btn&#39;)[5])">
+    <div class="home-menu-item" onclick="setView(&#39;sec&#39;, document.querySelector(&#39;.toggle-btn[data-view=sec]&#39;))">
       <span class="home-menu-index">06</span>
       <span class="home-menu-text">
-        <span class="home-menu-label">Detox Case Study Tracker</span>
-        <span class="home-menu-desc">Track case study patients from invite to protocol sent</span>
+        <span class="home-menu-label">Care Team</span>
+        <span class="home-menu-desc">Review appointment notes</span>
       </span>
     </div>
   </div>
