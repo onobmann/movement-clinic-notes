@@ -737,7 +737,7 @@
   }
   #toast.show { transform: translateX(-50%) translateY(0); }
   /* ===== TASKS VIEW ===== */
-  #tasks-view, #peptides-view, #tpp-view {
+  #tasks-view, #peptides-view, #tpp-view, #detox-view {
     flex-direction: column;
     height: calc(100vh - 68px);
     overflow: hidden;
@@ -2228,6 +2228,47 @@
   .tpp-decision-block { margin: 4px 0 12px; padding: 12px 14px; border: 1px solid var(--border); border-left: 3px solid var(--tpp-gold); border-radius: var(--r-md); }
   .tpp-decision-q { font-size: var(--fs-md); font-weight: 600; color: var(--text); }
   .tpp-decision-block .tpp-decision-btn { padding: 8px 10px; font-size: var(--fs-sm); }
+  /* -- Detox Case Study Tracker ---------------------------------------------- */
+  .detox-scroll { flex: 1; overflow: auto; padding: 16px 28px 28px; }
+  .detox-table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 1100px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); font-size: var(--fs-md); }
+  .detox-table th { position: sticky; top: 0; z-index: 2; background: var(--surface2); text-align: left; font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); padding: 10px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .detox-table th:first-child { border-top-left-radius: var(--r-md); }
+  .detox-table th:last-child { border-top-right-radius: var(--r-md); }
+  .detox-table td { border-bottom: 1px solid var(--border); padding: 0; vertical-align: top; }
+  .detox-table tbody tr:hover td { background: var(--surface2); }
+  .detox-cell button { display: block; width: 100%; min-height: 40px; background: none; border: none; text-align: left; padding: 10px 12px; color: var(--text); font-family: inherit; font-size: inherit; line-height: 1.4; cursor: pointer; }
+  .detox-cell button:hover, .detox-cell button:focus-visible { box-shadow: inset 0 0 0 1px var(--text-muted); outline: none; }
+  .detox-blank { color: var(--border); }
+  .detox-muted button { color: var(--text-muted); }
+  .detox-col-count { width: 48px; text-align: center !important; }
+  .detox-col-count button { text-align: center; }
+  .detox-col-name { position: sticky; left: 0; z-index: 1; background: var(--surface); min-width: 170px; }
+  .detox-table th.detox-col-name { z-index: 3; background: var(--surface2); }
+  .detox-name { font-weight: 600; margin-right: 6px; }
+  .detox-paid button { box-shadow: inset 3px 0 0 var(--success); }
+  .detox-col-lab { min-width: 240px; }
+  .detox-lab-flag button { background: var(--warn-bg); color: var(--warn-text); }
+  .detox-tag { display: inline-block; font-size: var(--fs-xs); color: var(--text-muted); border: 1px solid var(--border); border-radius: 999px; padding: 0 7px; margin: 2px 4px 0 0; font-weight: 500; }
+  .detox-row-hold .detox-cell button { color: var(--text-muted); }
+  .detox-table tfoot td { background: var(--surface2); font-weight: 600; color: var(--text-muted); padding: 10px 12px; font-size: var(--fs-sm); border-bottom: none; }
+  .detox-table tfoot td.detox-col-name { background: var(--surface2); }
+  .detox-table tfoot tr td:first-child { border-bottom-left-radius: var(--r-md); }
+  .detox-table tfoot tr td:last-child { border-bottom-right-radius: var(--r-md); }
+  .detox-none { padding: 20px 12px !important; color: var(--text-muted); }
+  .detox-summary { font-size: var(--fs-sm); color: var(--text-muted); }
+  #detox-pop { position: fixed; z-index: 600; display: none; flex-direction: column; gap: 8px; width: 280px; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow); font-size: var(--fs-sm); }
+  #detox-pop .dp-title { font-weight: 700; color: var(--text); }
+  #detox-pop .dp-title span { font-weight: 500; color: var(--text-muted); }
+  #detox-pop .dp-now { color: var(--text-muted); }
+  #detox-pop .dp-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  #detox-pop .dp-sep { border-top: 1px solid var(--border); padding-top: 8px; }
+  #detox-pop .dp-btn { padding: 6px 10px; background: none; border: 1px solid var(--border); border-radius: var(--r-sm); color: var(--text); font-family: inherit; font-size: var(--fs-sm); cursor: pointer; }
+  #detox-pop .dp-btn:hover { border-color: var(--text-muted); }
+  #detox-pop .dp-danger { color: var(--danger); }
+  #detox-pop .dp-input { padding: 7px 10px; font-size: var(--fs-sm); }
+  #detox-pop .dp-label { display: flex; flex-direction: column; gap: 4px; color: var(--text-muted); }
+  #detox-pop .dp-check { display: flex; align-items: center; gap: 8px; color: var(--text); cursor: pointer; }
+  @media (max-width: 700px) { .detox-scroll { padding: 10px 12px 20px; } }
   /* -- Phones ------------------------------------------------------------------
      Nav drops to its own scrollable row under the logo, and page title bars
      wrap instead of pushing buttons off the edge. */
@@ -2266,6 +2307,7 @@
       <button class="toggle-btn" onclick="setView('tasks', this)">Tasks</button>
       <button class="toggle-btn" onclick="setView('peptides', this)">Peptides</button>
       <button class="toggle-btn" onclick="setView('tpp', this)">Pipeline</button>
+      <button class="toggle-btn" onclick="setView('detox', this)">Detox</button>
     </div>
     <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle light / dark mode">
       <svg id="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 1020.354 15.354z"/></svg>
@@ -2312,6 +2354,13 @@
       <span class="home-menu-text">
         <span class="home-menu-label">Treatment Plan Pipeline</span>
         <span class="home-menu-desc">Track patients from discovery through treatment plan, then follow-up</span>
+      </span>
+    </div>
+    <div class="home-menu-item" onclick="setView(&#39;detox&#39;, document.querySelectorAll(&#39;.toggle-btn&#39;)[5])">
+      <span class="home-menu-index">06</span>
+      <span class="home-menu-text">
+        <span class="home-menu-label">Detox Case Study Tracker</span>
+        <span class="home-menu-desc">Track case study patients from invite to protocol sent</span>
       </span>
     </div>
   </div>
@@ -2527,6 +2576,56 @@
     </div>
   </div>
 </div>
+
+<!-- DETOX CASE STUDY TRACKER VIEW -->
+<div id="detox-view" class="view">
+  <div class="tasks-wrap">
+    <div class="tasks-topbar">
+      <div>
+        <h2 class="tasks-heading">Detox Case Study Tracker</h2>
+        <p class="tasks-sub">Click any cell to change it. Green names have paid.</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="refresh-btn detox-undo-btn" onclick="detoxUndo.step('undo')" title="Nothing to undo" disabled style="color:var(--text-muted);padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"></polyline><path d="M20 20v-7a4 4 0 0 0-4-4H4"></path></svg>
+        </button>
+        <button class="refresh-btn detox-redo-btn" onclick="detoxUndo.step('redo')" title="Nothing to redo" disabled style="color:var(--text-muted);padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 14 20 9 15 4"></polyline><path d="M4 20v-7a4 4 0 0 1 4-4h12"></path></svg>
+        </button>
+        <button class="refresh-btn" onclick="reloadDetox(this)" title="Refresh" style="color:var(--text-muted);padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+        </button>
+        <button class="task-add-btn" onclick="openAddDetoxModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          Add Patient
+        </button>
+      </div>
+    </div>
+    <div class="tasks-filterbar">
+      <span class="filter-label">Filter</span>
+      <div class="filter-search-wrap">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" class="filter-search-input" id="detox-search" placeholder="Search name or labs…" oninput="renderDetox()" autocomplete="off">
+      </div>
+      <select class="filter-select" id="detox-filter" onchange="renderDetox()">
+        <option value="all">Everyone</option>
+        <option value="active">Not on hold</option>
+        <option value="unpaid">Not paid yet</option>
+        <option value="labs">Needs follow-up labs</option>
+        <option value="dropship">Drop ship</option>
+        <option value="hold">On hold</option>
+      </select>
+      <span class="detox-summary" id="detox-summary"></span>
+    </div>
+    <div class="detox-scroll" id="detox-table-wrap">
+      <p style="color:var(--text-muted);padding:20px">Loading…</p>
+    </div>
+  </div>
+</div>
+<div id="detox-pop" onclick="event.stopPropagation()"></div>
 
 <!-- TREATMENT PLAN PIPELINE VIEW -->
 <div id="tpp-view" class="view">
@@ -2812,6 +2911,30 @@
     <div class="modal-footer">
       <button class="modal-cancel" onclick="closeAddPeptideModal()">Cancel</button>
       <button class="modal-submit" id="pep-add-submit-btn" onclick="submitAddPeptide()">Add Patient</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETOX ADD PATIENT MODAL -->
+<div id="detox-add-modal" class="modal-overlay" onclick="if(event.target===this) closeAddDetoxModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">New Detox Case Study Patient</span>
+      <button class="modal-close" onclick="closeAddDetoxModal()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field">
+        <label class="modal-label">Patient name</label>
+        <input type="text" id="detox-new-name" class="modal-input" placeholder="e.g. J. Madsen" onkeydown="if(event.key==='Enter') submitAddDetox()">
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:var(--fs-md);color:var(--text);cursor:pointer"><input type="checkbox" id="detox-new-invite"> Invite email sent today</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:var(--fs-md);color:var(--text);cursor:pointer"><input type="checkbox" id="detox-new-dropship"> Drop ship</label>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeAddDetoxModal()">Cancel</button>
+      <button class="modal-submit" id="detox-add-submit-btn" onclick="submitAddDetox()">Add Patient</button>
     </div>
   </div>
 </div>
@@ -3266,6 +3389,12 @@ function setView(view, btn) {
     startTppPolling();
   } else {
     stopTppPolling();
+  }
+  if (view === 'detox') {
+    loadDetox();
+    startDetoxPolling();
+  } else {
+    stopDetoxPolling();
   }
 }
 // ── Doctor selection ──────────────────────────────────────────────────────────
@@ -3791,6 +3920,311 @@ const pepUndo = makeUndo({
   drop: id => { allPeptides = allPeptides.filter(p => p.id !== id); if (pepDetailPatientId === id) closePeptideDetail(); },
   render: id => { renderPeptideBoard(); if (pepDetailPatientId === id) renderPeptideDetail(id); },
   reload: () => loadPeptides(),
+});
+
+// -- Detox Case Study Tracker -------------------------------------------------
+// A table with the same columns as the clinic's spreadsheet, one row per
+// patient, in the order they were added. Click any cell to change it. Step
+// cells hold '' (not yet), a date 'YYYY-MM-DD', 'Y', 'N', 'NA' or a few words
+// ('In Office'). A row's name is marked green once Paid is done, as in the
+// sheet, and the Labs cell is tinted while it still needs full follow-up labs.
+// Every change is one small PATCH of just that field, recorded for undo.
+const DETOX_STEPS = [
+  { key: 'invite', label: 'Invite sent' },
+  { key: 'responded', label: 'Responded' },
+  { key: 'interest', label: 'Interested' },
+  { key: 'consentSent', label: 'Consent sent' },
+  { key: 'consentSigned', label: 'Consent signed' },
+  { key: 'paid', label: 'Paid' },
+  { key: 'protocolSent', label: 'Protocol sent' },
+];
+let detoxRows = [];
+let detoxPollInterval = null;
+let detoxMissing = false;
+function detoxStepLabel(key) { const s = DETOX_STEPS.find(x => x.key === key); return s ? s.label : key; }
+function detoxIsDate(v) { return /^\d{4}-\d{2}-\d{2}$/.test(v || ''); }
+function detoxShow(v) {
+  if (!v) return '';
+  if (detoxIsDate(v)) { const [, m, d] = v.split('-'); return Number(m) + '/' + Number(d); }
+  if (v === 'NA') return 'N/A';
+  return v;
+}
+// Counts as done: a date, Y, or any words other than N / N/A.
+function detoxDone(v) { return !!v && v !== 'N' && v !== 'NA'; }
+function detoxToday() {
+  const d = new Date(), pad = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+}
+function detoxSort() { detoxRows.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)); }
+async function loadDetox() {
+  try {
+    const res = await fetch(WORKER_URL + '/detox');
+    if (res.status === 404) { detoxMissing = true; renderDetox(); return; }
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    detoxMissing = false;
+    detoxRows = await res.json();
+    detoxSort();
+    renderDetox();
+  } catch (err) {
+    const el = document.getElementById('detox-table-wrap');
+    if (el) el.innerHTML = '<p style="color:var(--danger);padding:20px">Could not load the detox tracker: ' + escapeHtml(err.message) + '</p>';
+  }
+}
+async function reloadDetox(btn) {
+  if (btn) btn.classList.add('spinning');
+  await loadDetox();
+  if (btn) btn.classList.remove('spinning');
+}
+function startDetoxPolling() {
+  if (!detoxPollInterval) detoxPollInterval = startMetaPoller('/detox', loadDetox, 20000);
+}
+function stopDetoxPolling() {
+  clearInterval(detoxPollInterval);
+  detoxPollInterval = null;
+  closeDetoxPop();
+}
+function detoxFiltered() {
+  const q = (document.getElementById('detox-search').value || '').trim().toLowerCase();
+  const show = document.getElementById('detox-filter').value;
+  return detoxRows.filter(p => {
+    if (q && !(p.name || '').toLowerCase().includes(q) && !(p.labOrder || '').toLowerCase().includes(q)) return false;
+    if (show === 'active') return p.status !== 'hold';
+    if (show === 'hold') return p.status === 'hold';
+    if (show === 'dropship') return !!p.dropShip;
+    if (show === 'labs') return !!p.followupLabs;
+    if (show === 'unpaid') return p.status !== 'hold' && !detoxDone(p.paid) && p.paid !== 'NA';
+    return true;
+  });
+}
+function renderDetox() {
+  const wrap = document.getElementById('detox-table-wrap');
+  if (!wrap) return;
+  const sum = document.getElementById('detox-summary');
+  if (detoxMissing) {
+    sum.textContent = '';
+    wrap.innerHTML = '<p style="color:var(--text-muted);padding:20px">The detox tracker needs the latest worker. Paste the new worker.js into Cloudflare and deploy it, then refresh.</p>';
+    return;
+  }
+  const counted = detoxRows.reduce((a, p) => a + (p.count || 0), 0);
+  const paid = detoxRows.filter(p => detoxDone(p.paid)).length;
+  const sent = detoxRows.filter(p => detoxDone(p.protocolSent)).length;
+  sum.textContent = counted + ' counted · ' + paid + ' paid · ' + sent + ' protocols sent';
+  const rows = detoxFiltered();
+  const cell = (p, key, text, cls, title) =>
+    '<td class="detox-cell' + (cls ? ' ' + cls : '') + '"><button type="button" onclick="openDetoxPop(event,\'' + p.id + '\',\'' + key + '\')"' + (title ? ' title="' + escapeHtml(title) + '"' : '') + '>' + text + '</button></td>';
+  const stepCell = (p, key) => {
+    const v = p[key] || '';
+    const text = v ? escapeHtml(detoxShow(v)) : '<span class="detox-blank">&ndash;</span>';
+    return cell(p, key, text, v === 'N' || v === 'NA' ? 'detox-muted' : '');
+  };
+  const head = '<tr><th class="detox-col-count" title="Counts toward the total">#</th><th class="detox-col-name">Name</th>' +
+    DETOX_STEPS.slice(0, 5).map(s => '<th>' + s.label + '</th>').join('') +
+    '<th class="detox-col-lab">Labs</th>' + DETOX_STEPS.slice(5).map(s => '<th>' + s.label + '</th>').join('') + '</tr>';
+  const body = rows.map(p => {
+    const tags = (p.dropShip ? '<span class="detox-tag">Drop ship</span>' : '') + (p.status === 'hold' ? '<span class="detox-tag">On hold</span>' : '');
+    const isPaid = detoxDone(p.paid);
+    return '<tr class="' + (p.status === 'hold' ? 'detox-row-hold' : '') + '">' +
+      cell(p, 'count', p.count === null || p.count === undefined ? '<span class="detox-blank">&ndash;</span>' : String(p.count), 'detox-col-count') +
+      cell(p, 'name', '<span class="detox-name">' + escapeHtml(p.name || 'Unnamed') + '</span>' + tags, 'detox-col-name' + (isPaid ? ' detox-paid' : ''), isPaid ? 'Paid' : '') +
+      DETOX_STEPS.slice(0, 5).map(s => stepCell(p, s.key)).join('') +
+      cell(p, 'labOrder', p.labOrder ? escapeHtml(p.labOrder) : '<span class="detox-blank">&ndash;</span>', 'detox-col-lab' + (p.followupLabs ? ' detox-lab-flag' : ''), p.followupLabs ? 'Needs full follow-up labs' : '') +
+      DETOX_STEPS.slice(5).map(s => stepCell(p, s.key)).join('') +
+      '</tr>';
+  }).join('');
+  const doneCount = key => rows.filter(p => detoxDone(p[key])).length;
+  const foot = '<tr><td class="detox-col-count">' + rows.reduce((a, p) => a + (p.count || 0), 0) + '</td><td class="detox-col-name">Total &middot; ' + rows.length + ' patient' + (rows.length === 1 ? '' : 's') + '</td>' +
+    DETOX_STEPS.slice(0, 5).map(s => '<td>' + doneCount(s.key) + '</td>').join('') +
+    '<td class="detox-col-lab">' + rows.filter(p => p.followupLabs).length + ' need follow-up labs</td>' +
+    DETOX_STEPS.slice(5).map(s => '<td>' + doneCount(s.key) + '</td>').join('') + '</tr>';
+  wrap.innerHTML = rows.length || detoxRows.length
+    ? '<table class="detox-table"><thead>' + head + '</thead><tbody>' + (body || '<tr><td colspan="10" class="detox-none">No patients match.</td></tr>') + '</tbody><tfoot>' + foot + '</tfoot></table>'
+    : '<p style="color:var(--text-muted);padding:20px">No patients yet. Use Add Patient to start.</p>';
+}
+// -- Cell editor (one small panel next to the clicked cell) -------------------
+let detoxPopTarget = null;
+function openDetoxPop(ev, id, key) {
+  ev.stopPropagation();
+  const p = detoxRows.find(x => x.id === id);
+  if (!p) return;
+  detoxPopTarget = { id, key };
+  const pop = document.getElementById('detox-pop');
+  const title = key === 'name' ? 'Patient' : key === 'count' ? 'Count toward total' : key === 'labOrder' ? 'Labs' : detoxStepLabel(key);
+  let html = '<div class="dp-title">' + escapeHtml(title) + ' &middot; <span>' + escapeHtml(p.name || '') + '</span></div>';
+  if (key === 'name') {
+    html += '<input class="modal-input dp-input" id="dp-name" value="' + escapeHtml(p.name || '') + '" onkeydown="if(event.key===\'Enter\') detoxSaveName()">' +
+      '<div class="dp-row"><button type="button" class="dp-btn" onclick="detoxSaveName()">Save name</button></div>' +
+      '<label class="dp-check"><input type="checkbox"' + (p.dropShip ? ' checked' : '') + ' onchange="detoxSet({ dropShip: this.checked })"> Drop ship</label>' +
+      '<label class="dp-check"><input type="checkbox"' + (p.status === 'hold' ? ' checked' : '') + ' onchange="detoxSet({ status: this.checked ? \'hold\' : \'\' })"> On hold</label>' +
+      '<div class="dp-row dp-sep"><button type="button" class="dp-btn dp-danger" onclick="detoxDelete()">Delete patient</button></div>';
+  } else if (key === 'count') {
+    html += '<input type="number" min="0" max="20" class="modal-input dp-input" id="dp-count" value="' + (p.count === null || p.count === undefined ? '' : p.count) + '" onkeydown="if(event.key===\'Enter\') detoxSaveCount()">' +
+      '<div class="dp-row"><button type="button" class="dp-btn" onclick="detoxSaveCount()">Save</button><button type="button" class="dp-btn" onclick="detoxSet({ count: null })">Not counted</button></div>';
+  } else if (key === 'labOrder') {
+    html += '<textarea class="modal-textarea dp-input" id="dp-lab" rows="3">' + escapeHtml(p.labOrder || '') + '</textarea>' +
+      '<label class="dp-check"><input type="checkbox" id="dp-lab-flag"' + (p.followupLabs ? ' checked' : '') + '> Needs full follow-up labs</label>' +
+      '<div class="dp-row"><button type="button" class="dp-btn" onclick="detoxSaveLab()">Save</button></div>';
+  } else {
+    const v = p[key] || '';
+    const other = v && !detoxIsDate(v) && !['Y', 'N', 'NA'].includes(v) ? v : '';
+    html += '<div class="dp-now">Now: ' + (v ? escapeHtml(detoxShow(v)) : 'not yet') + '</div>' +
+      '<div class="dp-row">' +
+        '<button type="button" class="dp-btn" onclick="detoxSet({ ' + key + ': detoxToday() })">Today (' + detoxShow(detoxToday()) + ')</button>' +
+        '<button type="button" class="dp-btn" onclick="detoxSet({ ' + key + ': \'Y\' })">Y</button>' +
+        '<button type="button" class="dp-btn" onclick="detoxSet({ ' + key + ': \'N\' })">N</button>' +
+        '<button type="button" class="dp-btn" onclick="detoxSet({ ' + key + ': \'NA\' })">N/A</button>' +
+      '</div>' +
+      '<label class="dp-label">On a date<input type="date" class="modal-input dp-input" value="' + (detoxIsDate(v) ? v : '') + '" onchange="if(this.value) detoxSet({ ' + key + ': this.value })"></label>' +
+      '<label class="dp-label">Or a few words<input class="modal-input dp-input" id="dp-other" maxlength="30" placeholder="e.g. In Office" value="' + escapeHtml(other) + '" onkeydown="if(event.key===\'Enter\' && this.value.trim()) detoxSet({ ' + key + ': this.value.trim() })"></label>' +
+      '<div class="dp-row dp-sep"><button type="button" class="dp-btn" onclick="detoxSet({ ' + key + ': \'\' })">Clear</button></div>';
+  }
+  pop.innerHTML = html;
+  pop.style.display = 'flex';
+  // Sit below the cell, kept on screen.
+  const r = ev.currentTarget.getBoundingClientRect();
+  const w = pop.offsetWidth, h = pop.offsetHeight;
+  let left = Math.min(r.left, window.innerWidth - w - 8);
+  let top = r.bottom + 4;
+  if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 4);
+  pop.style.left = Math.max(8, left) + 'px';
+  pop.style.top = top + 'px';
+  const first = pop.querySelector('#dp-name, #dp-count, #dp-lab');
+  if (first) { first.focus(); if (first.select) first.select(); }
+}
+function closeDetoxPop() {
+  const pop = document.getElementById('detox-pop');
+  if (pop) pop.style.display = 'none';
+  detoxPopTarget = null;
+}
+document.addEventListener('click', e => {
+  const pop = document.getElementById('detox-pop');
+  if (pop && pop.style.display !== 'none' && !pop.contains(e.target)) closeDetoxPop();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && detoxPopTarget) closeDetoxPop(); });
+function detoxChangeLabel(p, body) {
+  const k = Object.keys(body)[0];
+  const what = k === 'name' ? 'name' : k === 'count' ? 'count' : k === 'labOrder' || k === 'followupLabs' ? 'labs' : k === 'dropShip' ? 'drop ship' : k === 'status' ? 'on hold' : detoxStepLabel(k).toLowerCase();
+  return 'change ' + (p ? p.name : 'patient') + ' (' + what + ')';
+}
+async function detoxPatch(id, body) {
+  const p = detoxRows.find(x => x.id === id);
+  const done = detoxUndo.track(id, detoxChangeLabel(p, body));
+  const res = await fetch(WORKER_URL + '/detox/' + id, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error('Server error ' + res.status);
+  const updated = await res.json();
+  const i = detoxRows.findIndex(x => x.id === id);
+  if (i !== -1) detoxRows[i] = updated;
+  done(updated);
+  return updated;
+}
+async function detoxSet(body) {
+  if (!detoxPopTarget) return;
+  const { id, key } = detoxPopTarget;
+  // Checkboxes in the patient panel keep it open; everything else closes it.
+  const keepOpen = key === 'name' && ('dropShip' in body || 'status' in body);
+  if (!keepOpen) closeDetoxPop();
+  try {
+    await detoxPatch(id, body);
+    renderDetox();
+  } catch (err) {
+    showToast('Could not save: ' + err.message);
+    renderDetox();
+  }
+}
+function detoxSaveName() {
+  const v = document.getElementById('dp-name').value.trim();
+  if (!v) { document.getElementById('dp-name').focus(); return; }
+  detoxSet({ name: v });
+}
+function detoxSaveCount() {
+  const raw = document.getElementById('dp-count').value.trim();
+  const n = raw === '' ? null : Number(raw);
+  if (n !== null && !(Number.isInteger(n) && n >= 0 && n <= 20)) { showToast('Count must be a whole number from 0 to 20'); return; }
+  detoxSet({ count: n });
+}
+async function detoxSaveLab() {
+  if (!detoxPopTarget) return;
+  const id = detoxPopTarget.id;
+  const p = detoxRows.find(x => x.id === id);
+  const body = {};
+  const text = document.getElementById('dp-lab').value.trim();
+  const flag = document.getElementById('dp-lab-flag').checked;
+  if (text !== (p.labOrder || '')) body.labOrder = text;
+  if (flag !== !!p.followupLabs) body.followupLabs = flag;
+  closeDetoxPop();
+  if (!Object.keys(body).length) return;
+  try {
+    await detoxPatch(id, body);
+    renderDetox();
+  } catch (err) {
+    showToast('Could not save: ' + err.message);
+  }
+}
+async function detoxDelete() {
+  if (!detoxPopTarget) return;
+  const id = detoxPopTarget.id;
+  const p = detoxRows.find(x => x.id === id);
+  closeDetoxPop();
+  if (!p || !confirm('Delete ' + p.name + ' from the detox tracker? Undo (or the 30-day trash) can bring them back.')) return;
+  try {
+    const res = await fetch(WORKER_URL + '/detox/' + id, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    detoxRows = detoxRows.filter(x => x.id !== id);
+    detoxUndo.deleted(id, 'delete ' + p.name);
+    renderDetox();
+    showToast('Patient deleted');
+  } catch (err) {
+    showToast('Could not delete: ' + err.message);
+  }
+}
+// -- Add patient --------------------------------------------------------------
+function openAddDetoxModal() {
+  document.getElementById('detox-new-name').value = '';
+  document.getElementById('detox-new-invite').checked = true;
+  document.getElementById('detox-new-dropship').checked = false;
+  document.getElementById('detox-add-modal').classList.add('open');
+  setTimeout(() => document.getElementById('detox-new-name').focus(), 50);
+}
+function closeAddDetoxModal() {
+  document.getElementById('detox-add-modal').classList.remove('open');
+}
+async function submitAddDetox() {
+  const name = document.getElementById('detox-new-name').value.trim();
+  if (!name) { document.getElementById('detox-new-name').focus(); return; }
+  const same = detoxRows.find(p => (p.name || '').trim().toLowerCase() === name.toLowerCase());
+  if (same && !confirm(same.name + ' is already on the tracker. Add another row anyway?')) return;
+  const btn = document.getElementById('detox-add-submit-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const body = { name, dropShip: document.getElementById('detox-new-dropship').checked };
+    if (document.getElementById('detox-new-invite').checked) body.invite = detoxToday();
+    const res = await fetch(WORKER_URL + '/detox', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(res.status === 404 ? 'the worker needs updating first' : 'Server error ' + res.status);
+    const patient = await res.json();
+    detoxRows.push(patient);
+    detoxSort();
+    detoxUndo.added(patient, 'add ' + patient.name);
+    renderDetox();
+    closeAddDetoxModal();
+    showToast('Patient added');
+  } catch (err) {
+    showToast('Could not add patient: ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Add Patient';
+  }
+}
+const detoxUndo = makeUndo({
+  key: 'detox', coll: 'detox', path: '/detox/',
+  fields: ['name', 'count', 'dropShip', 'status', 'labOrder', 'followupLabs'].concat(DETOX_STEPS.map(s => s.key)),
+  list: () => detoxRows,
+  replace: r => { const i = detoxRows.findIndex(p => p.id === r.id); if (i !== -1) detoxRows[i] = r; },
+  add: r => { detoxRows.push(r); detoxSort(); },
+  drop: id => { detoxRows = detoxRows.filter(p => p.id !== id); },
+  render: () => renderDetox(),
+  reload: () => loadDetox(),
 });
 
 // ── Tasks ─────────────────────────────────────────────────────────────────────
@@ -6396,6 +6830,7 @@ document.addEventListener('keydown', e => {
     'tpp-view': { undo: tppUndo, redo: tppRedo },
     'tasks-view': { undo: () => taskUndo.step('undo'), redo: () => taskUndo.step('redo') },
     'peptides-view': { undo: () => pepUndo.step('undo'), redo: () => pepUndo.step('redo') },
+    'detox-view': { undo: () => detoxUndo.step('undo'), redo: () => detoxUndo.step('redo') },
     'sec-view': { undo: () => noteUndo.step('undo'), redo: () => noteUndo.step('redo') },
   };
   const page = view && pages[view.id];
