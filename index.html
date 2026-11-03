@@ -2254,6 +2254,9 @@
   .detox-table tfoot td.detox-col-name { background: var(--surface2); }
   .detox-table tfoot tr td:first-child { border-bottom-left-radius: var(--r-md); }
   .detox-table tfoot tr td:last-child { border-bottom-right-radius: var(--r-md); }
+  .detox-col-start { min-width: 150px; }
+  .detox-ticker { display: block; font-size: var(--fs-xs); color: var(--text-muted); margin-top: 2px; }
+  .detox-ticker-soon { font-style: italic; }
   .detox-none { padding: 20px 12px !important; color: var(--text-muted); }
   .detox-summary { font-size: var(--fs-sm); color: var(--text-muted); }
   #detox-pop { position: fixed; z-index: 600; display: none; flex-direction: column; gap: 8px; width: 280px; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow); font-size: var(--fs-sm); }
@@ -2583,7 +2586,7 @@
     <div class="tasks-topbar">
       <div>
         <h2 class="tasks-heading">Detox Case Study Tracker</h2>
-        <p class="tasks-sub">Click any cell to change it. Green names have paid.</p>
+        <p class="tasks-sub">Click any cell to change it. Green names have paid. Started counts the days since each patient began.</p>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
         <button class="refresh-btn detox-undo-btn" onclick="detoxUndo.step('undo')" title="Nothing to undo" disabled style="color:var(--text-muted);padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">
@@ -2614,9 +2617,16 @@
         <option value="all">Everyone</option>
         <option value="active">Not on hold</option>
         <option value="unpaid">Not paid yet</option>
+        <option value="started">Started</option>
+        <option value="notstarted">Not started yet</option>
         <option value="labs">Needs follow-up labs</option>
         <option value="dropship">Drop ship</option>
         <option value="hold">On hold</option>
+      </select>
+      <select class="filter-select" id="detox-sort" onchange="renderDetox()">
+        <option value="added">Order added</option>
+        <option value="longest">Longest running first</option>
+        <option value="newest">Newest start first</option>
       </select>
       <span class="detox-summary" id="detox-summary"></span>
     </div>
@@ -3955,6 +3965,20 @@ function detoxToday() {
   const d = new Date(), pad = n => String(n).padStart(2, '0');
   return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
 }
+// Day counter from the start date: Day 1 is the start date itself.
+function detoxDayNum(start) {
+  if (!detoxIsDate(start)) return null;
+  const [y, m, d] = start.split('-').map(Number);
+  const now = new Date();
+  const a = Date.UTC(y, m - 1, d), b = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.round((b - a) / 86400000) + 1;
+}
+function detoxTicker(start) {
+  const n = detoxDayNum(start);
+  if (n === null) return '';
+  if (n < 1) return 'Starts in ' + (1 - n) + ' day' + (1 - n === 1 ? '' : 's');
+  return 'Day ' + n + ' · Week ' + Math.ceil(n / 7);
+}
 function detoxSort() { detoxRows.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)); }
 async function loadDetox() {
   try {
@@ -3993,9 +4017,24 @@ function detoxFiltered() {
     if (show === 'dropship') return !!p.dropShip;
     if (show === 'labs') return !!p.followupLabs;
     if (show === 'unpaid') return p.status !== 'hold' && !detoxDone(p.paid) && p.paid !== 'NA';
+    if (show === 'started') return detoxIsDate(p.startDate);
+    if (show === 'notstarted') return p.status !== 'hold' && !detoxIsDate(p.startDate);
     return true;
+  }).sort((a, b) => {
+    const by = document.getElementById('detox-sort').value;
+    if (by === 'added') return 0; // detoxRows is already in the order added
+    // Longest running first; not started at the bottom, in the order added.
+    const da = detoxDayNum(a.startDate), db = detoxDayNum(b.startDate);
+    if (da === null || db === null) return (da === null) - (db === null);
+    return by === 'newest' ? da - db : db - da;
   });
 }
+// Keeps the day counters right if the page is left open past midnight.
+let detoxRenderedDay = '';
+setInterval(() => {
+  const v = document.getElementById('detox-view');
+  if (v && v.classList.contains('active') && !detoxPopTarget && detoxRenderedDay !== detoxToday()) renderDetox();
+}, 60000);
 function renderDetox() {
   const wrap = document.getElementById('detox-table-wrap');
   if (!wrap) return;
@@ -4008,7 +4047,9 @@ function renderDetox() {
   const counted = detoxRows.reduce((a, p) => a + (p.count || 0), 0);
   const paid = detoxRows.filter(p => detoxDone(p.paid)).length;
   const sent = detoxRows.filter(p => detoxDone(p.protocolSent)).length;
-  sum.textContent = counted + ' counted · ' + paid + ' paid · ' + sent + ' protocols sent';
+  const started = detoxRows.filter(p => detoxIsDate(p.startDate)).length;
+  sum.textContent = counted + ' counted · ' + paid + ' paid · ' + sent + ' protocols sent · ' + started + ' started';
+  detoxRenderedDay = detoxToday();
   const rows = detoxFiltered();
   const cell = (p, key, text, cls, title) =>
     '<td class="detox-cell' + (cls ? ' ' + cls : '') + '"><button type="button" onclick="openDetoxPop(event,\'' + p.id + '\',\'' + key + '\')"' + (title ? ' title="' + escapeHtml(title) + '"' : '') + '>' + text + '</button></td>';
@@ -4019,7 +4060,7 @@ function renderDetox() {
   };
   const head = '<tr><th class="detox-col-count" title="Counts toward the total">#</th><th class="detox-col-name">Name</th>' +
     DETOX_STEPS.slice(0, 5).map(s => '<th>' + s.label + '</th>').join('') +
-    '<th class="detox-col-lab">Labs</th>' + DETOX_STEPS.slice(5).map(s => '<th>' + s.label + '</th>').join('') + '</tr>';
+    '<th class="detox-col-lab">Labs</th>' + DETOX_STEPS.slice(5).map(s => '<th>' + s.label + '</th>').join('') + '<th class="detox-col-start">Started</th></tr>';
   const body = rows.map(p => {
     const tags = (p.dropShip ? '<span class="detox-tag">Drop ship</span>' : '') + (p.status === 'hold' ? '<span class="detox-tag">On hold</span>' : '');
     const isPaid = detoxDone(p.paid);
@@ -4029,15 +4070,19 @@ function renderDetox() {
       DETOX_STEPS.slice(0, 5).map(s => stepCell(p, s.key)).join('') +
       cell(p, 'labOrder', p.labOrder ? escapeHtml(p.labOrder) : '<span class="detox-blank">&ndash;</span>', 'detox-col-lab' + (p.followupLabs ? ' detox-lab-flag' : ''), p.followupLabs ? 'Needs full follow-up labs' : '') +
       DETOX_STEPS.slice(5).map(s => stepCell(p, s.key)).join('') +
+      cell(p, 'startDate', detoxIsDate(p.startDate)
+        ? escapeHtml(detoxShow(p.startDate)) + '<span class="detox-ticker' + (detoxDayNum(p.startDate) < 1 ? ' detox-ticker-soon' : '') + '">' + escapeHtml(detoxTicker(p.startDate)) + '</span>'
+        : '<span class="detox-blank">&ndash;</span>', 'detox-col-start') +
       '</tr>';
   }).join('');
   const doneCount = key => rows.filter(p => detoxDone(p[key])).length;
   const foot = '<tr><td class="detox-col-count">' + rows.reduce((a, p) => a + (p.count || 0), 0) + '</td><td class="detox-col-name">Total &middot; ' + rows.length + ' patient' + (rows.length === 1 ? '' : 's') + '</td>' +
     DETOX_STEPS.slice(0, 5).map(s => '<td>' + doneCount(s.key) + '</td>').join('') +
     '<td class="detox-col-lab">' + rows.filter(p => p.followupLabs).length + ' need follow-up labs</td>' +
-    DETOX_STEPS.slice(5).map(s => '<td>' + doneCount(s.key) + '</td>').join('') + '</tr>';
+    DETOX_STEPS.slice(5).map(s => '<td>' + doneCount(s.key) + '</td>').join('') +
+    '<td class="detox-col-start">' + rows.filter(p => detoxIsDate(p.startDate)).length + ' started</td></tr>';
   wrap.innerHTML = rows.length || detoxRows.length
-    ? '<table class="detox-table"><thead>' + head + '</thead><tbody>' + (body || '<tr><td colspan="10" class="detox-none">No patients match.</td></tr>') + '</tbody><tfoot>' + foot + '</tfoot></table>'
+    ? '<table class="detox-table"><thead>' + head + '</thead><tbody>' + (body || '<tr><td colspan="11" class="detox-none">No patients match.</td></tr>') + '</tbody><tfoot>' + foot + '</tfoot></table>'
     : '<p style="color:var(--text-muted);padding:20px">No patients yet. Use Add Patient to start.</p>';
 }
 // -- Cell editor (one small panel next to the clicked cell) -------------------
@@ -4048,7 +4093,7 @@ function openDetoxPop(ev, id, key) {
   if (!p) return;
   detoxPopTarget = { id, key };
   const pop = document.getElementById('detox-pop');
-  const title = key === 'name' ? 'Patient' : key === 'count' ? 'Count toward total' : key === 'labOrder' ? 'Labs' : detoxStepLabel(key);
+  const title = key === 'name' ? 'Patient' : key === 'count' ? 'Count toward total' : key === 'labOrder' ? 'Labs' : key === 'startDate' ? 'Started detox' : detoxStepLabel(key);
   let html = '<div class="dp-title">' + escapeHtml(title) + ' &middot; <span>' + escapeHtml(p.name || '') + '</span></div>';
   if (key === 'name') {
     html += '<input class="modal-input dp-input" id="dp-name" value="' + escapeHtml(p.name || '') + '" onkeydown="if(event.key===\'Enter\') detoxSaveName()">' +
@@ -4056,6 +4101,12 @@ function openDetoxPop(ev, id, key) {
       '<label class="dp-check"><input type="checkbox"' + (p.dropShip ? ' checked' : '') + ' onchange="detoxSet({ dropShip: this.checked })"> Drop ship</label>' +
       '<label class="dp-check"><input type="checkbox"' + (p.status === 'hold' ? ' checked' : '') + ' onchange="detoxSet({ status: this.checked ? \'hold\' : \'\' })"> On hold</label>' +
       '<div class="dp-row dp-sep"><button type="button" class="dp-btn dp-danger" onclick="detoxDelete()">Delete patient</button></div>';
+  } else if (key === 'startDate') {
+    const v = p.startDate || '';
+    html += '<div class="dp-now">Now: ' + (detoxIsDate(v) ? escapeHtml(detoxShow(v) + ' (' + detoxTicker(v) + ')') : 'not started') + '</div>' +
+      '<div class="dp-row"><button type="button" class="dp-btn" onclick="detoxSet({ startDate: detoxToday() })">Today (' + detoxShow(detoxToday()) + ')</button></div>' +
+      '<label class="dp-label">On a date<input type="date" class="modal-input dp-input" value="' + (detoxIsDate(v) ? v : '') + '" onchange="if(this.value) detoxSet({ startDate: this.value })"></label>' +
+      '<div class="dp-row dp-sep"><button type="button" class="dp-btn" onclick="detoxSet({ startDate: \'\' })">Not started</button></div>';
   } else if (key === 'count') {
     html += '<input type="number" min="0" max="20" class="modal-input dp-input" id="dp-count" value="' + (p.count === null || p.count === undefined ? '' : p.count) + '" onkeydown="if(event.key===\'Enter\') detoxSaveCount()">' +
       '<div class="dp-row"><button type="button" class="dp-btn" onclick="detoxSaveCount()">Save</button><button type="button" class="dp-btn" onclick="detoxSet({ count: null })">Not counted</button></div>';
@@ -4102,7 +4153,7 @@ document.addEventListener('click', e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && detoxPopTarget) closeDetoxPop(); });
 function detoxChangeLabel(p, body) {
   const k = Object.keys(body)[0];
-  const what = k === 'name' ? 'name' : k === 'count' ? 'count' : k === 'labOrder' || k === 'followupLabs' ? 'labs' : k === 'dropShip' ? 'drop ship' : k === 'status' ? 'on hold' : detoxStepLabel(k).toLowerCase();
+  const what = k === 'name' ? 'name' : k === 'startDate' ? 'start date' : k === 'count' ? 'count' : k === 'labOrder' || k === 'followupLabs' ? 'labs' : k === 'dropShip' ? 'drop ship' : k === 'status' ? 'on hold' : detoxStepLabel(k).toLowerCase();
   return 'change ' + (p ? p.name : 'patient') + ' (' + what + ')';
 }
 async function detoxPatch(id, body) {
@@ -4218,7 +4269,7 @@ async function submitAddDetox() {
 }
 const detoxUndo = makeUndo({
   key: 'detox', coll: 'detox', path: '/detox/',
-  fields: ['name', 'count', 'dropShip', 'status', 'labOrder', 'followupLabs'].concat(DETOX_STEPS.map(s => s.key)),
+  fields: ['name', 'count', 'dropShip', 'status', 'labOrder', 'followupLabs', 'startDate'].concat(DETOX_STEPS.map(s => s.key)),
   list: () => detoxRows,
   replace: r => { const i = detoxRows.findIndex(p => p.id === r.id); if (i !== -1) detoxRows[i] = r; },
   add: r => { detoxRows.push(r); detoxSort(); },
