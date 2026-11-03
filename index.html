@@ -2587,7 +2587,7 @@
     <div class="tasks-topbar">
       <div>
         <h2 class="tasks-heading">Detox Case Study Tracker</h2>
-        <p class="tasks-sub">Click any cell to change it. Green names have paid. Started counts each patient through the 19-week detox.</p>
+        <p class="tasks-sub">Click any cell to change it. Green names have paid. Started counts each patient through the 90-day detox.</p>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
         <button class="refresh-btn detox-undo-btn" onclick="detoxUndo.step('undo')" title="Nothing to undo" disabled style="color:var(--text-muted);padding:6px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface)">
@@ -3968,9 +3968,8 @@ function detoxToday() {
   return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
 }
 // Day counter from the start date: Day 1 is the start date itself. The detox
-// runs DETOX_WEEKS weeks; after the last day the patient shows as finished.
-const DETOX_WEEKS = 19;
-const DETOX_DAYS = DETOX_WEEKS * 7;
+// runs DETOX_DAYS days; after the last day the patient shows as finished.
+const DETOX_DAYS = 90;
 function detoxDayNum(start) {
   if (!detoxIsDate(start)) return null;
   const [y, m, d] = start.split('-').map(Number);
@@ -3983,9 +3982,9 @@ function detoxTicker(start) {
   if (n === null) return '';
   if (n < 1) return 'Starts in ' + (1 - n) + ' day' + (1 - n === 1 ? '' : 's');
   if (n > DETOX_DAYS) return 'Finished ' + detoxShow(detoxEndDate(start));
-  return 'Week ' + Math.ceil(n / 7) + ' of ' + DETOX_WEEKS + ' · Day ' + n;
+  return 'Day ' + n + ' of ' + DETOX_DAYS + ' · Week ' + Math.ceil(n / 7);
 }
-// Last day of the detox (start + 133 days - 1), as YYYY-MM-DD.
+// Last day of the detox (start + DETOX_DAYS - 1), as YYYY-MM-DD.
 function detoxEndDate(start) {
   const [y, m, d] = start.split('-').map(Number);
   return new Date(Date.UTC(y, m - 1, d + DETOX_DAYS - 1)).toISOString().slice(0, 10);
@@ -4123,7 +4122,7 @@ function openDetoxPop(ev, id, key) {
   } else if (key === 'startDate') {
     const v = p.startDate || '';
     html += '<div class="dp-now">Now: ' + (detoxIsDate(v) ? escapeHtml(detoxShow(v) + ' (' + detoxTicker(v) + ')') : 'not started') + '</div>' +
-      (detoxIsDate(v) ? '<div class="dp-now">' + DETOX_WEEKS + ' weeks, ends ' + escapeHtml(detoxShow(detoxEndDate(v))) + '</div>' : '') +
+      (detoxIsDate(v) ? '<div class="dp-now">' + DETOX_DAYS + ' days, ends ' + escapeHtml(detoxShow(detoxEndDate(v))) + '</div>' : '') +
       '<div class="dp-row"><button type="button" class="dp-btn" onclick="detoxSet({ startDate: detoxToday() })">Today (' + detoxShow(detoxToday()) + ')</button></div>' +
       '<label class="dp-label">On a date<input type="date" class="modal-input dp-input" value="' + (detoxIsDate(v) ? v : '') + '" onchange="if(this.value) detoxSet({ startDate: this.value })"></label>' +
       '<div class="dp-row dp-sep"><button type="button" class="dp-btn" onclick="detoxSet({ startDate: \'\' })">Not started</button></div>';
