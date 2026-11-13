@@ -4490,6 +4490,7 @@ function toggleCompletedSection(staffName) {
   if (completedOpenCols.has(staffName)) completedOpenCols.delete(staffName);
   else completedOpenCols.add(staffName);
   renderKanban();
+  if (completedOpenCols.has(staffName)) ensureCompletedTasks();
 }
 
 // ── Kick-back helpers ────────────────────────────────────────────────────────
@@ -4842,6 +4843,7 @@ function setPatientSearch(val) {
   if (input && input.value !== val) input.value = val;
   updateFilterUI();
   renderKanban();
+  if (val.trim()) ensureCompletedTasks();
 }
 function clearTaskFilters() {
   taskPriorityFilter = 'all';
@@ -4869,16 +4871,49 @@ function updateFilterUI() {
   if (searchClearBtn) searchClearBtn.style.display = taskPatientSearch.trim() ? '' : 'none';
 }
 
+// Completed tasks are the long history (most of the data), so the board loads
+// only open tasks and fetches completed ones the first time someone expands a
+// "Completed" section or searches. Once fetched they stay loaded and are
+// refreshed along with the open list.
+let tasksCompletedLoaded = false;
+let tasksCompletedLoading = null;
+async function fetchTasks(completed) {
+  const res = await fetch(WORKER_URL + '/tasks?completed=' + completed);
+  if (!res.ok) throw new Error('Server error ' + res.status);
+  return res.json();
+}
 async function loadTasks() {
   try {
-    const res = await fetch(WORKER_URL + '/tasks');
-    if (!res.ok) throw new Error('Server error ' + res.status);
-    allTasks = await res.json();
+    const [open, done] = await Promise.all([fetchTasks(0), tasksCompletedLoaded ? fetchTasks(1) : null]);
+    if (!tasksCompletedLoaded && open.some(t => t.completed)) {
+      // A worker that predates the ?completed filter sent everything.
+      tasksCompletedLoaded = true;
+      allTasks = open;
+    } else {
+      allTasks = done ? open.concat(done) : open;
+    }
     renderKanban();
   } catch (err) {
     document.getElementById('kanban-cols').innerHTML =
       '<div style="color:var(--danger);padding:24px;font-size:var(--fs-md)">Could not load tasks: ' + escapeHtml(err.message) + '</div>';
   }
+}
+
+async function ensureCompletedTasks() {
+  if (tasksCompletedLoaded) return;
+  if (!tasksCompletedLoading) {
+    tasksCompletedLoading = (async () => {
+      try {
+        const done = await fetchTasks(1);
+        const have = new Set(allTasks.map(t => t.id));
+        allTasks = allTasks.concat(done.filter(t => !have.has(t.id)));
+        tasksCompletedLoaded = true;
+      } catch (e) { /* stay unloaded; the next click or search tries again */ }
+      finally { tasksCompletedLoading = null; }
+    })();
+  }
+  await tasksCompletedLoading;
+  renderKanban();
 }
 
 async function reloadTasks() {
@@ -4963,12 +4998,12 @@ function renderKanban() {
           ${openTasks.length === 0
             ? `<div style="text-align:center;padding:20px 12px;color:var(--text-muted);font-size:var(--fs-sm);line-height:1.6">${(taskPriorityFilter !== 'all' || taskDueFilter !== 'all' || taskPatientSearch.trim()) ? 'No tasks match your filters' : 'No tasks yet'}</div>`
             : renderGroupedTaskCards(openTasks, s.name)}
-          ${doneTasks.length > 0 ? `
+          ${(doneTasks.length > 0 || !tasksCompletedLoaded) ? `
           <div class="kanban-completed-wrap">
             <button class="kanban-completed-toggle ${isOpen ? 'open' : ''}" onclick="toggleCompletedSection('${escapeHtml(s.name)}')">
-              ${chevronSvg} Completed (${doneTasks.length})
+              ${chevronSvg} Completed${tasksCompletedLoaded ? ' (' + doneTasks.length + ')' : ''}
             </button>
-            ${isOpen ? `<div class="kanban-completed-list">${renderGroupedTaskCards(doneTasks, s.name)}</div>` : ''}
+            ${isOpen ? `<div class="kanban-completed-list">${tasksCompletedLoaded ? renderGroupedTaskCards(doneTasks, s.name) : '<div style="padding:10px 12px;color:var(--text-muted);font-size:var(--fs-sm)">Loading…</div>'}</div>` : ''}
           </div>` : ''}
         </div>
       </div>`;
