@@ -7192,6 +7192,7 @@ function tppTlCardHtml(patient) {
       (prog ? '<div class="tpp-tile-sub">' + prog.done + ' of ' + prog.need + ' done this week</div>' : '') +
       (showStage ? '<div class="tpp-tile-sub">' + (stage === TPP_HANDOFF_STAGE ? 'Now on the Follow-Up board' : escapeHtml(tppStageLabel(stage))) + '</div>' : '') +
       (!info.started ? '<button class="tpp-tl-start" onclick="event.stopPropagation(); startTppTimeline(\'' + patient.id + '\')">Start week 1 today</button>' : '') +
+      (info.started && info.week === TPP_TL_PAST && stage !== TPP_HANDOFF_STAGE ? '<button class="tpp-tl-start" onclick="event.stopPropagation(); moveTppDiscoveryStage(\'' + patient.id + '\', TPP_HANDOFF_STAGE)">Send to Follow-Up</button>' : '') +
       tppTlLabBtnHtml(patient, info) +
       ((patient.timeline || {}).binder ? '<div class="tpp-tile-sub">On binder</div>' : '') +
       tppPaymentTagHtml(patient) +
