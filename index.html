@@ -9,21 +9,23 @@
 <script>(function(){try{var t=localStorage.getItem('mc-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
 <link rel="icon" type="image/png" href="favicon.png">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
   :root {
     /* Type scale and corner radii. Use these instead of one-off values. */
     --fs-xs: 0.7rem;
     --fs-sm: 0.78rem;
     --fs-md: 0.875rem;
     --fs-lg: 1rem;
-    --r-sm: 6px;
-    --r-md: 10px;
+    --r-sm: 3px;
+    --r-md: 4px;
     --bg: #18181a;
     --surface: #232326;
     --surface2: #2b2b2f;
     --border: #3a3a3e;
-    --accent: #d9bd6b;
-    --accent-dark: #b09134;
+    --accent: #b9b9bd;
+    --accent-dark: #9a9a9f;
+    --btn: #d9bd6b;
+    --btn-hover: #b09134;
     --charcoal: #101012;
     --charcoal2: #232326;
     --text: #ececea;
@@ -32,9 +34,9 @@
     --shadow: 0 2px 16px rgba(0,0,0,0.5);
     --success: #3ec27a;
     /* Gold tint: selected / drag-over / brand highlights */
-    --gold-tint: rgba(217,189,107,0.14);
-    --gold-line: rgba(217,189,107,0.4);
-    --gold-text: #e3c47e;
+    --gold-tint: rgba(255,255,255,0.06);
+    --gold-line: rgba(255,255,255,0.18);
+    --gold-text: #d0d0d4;
     /* Warning: late / stalled / on hold. Amber, kept distinct from the brand gold. */
     --warn-bg: rgba(232,146,76,0.14);
     --warn-border: rgba(232,146,76,0.42);
@@ -51,8 +53,10 @@
     --surface: #ffffff;
     --surface2: #efefed;
     --border: #e0dedd;
-    --accent: #cfb25c;
-    --accent-dark: #b09134;
+    --accent: #4a4a4e;
+    --accent-dark: #35353a;
+    --btn: #cfb25c;
+    --btn-hover: #b09134;
     --charcoal: #30302f;
     --charcoal2: #474746;
     --text: #070707;
@@ -60,9 +64,9 @@
     --danger: #c0392b;
     --shadow: 0 2px 16px rgba(0,0,0,0.08);
     --success: #27ae60;
-    --gold-tint: #fdf3e0;
-    --gold-line: #f0dba8;
-    --gold-text: #b09134;
+    --gold-tint: #efefed;
+    --gold-line: #d8d6d3;
+    --gold-text: #35353a;
     --warn-bg: #fdf0e6;
     --warn-border: #f2cdb0;
     --warn-text: #b0561c;
@@ -162,9 +166,9 @@
      invert it there so it renders as dark ink instead. */
   :root[data-theme="light"] .home-hero-logo { filter: invert(1) opacity(0.88); }
   .home-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2.4rem;
-    letter-spacing: 0.07em;
+    font-family: 'Inter', sans-serif; font-weight: 600;
+    font-size: 1.5rem;
+    letter-spacing: 0;
     color: var(--text);
     margin: 0;
   }
@@ -193,18 +197,18 @@
     background: var(--surface2);
   }
   .home-menu-index {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.3rem;
-    letter-spacing: 0.03em;
+    font-family: 'Inter', sans-serif; font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 0;
     color: var(--accent);
     flex-shrink: 0;
     width: 28px;
   }
   .home-menu-text { display: flex; flex-direction: column; gap: 2px; }
   .home-menu-label {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.1rem;
-    letter-spacing: 0.04em;
+    font-family: 'Inter', sans-serif; font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 0;
     color: var(--text);
   }
   .home-menu-desc { font-size: var(--fs-sm); color: var(--text-muted); }
@@ -222,10 +226,10 @@
   }
   .dr-header { text-align: center; }
   .dr-header h2 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2.4rem;
+    font-family: 'Inter', sans-serif; font-weight: 600;
+    font-size: 1.5rem;
     color: var(--text);
-    letter-spacing: 0.05em;
+    letter-spacing: 0;
     margin-bottom: 4px;
   }
   .dr-header p {
@@ -244,9 +248,9 @@
     box-shadow: var(--shadow);
   }
   .checklist h3 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.1rem;
-    letter-spacing: 0.08em;
+    font-family: 'Inter', sans-serif; font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 0;
     margin-bottom: 14px;
     color: var(--text);
   }
@@ -323,8 +327,8 @@
     max-width: 560px;
     color: var(--text-muted);
     font-size: var(--fs-sm);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    letter-spacing: 0;
+    text-transform: none;
   }
   .or-divider::before, .or-divider::after {
     content: ''; flex: 1; height: 1px; background: var(--border);
@@ -356,7 +360,7 @@
   .submit-btn {
     align-self: flex-end;
     padding: 11px 30px;
-    background: var(--accent);
+    background: var(--btn);
     color: var(--charcoal);
     border: none;
     border-radius: var(--r-sm);
@@ -370,7 +374,7 @@
     gap: 8px;
     letter-spacing: 0.02em;
   }
-  .submit-btn:hover { background: var(--accent-dark); }
+  .submit-btn:hover { background: var(--btn-hover); }
   .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .spinner {
     width: 16px; height: 16px;
@@ -404,9 +408,9 @@
     justify-content: space-between;
   }
   .patient-list-header h3 {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Inter', sans-serif; font-weight: 600;
     font-size: var(--fs-lg);
-    letter-spacing: 0.1em;
+    letter-spacing: 0;
     color: var(--text);
   }
   .patient-list-header p {
@@ -626,9 +630,9 @@
   }
   .empty-state svg { opacity: 0.18; }
   .empty-state h3 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.4rem;
-    letter-spacing: 0.06em;
+    font-family: 'Inter', sans-serif; font-weight: 600;
+    font-size: 1.1rem;
+    letter-spacing: 0;
     color: var(--text-muted);
   }
   .empty-state p { font-size: var(--fs-md); max-width: 260px; line-height: 1.65; }
@@ -650,9 +654,9 @@
     gap: 8px;
   }
   .appt-card-header h2 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.9rem;
-    letter-spacing: 0.04em;
+    font-family: 'Inter', sans-serif; font-weight: 600;
+    font-size: 1.3rem;
+    letter-spacing: 0;
     color: var(--text);
   }
   .appt-time {
@@ -667,8 +671,8 @@
   .section-label {
     font-size: var(--fs-xs);
     font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+    letter-spacing: 0;
+    text-transform: none;
     color: var(--accent-dark);
     margin-bottom: 10px;
   }
@@ -687,8 +691,8 @@
   .summary-field .field-label {
     font-size: var(--fs-xs);
     font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    letter-spacing: 0;
+    text-transform: none;
     color: var(--text-muted);
     margin-bottom: 6px;
   }
@@ -759,9 +763,9 @@
     background: var(--surface);
   }
   .tasks-heading {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.8rem;
-    letter-spacing: 0.05em;
+    font-family: 'Inter', sans-serif; font-weight: 600;
+    font-size: 1.4rem;
+    letter-spacing: 0;
     color: var(--text);
     margin-bottom: 2px;
   }
@@ -774,7 +778,7 @@
     align-items: center;
     gap: 7px;
     padding: 10px 22px;
-    background: var(--accent);
+    background: var(--btn);
     color: var(--charcoal);
     border: none;
     border-radius: var(--r-sm);
@@ -785,7 +789,7 @@
     transition: background 0.2s;
     letter-spacing: 0.02em;
   }
-  .task-add-btn:hover { background: var(--accent-dark); }
+  .task-add-btn:hover { background: var(--btn-hover); }
   .tasks-filterbar {
     display: flex;
     align-items: center;
@@ -800,8 +804,8 @@
     font-size: var(--fs-xs);
     font-weight: 700;
     color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    text-transform: none;
+    letter-spacing: 0;
     margin-right: 2px;
   }
   .filter-select {
@@ -1441,8 +1445,8 @@
     font-family: 'Inter', sans-serif;
     font-size: var(--fs-xs);
     font-weight: 700;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
+    letter-spacing: 0;
+    text-transform: none;
     color: var(--text-muted);
     cursor: pointer;
     text-align: left;
@@ -1550,7 +1554,7 @@
   .comment-input:focus { outline: none; border-color: var(--accent); }
   .comment-send-btn {
     flex-shrink: 0;
-    background: var(--accent);
+    background: var(--btn);
     color: white;
     border: none;
     border-radius: var(--r-sm);
@@ -1560,7 +1564,7 @@
     font-weight: 700;
     cursor: pointer;
   }
-  .comment-send-btn:hover { background: var(--accent-dark); }
+  .comment-send-btn:hover { background: var(--btn-hover); }
   .task-created-at {
     font-size: var(--fs-xs);
     color: var(--text-muted);
@@ -1585,9 +1589,9 @@
     font-weight: 700;
     color: var(--text-muted);
     cursor: pointer;
-    letter-spacing: 0.04em;
+    letter-spacing: 0;
     text-align: left;
-    text-transform: uppercase;
+    text-transform: none;
   }
   .kanban-completed-toggle:hover { color: var(--text); }
   .kanban-completed-toggle svg { transition: transform 0.2s; flex-shrink: 0; }
@@ -1601,8 +1605,8 @@
   .task-section-banner {
     font-size: var(--fs-xs);
     font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    letter-spacing: 0;
+    text-transform: none;
     padding: 6px 10px;
     border-radius: var(--r-sm);
   }
@@ -1669,9 +1673,9 @@
     border-bottom: 1px solid var(--border);
   }
   .modal-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.2rem;
-    letter-spacing: 0.06em;
+    font-family: 'Inter', sans-serif; font-weight: 600;
+    font-size: 1.1rem;
+    letter-spacing: 0;
     color: var(--text);
   }
   .modal-close {
@@ -1704,8 +1708,8 @@
   .modal-label {
     font-size: var(--fs-xs);
     font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    letter-spacing: 0;
+    text-transform: none;
     color: var(--text-muted);
   }
   .modal-input, .modal-select, .modal-textarea {
@@ -1745,7 +1749,7 @@
   .modal-cancel:hover { border-color: var(--text-muted); color: var(--text); }
   .modal-submit {
     padding: 9px 24px;
-    background: var(--accent);
+    background: var(--btn);
     border: none;
     border-radius: var(--r-sm);
     font-family: 'Inter', sans-serif;
@@ -1755,7 +1759,7 @@
     cursor: pointer;
     transition: background 0.15s;
   }
-  .modal-submit:hover { background: var(--accent-dark); }
+  .modal-submit:hover { background: var(--btn-hover); }
   .modal-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
   /* Assignee multi-select pills */
@@ -1905,7 +1909,7 @@
   }
   .pep-tray-title {
     flex-shrink: 0; max-width: 150px;
-    font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0; text-transform: none;
     color: var(--text); line-height: 1.3;
   }
   .pep-tray-cards { display: flex; gap: 8px; overflow-x: auto; padding: 2px; min-width: 0; }
@@ -1918,7 +1922,7 @@
   .pep-detail-box { max-width: 620px; max-height: 85vh; display: flex; flex-direction: column; }
   .pep-detail-box .modal-body { overflow-y: auto; }
   .pep-section-title {
-    font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0; text-transform: none;
     color: var(--text-muted); margin: 4px 0 2px;
   }
   .pep-history-row {
@@ -1966,7 +1970,7 @@
   .tpp-tabs { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 4px 18px; }
   .tpp-mode-btn {
     position: relative; padding: 2px 0 6px; border: none; background: none; cursor: pointer;
-    font-family: 'Bebas Neue', sans-serif; font-size: 1.35rem; letter-spacing: 0.04em; line-height: 1.1;
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.95rem; letter-spacing: 0; line-height: 1.1;
     color: var(--text-muted); transition: color 0.15s; white-space: nowrap;
   }
   .tpp-mode-btn:hover { color: var(--text); }
@@ -2019,7 +2023,7 @@
   .tpp-tl-col.pep-col-empty { cursor: pointer; }
   .tpp-tl-col.pep-col-empty:hover { border-color: var(--text-muted); }
   .tpp-tl-todo { margin: 0 10px 10px; padding: 8px 10px; border-left: 3px solid var(--accent); background: var(--surface2); border-radius: var(--r-sm); }
-  .tpp-tl-todo-title { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; }
+  .tpp-tl-todo-title { font-size: var(--fs-xs); text-transform: none; letter-spacing: 0; color: var(--text-muted); margin-bottom: 6px; }
   .tpp-tl-todo ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
   .tpp-tl-todo li { font-size: var(--fs-sm); overflow-wrap: break-word; word-break: normal; }
   .tpp-tl-todo li span { color: var(--text-muted); }
@@ -2185,7 +2189,7 @@
   .tpp-board .kanban-col.tpp-nextdue-col .kanban-col-header { flex-wrap: wrap; row-gap: 2px; box-shadow: none; }
 
   /* Details card */
-  .tpp-ki-head { background: none; font-size: var(--fs-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 14px 6px; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+  .tpp-ki-head { background: none; font-size: var(--fs-xs); font-weight: 700; text-transform: none; letter-spacing: 0; padding: 10px 14px 6px; border-bottom: 1px solid var(--border); color: var(--text-muted); }
   .tpp-ki-row.current .tpp-ki-label { font-weight: 700; color: var(--text); }
   .tpp-ki-seg-btn.active, .tpp-ki-seg-btn.tpp-ki-pay-plan.active { font-weight: 700; color: var(--text); box-shadow: none; background: var(--surface2); }
   .tpp-ki-file { font-size: var(--fs-md); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; color: var(--text); text-underline-offset: 2px; font-weight: 600; text-decoration: none; }
@@ -2231,7 +2235,7 @@
   /* -- Detox Case Study Tracker ---------------------------------------------- */
   .detox-scroll { flex: 1; overflow: auto; padding: 16px 28px 28px; }
   .detox-table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 1100px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); font-size: var(--fs-md); }
-  .detox-table th { position: sticky; top: 0; z-index: 2; background: var(--surface2); text-align: left; font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); padding: 10px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .detox-table th { position: sticky; top: 0; z-index: 2; background: var(--surface2); text-align: left; font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--text-muted); padding: 10px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
   .detox-table th:first-child { border-top-left-radius: var(--r-md); }
   .detox-table th:last-child { border-top-right-radius: var(--r-md); }
   .detox-table td { border-bottom: 1px solid var(--border); padding: 0; vertical-align: top; }
@@ -2297,6 +2301,13 @@
     .tpp-mode-btn { font-size: 0.9rem; }
     .kanban-scroll { padding-left: 12px; padding-right: 12px; }
   }
+
+  /* Plainer look (Nov 13, 2026): flat list on the home page, neutral selected states, gold only on filled primary buttons. */
+  .home-menu-list { gap: 0; }
+  .home-menu-item { background: none; border: none; border-bottom: 1px solid var(--border); border-radius: 0; padding: 14px 4px; }
+  .home-menu-item:hover { background: var(--surface); border-color: var(--border); }
+  .unread-badge, .filter-active-count, .tpp-ki-seg-btn.active, .tpp-accept-btn, .tpp-tl-labbtn.done { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .task-card.card-pri-medium { border-left-color: var(--border); }
 </style>
 </head>
 <body>
@@ -2325,26 +2336,21 @@
 </header>
 <!-- HOME VIEW -->
 <div id="home-view" class="view active">
-  <img class="home-hero-logo" alt="Movement Clinic" src="logo.png">
   <h1 class="home-title">Movement Clinic</h1>
-  <div class="home-title-rule"></div>
   <div class="home-menu-list">
     <div class="home-menu-item" onclick="setView(&#39;tasks&#39;, document.querySelector(&#39;.toggle-btn[data-view=tasks]&#39;))">
-      <span class="home-menu-index">01</span>
       <span class="home-menu-text">
         <span class="home-menu-label">Tasks</span>
         <span class="home-menu-desc">Team task board</span>
       </span>
     </div>
     <div class="home-menu-item" onclick="setView(&#39;tpp&#39;, document.querySelector(&#39;.toggle-btn[data-view=tpp]&#39;))">
-      <span class="home-menu-index">02</span>
       <span class="home-menu-text">
         <span class="home-menu-label">Treatment Plan Pipeline</span>
         <span class="home-menu-desc">Track patients from discovery through treatment plan, then follow-up</span>
       </span>
     </div>
     <div class="home-menu-item" onclick="setView(&#39;detox&#39;, document.querySelector(&#39;.toggle-btn[data-view=detox]&#39;))">
-      <span class="home-menu-index">03</span>
       <span class="home-menu-text">
         <span class="home-menu-label">Detox Case Study Tracker</span>
         <span class="home-menu-desc">Track case study patients from invite to protocol sent</span>
@@ -2352,7 +2358,6 @@
     </div>
     <!-- ARCHIVED Nov 13, 2026: Peptides (04) menu item hidden. Code and data kept. To restore, uncomment.
     <div class="home-menu-item" onclick="setView(&#39;peptides&#39;, document.querySelector(&#39;.toggle-btn[data-view=peptides]&#39;))">
-      <span class="home-menu-index">04</span>
       <span class="home-menu-text">
         <span class="home-menu-label">Peptides</span>
         <span class="home-menu-desc">Track patients through the peptide pipeline</span>
@@ -2361,14 +2366,12 @@
     -->
     <!-- ARCHIVED Nov 13, 2026: Doctor (05) and Care Team (06) menu items hidden. Code and data kept. To restore, uncomment.
     <div class="home-menu-item" onclick="setView(&#39;dr&#39;, document.querySelector(&#39;.toggle-btn[data-view=dr]&#39;))">
-      <span class="home-menu-index">05</span>
       <span class="home-menu-text">
         <span class="home-menu-label">Doctor</span>
         <span class="home-menu-desc">Record a post-appointment note</span>
       </span>
     </div>
     <div class="home-menu-item" onclick="setView(&#39;sec&#39;, document.querySelector(&#39;.toggle-btn[data-view=sec]&#39;))">
-      <span class="home-menu-index">06</span>
       <span class="home-menu-text">
         <span class="home-menu-label">Care Team</span>
         <span class="home-menu-desc">Review appointment notes</span>
@@ -5045,7 +5048,7 @@ function renderTaskCard(t, actingAs) {
   return `
     <div class="task-card card-pri-${pri} ${t.completed ? 'completed' : ''} ${t.pinned ? 'pinned' : ''}" id="card-${t.id}-${escapeHtml(actingAs).replace(/[^a-zA-Z0-9]/g,'')}" title="${priLabel} priority">
       ${t.pinned ? `<div class="pin-badge">❗ Most Important</div>` : ''}
-      ${kickedToMe ? `<div class="duplicate-tag" title="Originally assigned to ${escapeHtml(t.assignee)} — it's on your board now because of a kickback">↩ Kicked back from ${escapeHtml(t.assignee)}'s board</div>` : ''}
+      ${kickedToMe ? `<div class="duplicate-tag" title="Originally assigned to ${escapeHtml(t.assignee)} — it's on your board now because of a kickback">Kicked back from ${escapeHtml(t.assignee)}'s board</div>` : ''}
       ${renderKickbackBanner(t, actingAs, otherParty)}
       <div class="task-card-top">
         <div class="task-check ${checked}" onclick="toggleTaskComplete('${t.id}','${escapeHtml(actingAs)}')" title="${t.completed ? 'Mark incomplete' : 'Mark complete'}"></div>
@@ -5073,17 +5076,14 @@ function renderTaskCard(t, actingAs) {
         <div class="task-card-actions-left">
           <button class="task-pin-btn ${t.pinned ? 'active' : ''}" onclick="event.stopPropagation();togglePin('${t.id}')" title="${t.pinned ? 'Unpin from top' : 'Bump to top — mark as most important'}">!</button>
           ${canKickBack ? `<button class="task-kickback-btn" onclick="event.stopPropagation();openKickBackModal('${t.id}','${escapeHtml(actingAs)}','${escapeHtml(otherParty)}')" title="Send a question or reply to ${escapeHtml(otherParty)}">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
             Kick Back
           </button>` : ''}
         </div>
         <div class="task-card-actions-right">
           <button class="task-edit-btn" onclick="editTask('${t.id}')">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             Edit
           </button>
           <button class="task-del-btn" onclick="deleteTask('${t.id}')">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
             Delete
           </button>
         </div>
@@ -5096,11 +5096,10 @@ function renderKickbackBanner(t, actingAs, otherParty) {
   if (!hasUnresolvedKickback(t)) return '';
   const last = t.thread[t.thread.length - 1];
   const isQuestion = last.type === 'question';
-  const icon = isQuestion ? '❓' : '💬';
   const label = isQuestion ? (escapeHtml(last.from) + ' is asking for clarification') : (escapeHtml(last.from) + ' replied');
   return `
     <div class="kickback-banner ${isQuestion ? 'kb-question' : 'kb-reply'}">
-      <div class="kickback-banner-text">${icon} <strong>${label}</strong>: "${escapeHtml(last.message)}"</div>
+      <div class="kickback-banner-text"><strong>${label}</strong>: "${escapeHtml(last.message)}"</div>
       <button class="kickback-resolve-btn" onclick="event.stopPropagation();openResolveModal('${t.id}','${escapeHtml(actingAs)}','${escapeHtml(otherParty)}')">Mark Resolved</button>
     </div>`;
 }
@@ -5123,9 +5122,8 @@ function renderThreadEntry(e) {
       ${e.message ? `<div class="thread-entry-msg">${escapeHtml(e.message)}</div>` : ''}
     </div>`;
   }
-  const icon = e.type === 'question' ? '❓' : '💬';
   return `<div class="thread-entry">
-    <div class="thread-entry-head">${icon} <strong>${escapeHtml(e.from)}</strong><span class="thread-entry-time">${formatTime(e.at)}</span></div>
+    <div class="thread-entry-head"><strong>${escapeHtml(e.from)}</strong><span class="thread-entry-time">${formatTime(e.at)}</span></div>
     <div class="thread-entry-msg">${escapeHtml(e.message)}</div>
   </div>`;
 }
@@ -5156,7 +5154,7 @@ function renderCommentSection(t, actingAs) {
   return `
     <div class="comment-bar">
       <button class="comment-toggle ${isOpen ? 'open' : ''}" onclick="event.stopPropagation();toggleComments('${t.id}')">
-        💬 ${label}${comments.length > 0 ? '' : chevron}
+        ${label}${comments.length > 0 ? '' : chevron}
       </button>
     </div>
     ${isOpen ? `
