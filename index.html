@@ -9,7 +9,7 @@
 <script>(function(){try{var t=localStorage.getItem('mc-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}})();</script>
 <link rel="icon" type="image/png" href="favicon.png">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap');
   :root {
     /* Type scale and corner radii. Use these instead of one-off values. */
     --fs-xs: 0.7rem;
@@ -166,13 +166,13 @@
      invert it there so it renders as dark ink instead. */
   :root[data-theme="light"] .home-hero-logo { filter: invert(1) opacity(0.88); }
   .home-title {
-    font-family: 'Inter', sans-serif; font-weight: 600;
-    font-size: 1.5rem;
-    letter-spacing: 0;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.4rem;
+    letter-spacing: 0.07em;
     color: var(--text);
     margin: 0;
   }
-  .home-title-rule { width: 42px; height: 3px; background: var(--accent); margin: 10px 0 26px; }
+  .home-title-rule { width: 42px; height: 3px; background: var(--btn); margin: 10px 0 26px; }
   .home-menu-list {
     display: flex;
     flex-direction: column;
@@ -184,7 +184,7 @@
   .home-menu-item {
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: var(--r-md);
+    border-radius: 10px;
     padding: 16px 18px;
     cursor: pointer;
     transition: border-color 0.15s, background 0.15s;
@@ -193,22 +193,22 @@
     gap: 16px;
   }
   .home-menu-item:hover {
-    border-color: var(--accent);
+    border-color: var(--btn);
     background: var(--surface2);
   }
   .home-menu-index {
-    font-family: 'Inter', sans-serif; font-weight: 600;
-    font-size: 1rem;
-    letter-spacing: 0;
-    color: var(--accent);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 0.03em;
+    color: var(--btn);
     flex-shrink: 0;
     width: 28px;
   }
   .home-menu-text { display: flex; flex-direction: column; gap: 2px; }
   .home-menu-label {
-    font-family: 'Inter', sans-serif; font-weight: 600;
-    font-size: 1rem;
-    letter-spacing: 0;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.04em;
     color: var(--text);
   }
   .home-menu-desc { font-size: var(--fs-sm); color: var(--text-muted); }
@@ -2302,10 +2302,7 @@
     .kanban-scroll { padding-left: 12px; padding-right: 12px; }
   }
 
-  /* Plainer look (Nov 13, 2026): flat list on the home page, neutral selected states, gold only on filled primary buttons. */
-  .home-menu-list { gap: 0; }
-  .home-menu-item { background: none; border: none; border-bottom: 1px solid var(--border); border-radius: 0; padding: 14px 4px; }
-  .home-menu-item:hover { background: var(--surface); border-color: var(--border); }
+  /* Plainer look (Nov 13, 2026): neutral selected states, gold only on filled primary buttons. The home page keeps its original look. */
   .unread-badge, .filter-active-count, .tpp-ki-seg-btn.active, .tpp-accept-btn, .tpp-tl-labbtn.done { background: var(--text); color: var(--bg); border-color: var(--text); }
   .task-card.card-pri-medium { border-left-color: var(--border); }
 </style>
@@ -2336,21 +2333,26 @@
 </header>
 <!-- HOME VIEW -->
 <div id="home-view" class="view active">
+  <img class="home-hero-logo" alt="Movement Clinic" src="logo.png">
   <h1 class="home-title">Movement Clinic</h1>
+  <div class="home-title-rule"></div>
   <div class="home-menu-list">
     <div class="home-menu-item" onclick="setView(&#39;tasks&#39;, document.querySelector(&#39;.toggle-btn[data-view=tasks]&#39;))">
+      <span class="home-menu-index">01</span>
       <span class="home-menu-text">
         <span class="home-menu-label">Tasks</span>
         <span class="home-menu-desc">Team task board</span>
       </span>
     </div>
     <div class="home-menu-item" onclick="setView(&#39;tpp&#39;, document.querySelector(&#39;.toggle-btn[data-view=tpp]&#39;))">
+      <span class="home-menu-index">02</span>
       <span class="home-menu-text">
         <span class="home-menu-label">Treatment Plan Pipeline</span>
         <span class="home-menu-desc">Track patients from discovery through treatment plan, then follow-up</span>
       </span>
     </div>
     <div class="home-menu-item" onclick="setView(&#39;detox&#39;, document.querySelector(&#39;.toggle-btn[data-view=detox]&#39;))">
+      <span class="home-menu-index">03</span>
       <span class="home-menu-text">
         <span class="home-menu-label">Detox Case Study Tracker</span>
         <span class="home-menu-desc">Track case study patients from invite to protocol sent</span>
@@ -2358,6 +2360,7 @@
     </div>
     <!-- ARCHIVED Nov 13, 2026: Peptides (04) menu item hidden. Code and data kept. To restore, uncomment.
     <div class="home-menu-item" onclick="setView(&#39;peptides&#39;, document.querySelector(&#39;.toggle-btn[data-view=peptides]&#39;))">
+      <span class="home-menu-index">04</span>
       <span class="home-menu-text">
         <span class="home-menu-label">Peptides</span>
         <span class="home-menu-desc">Track patients through the peptide pipeline</span>
@@ -2366,12 +2369,14 @@
     -->
     <!-- ARCHIVED Nov 13, 2026: Doctor (05) and Care Team (06) menu items hidden. Code and data kept. To restore, uncomment.
     <div class="home-menu-item" onclick="setView(&#39;dr&#39;, document.querySelector(&#39;.toggle-btn[data-view=dr]&#39;))">
+      <span class="home-menu-index">05</span>
       <span class="home-menu-text">
         <span class="home-menu-label">Doctor</span>
         <span class="home-menu-desc">Record a post-appointment note</span>
       </span>
     </div>
     <div class="home-menu-item" onclick="setView(&#39;sec&#39;, document.querySelector(&#39;.toggle-btn[data-view=sec]&#39;))">
+      <span class="home-menu-index">06</span>
       <span class="home-menu-text">
         <span class="home-menu-label">Care Team</span>
         <span class="home-menu-desc">Review appointment notes</span>
