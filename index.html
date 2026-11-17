@@ -1570,6 +1570,16 @@
     color: var(--text-muted);
     margin-top: 2px;
   }
+  .task-lab-dates {
+    font-size: var(--fs-xs);
+    color: var(--text);
+    margin-top: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .task-lab-dates span { color: var(--text-muted); }
+  .kanban-col .task-lab-dates { font-size: var(--fs-md); }
   .kanban-completed-wrap {
     margin-top: 4px;
     border-top: 1px dashed var(--border);
@@ -2825,7 +2835,7 @@
     <div class="modal-body">
       <div class="modal-field">
         <label class="modal-label">Assign to <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted);font-size:var(--fs-xs)">(select one or more — first to complete removes it from all)</span></label>
-        <div class="assignee-pills" id="assignee-checkboxes">
+        <div class="assignee-pills" id="assignee-checkboxes" onchange="updateLabDatesRow()">
           <label class="assignee-pill"><input type="checkbox" name="assignee" value="Bella"><span>Bella</span></label>
           <label class="assignee-pill"><input type="checkbox" name="assignee" value="Bree"><span>Bree</span></label>
           <label class="assignee-pill"><input type="checkbox" name="assignee" value="Christy"><span>Christy</span></label>
@@ -2877,6 +2887,16 @@
             <option value="medium" selected>🟡 Medium</option>
             <option value="low">🟢 Low</option>
           </select>
+        </div>
+      </div>
+      <div class="modal-row" id="task-lab-dates-row" style="display:none">
+        <div class="modal-field" style="flex:1">
+          <label class="modal-label">Labs send date</label>
+          <input type="date" id="task-labs-send" class="modal-input">
+        </div>
+        <div class="modal-field" style="flex:1">
+          <label class="modal-label">Lab draw date</label>
+          <input type="date" id="task-lab-draw" class="modal-input">
         </div>
       </div>
     </div>
@@ -3932,7 +3952,7 @@ const noteUndo = makeUndo({
 });
 const taskUndo = makeUndo({
   key: 'task', coll: 'tasks', path: '/tasks/',
-  fields: ['assignee', 'assignees', 'assignedBy', 'description', 'patientInitials', 'dueDate', 'priority', 'completed', 'pinned', 'thread', 'resolved', 'comments'],
+  fields: ['assignee', 'assignees', 'assignedBy', 'description', 'patientInitials', 'dueDate', 'labsSendDate', 'labDrawDate', 'priority', 'completed', 'pinned', 'thread', 'resolved', 'comments'],
   list: () => allTasks,
   replace: r => { const i = allTasks.findIndex(t => t.id === r.id); if (i !== -1) allTasks[i] = r; },
   add: r => { allTasks.unshift(r); },
@@ -4752,6 +4772,12 @@ function setSelectedAssignees(assignees) {
   document.querySelectorAll('#assignee-checkboxes input').forEach(el => {
     el.checked = assignees.includes(el.value);
   });
+  updateLabDatesRow();
+}
+// Labs send date and Lab draw date exist only on tasks assigned to Labs.
+function updateLabDatesRow() {
+  const row = document.getElementById('task-lab-dates-row');
+  if (row) row.style.display = getSelectedAssignees().includes('Labs') ? '' : 'none';
 }
 
 function getTasksForColumn(staffName) {
@@ -5063,6 +5089,10 @@ function renderTaskCard(t, actingAs) {
         ? (t.assignee ? `<div class="task-assigned-by">Originally assigned to ${escapeHtml(t.assignee)}</div>` : '')
         : (t.assignedBy ? `<div class="task-assigned-by">Assigned by ${escapeHtml(t.assignedBy)}</div>` : '')}
       ${t.createdAt ? `<div class="task-created-at">Added ${formatTime(t.createdAt)}</div>` : ''}
+      ${actingAs === 'Labs' && (t.labsSendDate || t.labDrawDate) ? `<div class="task-lab-dates">
+        ${t.labsSendDate ? `<div><span>Labs send</span> ${formatLabDate(t.labsSendDate)}</div>` : ''}
+        ${t.labDrawDate ? `<div><span>Lab draw</span> ${formatLabDate(t.labDrawDate)}</div>` : ''}
+      </div>` : ''}
       ${coAssignees.length > 0 ? `
       <div class="co-assignees">
         <span style="font-size:var(--fs-xs);color:var(--text-muted);margin-right:2px">Also:</span>
@@ -5226,6 +5256,9 @@ async function submitComment(taskId, actingAs) {
   }
 }
 
+function formatLabDate(d) {
+  return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
 function getDueInfo(dueDate) {
   if (!dueDate) return { cls: '', label: '' };
   const due = new Date(dueDate + 'T00:00:00');
@@ -5373,6 +5406,8 @@ function openTaskModal(assignee) {
   document.getElementById('task-patient').value = '';
   document.getElementById('task-due').value = '';
   document.getElementById('task-priority').value = 'medium';
+  document.getElementById('task-labs-send').value = '';
+  document.getElementById('task-lab-draw').value = '';
   setSelectedAssignees(assignee ? [assignee] : []);
   document.getElementById('task-assigned-by').value = getRememberedAssignedBy() || '';
   document.getElementById('task-submit-btn').disabled = false;
@@ -5392,6 +5427,8 @@ function editTask(id) {
   document.getElementById('task-patient').value = task.patientInitials || '';
   document.getElementById('task-due').value = task.dueDate || '';
   document.getElementById('task-priority').value = task.priority || 'medium';
+  document.getElementById('task-labs-send').value = task.labsSendDate || '';
+  document.getElementById('task-lab-draw').value = task.labDrawDate || '';
   document.getElementById('task-submit-btn').disabled = false;
   document.getElementById('task-submit-btn').textContent = 'Save Changes';
   document.getElementById('task-modal').classList.add('open');
@@ -5553,6 +5590,9 @@ async function submitTask() {
   const patient = document.getElementById('task-patient').value.trim();
   const due = document.getElementById('task-due').value;
   const priority = document.getElementById('task-priority').value;
+  const isLabs = assignees.includes('Labs');
+  const labsSendDate = isLabs ? document.getElementById('task-labs-send').value : '';
+  const labDrawDate = isLabs ? document.getElementById('task-lab-draw').value : '';
 
   if (!assignees.length) {
     document.getElementById('assignee-checkboxes').style.outline = '2px solid var(--danger)';
@@ -5574,7 +5614,7 @@ async function submitTask() {
   try {
     if (editingTaskId) {
       // Update existing task
-      const payload = { assignee, assignees, assignedBy, description: desc, patientInitials: patient, dueDate: due, priority };
+      const payload = { assignee, assignees, assignedBy, description: desc, patientInitials: patient, dueDate: due, labsSendDate, labDrawDate, priority };
       const done = taskUndo.track(editingTaskId, 'edit ' + shortLabel(desc));
       const res = await fetch(WORKER_URL + '/tasks/' + editingTaskId, {
         method: 'PATCH',
@@ -5594,7 +5634,7 @@ async function submitTask() {
       const res = await fetch(WORKER_URL + '/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assignee, assignees, assignedBy, description: desc, patientInitials: patient, dueDate: due, priority }),
+        body: JSON.stringify({ assignee, assignees, assignedBy, description: desc, patientInitials: patient, dueDate: due, labsSendDate, labDrawDate, priority }),
       });
       if (!res.ok) throw new Error('Server error ' + res.status);
       const task = await res.json();
